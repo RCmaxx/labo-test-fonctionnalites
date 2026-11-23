@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123214816';
-import { S, esc, fmt, nameOf, DONE, PRIORITY, PAGE } from './state.js?v=20261123214816';
+import { sb } from './sb.js?v=20261123214910';
+import { S, esc, fmt, nameOf, DONE, PRIORITY, PAGE } from './state.js?v=20261123214910';
 
 let search = '', doneN = PAGE, tq = 0; // recherche et nombre de terminées gardés entre deux affichages
 const COLS = 'id, title, location, description, status, priority, assignee_id, created_by, created_at, resolved_at, validated_at';
@@ -13,7 +13,7 @@ const withSearch = (q, words) => {
   return q;
 };
 export async function renderList(el) {
-  el.innerHTML = `<h1>Interventions</h1><p><label>Rechercher <input type="search" id="q" value="${esc(search)}"></label></p><div id="rows"><p>Chargement…</p></div>`;
+  el.innerHTML = `<h1>Interventions</h1><p class="search"><label>Rechercher <input type="search" id="q" value="${esc(search)}"></label></p><div id="rows"><p>Chargement…</p></div>`;
   const qel = el.querySelector('#q'), rows = el.querySelector('#rows');
   const [reads, msgs] = await Promise.all([
     sb.from('intervention_reads').select('intervention_id, last_read_at').eq('user_id', S.me.id),
@@ -22,12 +22,13 @@ export async function renderList(el) {
   const last = Object.fromEntries((reads.data || []).map(r => [r.intervention_id, r.last_read_at]));
   const unread = {};
   (msgs.data || []).forEach(m => { if (!last[m.intervention_id] || m.created_at > last[m.intervention_id]) unread[m.intervention_id] = (unread[m.intervention_id] || 0) + 1; });
-  const item = r => `<li>
-      <a href="#i/${r.id}"><b>${esc(r.title)}</b></a> · ${esc(r.location) || 'sans lieu'} · ${PRIORITY[r.priority] || ''}
-      · ${r.assignee_id ? esc(nameOf(r.assignee_id)) : 'Non assignée'}
-      · ${fmt(DONE.includes(r.status) ? r.resolved_at || r.validated_at : r.created_at)}
-      ${unread[r.id] ? `· ${unread[r.id]} non lu${unread[r.id] > 1 ? 's' : ''}` : ''}
-    </li>`;
+  const item = r => {
+    const done = DONE.includes(r.status), n = unread[r.id];
+    return `<li><a class="card${done ? ' card--done' : ''}" href="#i/${r.id}">
+      <span class="card__head"><span class="tag tag--${r.priority}">${PRIORITY[r.priority] || ''}</span><b class="card__title">${esc(r.title)}</b>${n ? `<span class="badge">${n}</span>` : ''}</span>
+      <span class="card__meta"><span class="tag">${esc(r.location) || 'Sans lieu'}</span>${r.assignee_id ? `<span class="tag tag--tech">${esc(nameOf(r.assignee_id))}</span>` : ''}<time>${fmt(done ? r.resolved_at || r.validated_at : r.created_at)}</time></span>
+    </a></li>`;
+  };
   const paint = (open, done, more) => {
     const groups = [
       ['Brouillons', open.filter(r => r.status === 'brouillon' && (S.me.role !== 'technicien' || r.created_by === S.me.id))],
@@ -36,7 +37,7 @@ export async function renderList(el) {
       ['En cours', open.filter(r => r.status === 'prise_en_charge' && r.assignee_id !== S.me.id)],
       ['Terminées', done],
     ];
-    rows.innerHTML = groups.map(([t, list]) => `<h2>${t} (${list.length})</h2>${list.length ? `<ul>${list.map(item).join('')}</ul>` : '<p>Aucune.</p>'}`).join('')
+    rows.innerHTML = groups.map(([t, list]) => `<section class="group"><h2 class="group__title">${t} <span class="count">${list.length}</span></h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`).join('')
       + (more ? '<button id="more">Plus de terminées</button>' : '');
     const btn = rows.querySelector('#more');
     if (btn) btn.onclick = () => { doneN += PAGE; renderList(el); };

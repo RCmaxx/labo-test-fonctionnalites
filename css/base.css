@@ -28,6 +28,6 @@ button {
   padding: 9px 14px; border-radius: var(--r-s); border: 1px solid var(--btn-bd);
   background: var(--btn-bg); color: var(--btn-fg); cursor: pointer; white-space: nowrap;
 }
-button.primary { --btn-bg: var(--ink); --btn-bd: var(--ink); --btn-fg: #fff; }
+button.primary { --btn-bg: var(--ink); --btn-bd: var(--ink); --btn-fg: var(--surface); }
 button.danger { --btn-fg: var(--danger); }
 button:disabled { opacity: .5; cursor: default; }
