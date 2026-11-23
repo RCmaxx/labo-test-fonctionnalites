@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123205732';
-import { S, esc, fmt, norm, nameOf, DONE, PRIORITY, PAGE } from './state.js?v=20261123205732';
+import { sb } from './sb.js?v=20261123211258';
+import { S, esc, fmt, norm, nameOf, DONE, PRIORITY, PAGE } from './state.js?v=20261123211258';
 
 let search = '', doneN = PAGE; // recherche et nombre de terminées gardés entre deux affichages
 export async function renderList(el) {

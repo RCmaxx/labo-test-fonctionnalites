@@ -1,6 +1,6 @@
-import { sb } from './sb.js?v=20261123205732';
-import { S, esc, options, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123205732';
-import { takeLock } from './lock.js?v=20261123205732';
+import { sb } from './sb.js?v=20261123211258';
+import { S, esc, options, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123211258';
+import { takeLock } from './lock.js?v=20261123211258';
 
 // Envoie les photos dans le stockage puis les rattache à l'intervention (un message photo s'ajoute au tchat). Renvoie la première erreur.
 export async function uploadPhotos(iid, files) {
