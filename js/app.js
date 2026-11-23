@@ -84,7 +84,7 @@ function header() {
   top.innerHTML = `
     <div class="bar">
       ${tech ? `<span class="ptit">${({ nouvelles: 'Interventions', encours: 'En cours', planifiees: 'Planifiées', terminees: 'Terminées', routines: 'Routines', parametres: 'Profils', equipe: 'Profils', nouvelle: 'Nouvelle intervention', intervention: 'Intervention' })[cur] || 'Interventions'}</span><span class="pcnt">${['nouvelles', 'encours', 'planifiees'].includes(cur) ? (window.__pcnt || '') : ''}</span>${['nouvelles', 'encours'].includes(cur) ? '' : `<button type="button" class="burg" aria-label="Compte" aria-expanded="false"><span class="av" aria-hidden="true" style="background:${avatar(avName, undefined, r).bg}">${avatar(avName, undefined, r).e}</span></button>`}<div class="tmenu">` : ''}
-      <span class="brand">${esc(state.org?.name || '')}</span>
+      <span class="brand">Labo</span>
       ${tech ? '' : `<nav>
         <a href="#/" class="${!searching && ['', 'interventions', 'intervention', 'nouvelle'].includes(cur) ? 'on' : ''}">Interventions</a>
         ${r === 'client' ? '' : `<a href="#/terminees" class="${cur === 'terminees' ? 'on' : ''}">Terminées</a>`}
