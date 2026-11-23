@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123220622';
-import { S, esc } from './state.js?v=20261123220622';
+import { sb } from './sb.js?v=20261123221328';
+import { S, esc } from './state.js?v=20261123221328';
 
 // Verrou d'édition (expire seul côté base après 2 min sans renouvellement).
 const LOCKS = new Map(); // intervention_id → { by, name, until }

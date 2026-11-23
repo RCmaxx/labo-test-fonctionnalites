@@ -1,11 +1,11 @@
-import { sb } from './sb.js?v=20261123220622';
-import { S, app, route, VERSION } from './state.js?v=20261123220622';
-import { renderLogin, renderOrg, renderInvitation, renderMe } from './auth.js?v=20261123220622';
-import { renderList } from './list.js?v=20261123220622';
-import { renderDetail } from './detail.js?v=20261123220622';
-import { renderForm } from './form.js?v=20261123220622';
-import { startLive } from './live.js?v=20261123220622';
-import { drawAlerts } from './alerts.js?v=20261123220622';
+import { sb } from './sb.js?v=20261123221328';
+import { S, app, route, VERSION } from './state.js?v=20261123221328';
+import { renderLogin, renderOrg, renderInvitation, renderMe } from './auth.js?v=20261123221328';
+import { renderList } from './list.js?v=20261123221328';
+import { renderDetail } from './detail.js?v=20261123221328';
+import { renderForm } from './form.js?v=20261123221328';
+import { startLive } from './live.js?v=20261123221328';
+import { drawAlerts } from './alerts.js?v=20261123221328';
 
 async function render() {
   const [page, id] = route();
@@ -34,6 +34,7 @@ async function render() {
 function show() {
   const el = app.querySelector('main'), [page, id, sub] = route();
   if (!el) return;
+  app.querySelectorAll('.topbar a').forEach(a => a.classList.toggle('on', a.hash === (page === 'compte' ? '#compte' : '')));
   page === 'compte' ? renderMe(el) : page === 'nouvelle' ? renderForm(el)
     : page === 'i' ? (sub === 'modifier' ? renderForm(el, id) : renderDetail(el, id)) : renderList(el);
 }

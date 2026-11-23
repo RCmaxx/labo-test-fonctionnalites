@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123220622';
-import { S, esc, fmtCard, nameOf, DONE, PAGE } from './state.js?v=20261123220622';
+import { sb } from './sb.js?v=20261123221328';
+import { S, esc, fmtCard, nameOf, DONE, PAGE } from './state.js?v=20261123221328';
 
 let search = '', doneN = PAGE, tq = 0; // recherche et nombre de terminées gardés entre deux affichages
 // Icônes de l'appli (clé du technicien, main de la présence client).
@@ -21,8 +21,16 @@ const withSearch = (q, words) => {
   }
   return q;
 };
+// Icônes des sous-titres, reprises de l'appli (js/views/list.js GICO) ; crayon pour les brouillons.
+const WR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/></svg>';
+const GICO = {
+  brouillon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  mes: WR, cours: WR,
+  publiee: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></svg>',
+  fini: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
+};
 export async function renderList(el) {
-  el.innerHTML = `<h1>Interventions</h1><p class="search"><label>Rechercher <input type="search" id="q" value="${esc(search)}"></label></p><div id="rows"><p>Chargement…</p></div>`;
+  el.innerHTML = `<p class="search"><label>Rechercher <input type="search" id="q" value="${esc(search)}"></label></p><div id="rows"><p>Chargement…</p></div>`;
   const qel = el.querySelector('#q'), rows = el.querySelector('#rows');
   const [reads, msgs] = await Promise.all([
     sb.from('intervention_reads').select('intervention_id, last_read_at').eq('user_id', S.me.id),
@@ -41,13 +49,13 @@ export async function renderList(el) {
   };
   const paint = (open, done, more) => {
     const groups = [
-      ['Brouillons', open.filter(r => r.status === 'brouillon' && (S.me.role !== 'technicien' || r.created_by === S.me.id))],
-      ['Mes interventions', open.filter(r => r.status === 'prise_en_charge' && r.assignee_id === S.me.id)],
-      ['Nouvelles interventions', open.filter(r => r.status === 'publiee')],
-      ['En cours', open.filter(r => r.status === 'prise_en_charge' && r.assignee_id !== S.me.id)],
-      ['Terminées', done],
+      ['brouillon', 'Brouillons', open.filter(r => r.status === 'brouillon' && (S.me.role !== 'technicien' || r.created_by === S.me.id))],
+      ['mes', 'Mes interventions', open.filter(r => r.status === 'prise_en_charge' && r.assignee_id === S.me.id)],
+      ['publiee', 'Nouvelles interventions', open.filter(r => r.status === 'publiee')],
+      ['cours', 'En cours', open.filter(r => r.status === 'prise_en_charge' && r.assignee_id !== S.me.id)],
+      ['fini', 'Terminées', done],
     ];
-    rows.innerHTML = groups.map(([t, list]) => `<section class="group"><h2 class="group__title">${t} <span class="count">${list.length}</span></h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`).join('')
+    rows.innerHTML = groups.map(([k, t, list]) => `<section class="group"><h2 class="group__title">${GICO[k]}<span class="count">${list.length}</span><span>${t}</span></h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`).join('')
       + (more ? '<p class="more"><button id="more">Plus de terminées</button></p>' : '');
     const btn = rows.querySelector('#more');
     if (btn) btn.onclick = () => { doneN += PAGE; renderList(el); };

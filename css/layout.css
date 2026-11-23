@@ -3,10 +3,16 @@
    déclenchent les mêmes règles @container, écrites une seule fois. */
 #app { container: app / inline-size; }
 
-.topbar { display: flex; align-items: center; gap: var(--s4); margin-bottom: var(--s6); font-weight: var(--fw-meta); }
-.topbar a { color: var(--ink-2); text-decoration: none; }
+/* Barre du haut comme l'appli : bande blanche bord à bord (fond étendu par border-image), filet bas, onglets en pastille. */
+.topbar {
+  display: flex; align-items: center; gap: var(--s1);
+  margin: calc(-1 * var(--pad)) 0 var(--s6); padding: 9px 0 10px;
+  border-image: linear-gradient(to top, var(--line) 1px, var(--surface) 0) fill 0 // 0 100vmax;
+}
+.topbar a { padding: var(--s2) var(--s3); border-radius: var(--r-s); color: var(--ink-2); text-decoration: none; }
+.topbar a.on { background: var(--soft); color: var(--ink); font-weight: 500; }
 .topbar small { color: var(--ink-3); font-size: var(--fs-s); }
-.sim-toggle { margin-left: auto; padding: 4px 10px; font-size: var(--fs-s); }
+.sim-toggle { margin-left: auto; padding: 5px 10px; font-size: 12px; }
 
 .alerts:empty { display: none; }
 .alerts { display: grid; gap: var(--s2); margin-bottom: var(--s4); }
@@ -33,10 +39,11 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 .sim .fab { right: calc(50vw - var(--sim-w) / 2 + var(--s4)); bottom: calc(var(--s6) + var(--s4)); }
 
 /* Mobile (réel et simulé) */
-@media (max-width: 600px) { #app { padding: var(--s4); } }
-.sim #app { padding: var(--s4); }
+@media (max-width: 600px) { #app { --pad: var(--s4); } }
+.sim #app { --pad: var(--s4); }
 @container app (max-width: 600px) {
-  .topbar, .search, .group { margin-bottom: var(--s4); }
+  .topbar { margin-bottom: var(--s4); }
+  .search, .group { margin-bottom: var(--s4); }
   .fab { right: var(--s4); bottom: var(--s4); }
   .cards { grid-template-columns: 1fr; }
   .facts { grid-template-columns: 1fr; gap: 2px; }

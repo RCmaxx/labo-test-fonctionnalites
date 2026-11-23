@@ -2,8 +2,11 @@
 .search { margin: 0 0 var(--s6); max-width: 420px; }
 
 .group { margin: 0 0 var(--s6); }
-.group__title { display: flex; align-items: center; gap: var(--s2); }
-.count { font-size: var(--fs-s); font-weight: var(--fw-meta); color: var(--ink-2); background: var(--soft); border-radius: var(--r-pill); padding: 2px var(--s2); }
+/* Sous-titre comme l'appli : icône, grand compteur, libellé, alignés en bas, au retrait du texte des cartes. */
+.group__title { display: flex; align-items: flex-end; gap: 10px; margin: 0 0 var(--s2); padding: 0 10px; font-size: 17px; font-weight: var(--fw-title); line-height: 20px; color: var(--group-fg); }
+.group__title svg { flex: none; width: 20px; height: 20px; margin-bottom: 4px; color: var(--ink); }
+.group__title span:last-child { padding-bottom: 3px; }
+.count { font-size: 34px; font-weight: 700; line-height: 29px; color: var(--ink); }
 .empty { color: var(--ink-3); margin: 0; }
 
 .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
