@@ -14,11 +14,11 @@
 .alerts button { margin-left: auto; }
 
 /* Place gardée sous le contenu pour que le bouton + ne masque jamais la fin de page. */
-main { padding-bottom: calc(56px + var(--s6) * 2); }
+:root { --fab: 56px; }
+main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 
 /* Bouton + : rond noir fixe, centré entre le bord droit et les cartes quand la marge le permet. */
 .fab {
-  --fab: 56px;
   position: fixed; right: var(--s6); bottom: var(--s6);
   width: var(--fab); height: var(--fab); border-radius: 50%;
   display: grid; place-items: center;
