@@ -1,11 +1,11 @@
-import { sb } from './sb.js?v=20261123215029';
-import { S, app, route, VERSION } from './state.js?v=20261123215029';
-import { renderLogin, renderOrg, renderInvitation, renderMe } from './auth.js?v=20261123215029';
-import { renderList } from './list.js?v=20261123215029';
-import { renderDetail } from './detail.js?v=20261123215029';
-import { renderForm } from './form.js?v=20261123215029';
-import { startLive } from './live.js?v=20261123215029';
-import { drawAlerts } from './alerts.js?v=20261123215029';
+import { sb } from './sb.js?v=20261123215119';
+import { S, app, route, VERSION } from './state.js?v=20261123215119';
+import { renderLogin, renderOrg, renderInvitation, renderMe } from './auth.js?v=20261123215119';
+import { renderList } from './list.js?v=20261123215119';
+import { renderDetail } from './detail.js?v=20261123215119';
+import { renderForm } from './form.js?v=20261123215119';
+import { startLive } from './live.js?v=20261123215119';
+import { drawAlerts } from './alerts.js?v=20261123215119';
 
 async function render() {
   const [page, id] = route();
@@ -24,7 +24,7 @@ async function render() {
     S.team = t.data || [];
     startLive(show);
   }
-  app.innerHTML = `<nav><a href="#">Interventions</a> · <a href="#nouvelle">Nouvelle intervention</a> · <a href="#compte">Mon compte</a> · ${VERSION}</nav><aside id="alerts"></aside><main></main>`;
+  app.innerHTML = `<nav class="topbar"><a href="#">Interventions</a><a href="#compte">Mon compte</a><small>${VERSION}</small></nav><aside class="alerts" id="alerts"></aside><main></main><a class="fab" href="#nouvelle" aria-label="Nouvelle intervention">+</a>`;
   drawAlerts();
   show();
 }
