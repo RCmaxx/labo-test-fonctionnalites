@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123221655';
-import { S, esc, fmtCard, nameOf, DONE, PAGE, route } from './state.js?v=20261123221655';
+import { sb } from './sb.js?v=20261123221841';
+import { S, esc, fmtCard, nameOf, DONE, PAGE, route } from './state.js?v=20261123221841';
 
 let search = '', doneN = PAGE, tq = 0; // recherche et nombre de terminées gardés entre deux affichages
 // Icônes de l'appli (clé du technicien, main de la présence client).
