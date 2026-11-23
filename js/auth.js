@@ -1,6 +1,6 @@
-import { sb } from './sb.js?v=20261123214910';
-import { S, app, esc, fmt, options, rerender, ACCOUNTS, ROLES, VERSION } from './state.js?v=20261123214910';
-import { stopLive } from './live.js?v=20261123214910';
+import { sb } from './sb.js?v=20261123214956';
+import { S, app, esc, fmt, options, rerender, ACCOUNTS, ROLES, VERSION } from './state.js?v=20261123214956';
+import { stopLive } from './live.js?v=20261123214956';
 
 export function renderLogin(error = '', intro = '') {
   app.innerHTML = `${intro}

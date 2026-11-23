@@ -1,7 +1,7 @@
-import { sb } from './sb.js?v=20261123214910';
-import { S, esc, fmt, DONE, STATUS, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123214910';
-import { uploadPhotos } from './form.js?v=20261123214910';
-import { drawEdit } from './lock.js?v=20261123214910';
+import { sb } from './sb.js?v=20261123214956';
+import { S, esc, fmt, DONE, STATUS, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123214956';
+import { uploadPhotos } from './form.js?v=20261123214956';
+import { drawEdit } from './lock.js?v=20261123214956';
 
 // Actions possibles selon le rôle et le statut (mêmes règles que l'app main, lot 408).
 function actions(i) {
@@ -38,39 +38,37 @@ export async function renderDetail(el, id) {
   ]);
   if (error || !i) return el.innerHTML = `<p>${esc(error?.message || 'Intervention introuvable.')}</p>`;
   const photos = ph.data || [], urls = await signedUrls(photos.map(p => p.path));
-  const img = path => urls[path] ? `<a href="${urls[path]}"><img src="${urls[path]}" alt="Photo" width="160"></a>` : '';
+  const img = path => urls[path] ? `<a class="photo" href="${urls[path]}"><img src="${urls[path]}" alt="Photo"></a>` : '';
   const events = ev.data || [], chat = S.me.role !== 'client'; // le client n'a pas de tchat : ses photos s'affichent à part
   const acts = actions(i), mgr = MGR.includes(S.me.role);
-  const line = e => `<li><b>${esc(e.actor_name)}</b> · ${fmt(e.created_at)}<br>${e.type === 'photo' ? img(e.body) : esc(e.body)}</li>`;
+  const line = e => `<li class="msg"><span class="msg__who"><b>${esc(e.actor_name)}</b><time>${fmt(e.created_at)}</time></span>${e.type === 'photo' ? img(e.body) : `<p>${esc(e.body)}</p>`}</li>`;
   const closers = S.team.filter(m => TECH.includes(m.role));
   el.innerHTML = `
-    <article>
-      <h1>${esc(i.title)}</h1>
-      <dl>
-        <dt>Statut</dt><dd>${STATUS[i.status] || esc(i.status)}</dd>
-        <dt>Priorité</dt><dd>${PRIORITY[i.priority] || ''}</dd>
+    <article class="detail">
+      <header class="detail__head"><h1>${esc(i.title)}</h1><span class="tag tag--${i.priority}">${PRIORITY[i.priority] || ''}</span><span class="tag">${STATUS[i.status] || esc(i.status)}</span></header>
+      <section class="panel"><dl class="facts">
         <dt>Lieu</dt><dd>${esc(i.location) || '—'}</dd>
         <dt>Créée le</dt><dd>${fmt(i.created_at)}</dd>
         ${i.available_from ? `<dt>Créneau</dt><dd>${fmt(i.available_from)} – ${fmt(i.available_until)}</dd>` : ''}
         ${i.remind_minutes ? `<dt>Rappel</dt><dd>${REMIND[i.remind_minutes] || `${i.remind_minutes} min avant`}</dd>` : ''}
       </dl>
-      <p>${esc(i.description) || 'Pas de description.'}</p>
+      <p class="desc">${esc(i.description) || 'Pas de description.'}</p></section>
       ${canEdit(i) ? `<p id="edit" data-id="${i.id}"></p>` : ''}
-      ${acts.length || mgr ? `<p>${acts.map(([a, l]) => `<button data-act="${a}">${l}</button>`).join(' ')} ${mgr ? '<button id="del">Supprimer</button>' : ''}</p>` : ''}
-      ${canClose(i) ? `<details><summary>Clôturer</summary><form id="close">
+      ${acts.length || mgr ? `<p class="actions">${acts.map(([a, l]) => `<button class="primary" data-act="${a}">${l}</button>`).join(' ')} ${mgr ? '<button class="danger" id="del">Supprimer</button>' : ''}</p>` : ''}
+      ${canClose(i) ? `<details class="panel"><summary>Clôturer</summary><form id="close">
         <label>Qui a fait l'intervention ? <select name="tech">${closers.map(m => `<option value="${m.user_id}">${esc(m.full_name)}</option>`).join('')}<option value="">Quelqu'un d'autre</option></select></label>
         <label>Nom de la personne <input name="other"></label> <button>Clôturer</button></form></details>` : ''}
-      <p id="acterr"></p>
-      ${!chat && photos.length ? `<section><h2>Photos</h2>${photos.map(p => img(p.path)).join('')}</section>` : ''}
-      ${chat ? `<section>
+      <p class="error" id="acterr"></p>
+      ${!chat && photos.length ? `<section class="panel"><h2>Photos</h2><div class="photos">${photos.map(p => img(p.path)).join('')}</div></section>` : ''}
+      ${chat ? `<section class="panel chat">
         <h2>Tchat</h2>
-        <ul>${events.filter(e => ['commentaire', 'photo'].includes(e.type)).map(line).join('') || '<li>Aucun message.</li>'}</ul>
-        <form id="chat"><textarea name="body" maxlength="2000"></textarea>
-          <label>Photos <input type="file" name="photos" accept="image/*" multiple></label> <button>Envoyer</button><p></p></form>
+        <ul class="msgs">${events.filter(e => ['commentaire', 'photo'].includes(e.type)).map(line).join('') || '<li class="empty">Aucun message.</li>'}</ul>
+        <form class="chat__form" id="chat"><textarea name="body" maxlength="2000"></textarea>
+          <label>Photos <input type="file" name="photos" accept="image/*" multiple></label> <button class="primary">Envoyer</button><p class="error"></p></form>
       </section>` : ''}
-      <section>
+      <section class="panel">
         <h2>Historique</h2>
-        <ul>${events.filter(e => !['commentaire', 'photo'].includes(e.type)).map(e => `<li>${fmt(e.created_at)} · ${esc(e.type)} · ${esc(e.actor_name)}${e.body ? ` · ${esc(e.body)}` : ''}</li>`).join('') || '<li>Aucun événement.</li>'}</ul>
+        <ul class="history">${events.filter(e => !['commentaire', 'photo'].includes(e.type)).map(e => `<li>${fmt(e.created_at)} · ${esc(e.type)} · ${esc(e.actor_name)}${e.body ? ` · ${esc(e.body)}` : ''}</li>`).join('') || '<li class="empty">Aucun événement.</li>'}</ul>
       </section>
     </article>`;
   drawEdit();
