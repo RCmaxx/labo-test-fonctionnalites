@@ -29,6 +29,7 @@ button, .btn {
   background: var(--btn-bg); color: var(--btn-fg); cursor: pointer; white-space: nowrap; text-decoration: none;
 }
 .primary { --btn-bg: var(--ink); --btn-bd: var(--ink); --btn-fg: var(--surface); }
+.ghost { --btn-bg: var(--surface); }
 .danger { --btn-fg: var(--danger); }
 button:disabled { opacity: .5; cursor: default; }
 @media (any-hover: hover) { button:hover, .btn:hover { filter: brightness(.96); } }

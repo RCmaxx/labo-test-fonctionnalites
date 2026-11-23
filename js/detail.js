@@ -1,18 +1,36 @@
 import { sb } from './sb.js';
-import { S, esc, fmt, DONE, STATUS, PRIORITY, REMIND, MGR, TECH } from './state.js';
+import { S, esc, DONE, MGR, TECH, nameOf, rerender } from './state.js';
 import { uploadPhotos } from './form.js';
 import { drawEdit } from './lock.js';
+
+const WRENCH = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
+const BRIEFCASE = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>';
+const CAM = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M9.2 4.5h5.6l1.5 2.2H19a2.5 2.5 0 0 1 2.5 2.5v8.3A2.5 2.5 0 0 1 19 20H5a2.5 2.5 0 0 1-2.5-2.5V9.2A2.5 2.5 0 0 1 5 6.7h2.7zM12 9.6a3.6 3.6 0 1 0 0 7.2a3.6 3.6 0 1 0 0-7.2z"/><circle cx="12" cy="13.2" r="2.1" fill="currentColor"/></svg>';
+const UNTAKE = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 4 1.5"/><path d="M16 19h6"/></svg>';
+const BACK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
+const GEAR = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.66 5.19L9.80 2.45L14.20 2.45L14.34 5.19A7.2 7.2 0 0 1 16.72 6.57L19.17 5.32L21.37 9.13L19.07 10.63A7.2 7.2 0 0 1 19.07 13.37L21.37 14.87L19.17 18.68L16.72 17.43A7.2 7.2 0 0 1 14.34 18.81L14.20 21.55L9.80 21.55L9.66 18.81A7.2 7.2 0 0 1 7.28 17.43L4.83 18.68L2.63 14.87L4.93 13.37A7.2 7.2 0 0 1 4.93 10.63L2.63 9.13L4.83 5.32L7.28 6.57A7.2 7.2 0 0 1 9.66 5.19Z"/><circle cx="12" cy="12" r="2.8"/></svg>';
+const SEND = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+
+const EVENTS = {
+  creee: 'Intervention créée', demande_transfert: 'Demande de transfert', modifiee: 'Modifié',
+  publiee: 'Intervention créée', prise_en_charge: 'Intervention prise en charge', resolue: 'Intervention terminée',
+  validee: 'Validé', refusee: 'Refusé', commentaire: 'Commenté', photo: 'Photo ajoutée',
+  liberee: "Ne prend plus l'intervention", reactivee: 'L’intervention n’est plus clôturée',
+};
+const STATUS_L = { prise_en_charge: 'En cours', resolue: 'Terminée', validee: 'Clôturée', brouillon: 'Brouillon' };
+const PRIO_L = { haute: 'Urgent', urgente: 'Urgente' };
+const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
 // Actions possibles selon le rôle et le statut (mêmes règles que l'app main, lot 408).
 function actions(i) {
   const r = S.me.role, mgr = MGR.includes(r), mine = i.assignee_id === S.me.id, tech = TECH.includes(r);
   const a = [];
-  if (i.status === 'brouillon' && (mgr || (['reception', 'technicien'].includes(r) && i.created_by === S.me.id))) a.push(['publier', 'Publier']);
-  if (i.status === 'publiee' && tech && !i.assignee_id && (!i.proposed_to || i.proposed_to === S.me.id)) a.push(['prendre', "Commencer l'intervention"]);
-  if (i.status === 'prise_en_charge' && (mine || ['directeur', 'responsable_tech'].includes(r))) a.push(['resoudre', "Terminer l'intervention"]);
-  if (i.status === 'prise_en_charge' && mine) a.push(['liberer', "Ne plus prendre l'intervention"]);
-  if (i.status === 'prise_en_charge' && tech && i.assignee_id && !mine) a.push(['demander', "Demander l'intervention"]);
-  if (DONE.includes(i.status) && (mgr || mine)) a.push(['renvoyer', 'Renvoyer active']);
+  if (i.status === 'brouillon' && (mgr || (['reception', 'technicien'].includes(r) && i.created_by === S.me.id))) a.push(['publier', 'Publier', 'primary']);
+  if (i.status === 'publiee' && tech && !i.assignee_id && (!i.proposed_to || i.proposed_to === S.me.id)) a.push(['prendre', "Commencer l'intervention", 'primary']);
+  if (i.status === 'prise_en_charge' && (mine || ['directeur', 'responsable_tech'].includes(r))) a.push(['resoudre', "Terminer l'intervention", 'primary']);
+  if (i.status === 'prise_en_charge' && mine) a.push(['liberer', UNTAKE, 'ghost ibtn', "Ne plus prendre l'intervention"]);
+  if (i.status === 'prise_en_charge' && tech && i.assignee_id && !mine) a.push(['demander', "Demander l'intervention", 'ghost']);
+  if (DONE.includes(i.status) && (mgr || mine)) a.push(['renvoyer', 'Renvoyer active', 'ghost']);
   return a;
 }
 
@@ -22,87 +40,296 @@ const canEdit = i => (i.created_by === S.me.id || (!!i.available_from && (i.prop
 // Clôture pour quelqu'un d'autre : directeur et responsable tech, sur une nouvelle non prise.
 const canClose = i => ['directeur', 'responsable_tech'].includes(S.me.role) && i.status === 'publiee' && !i.assignee_id;
 
-// Liens signés des photos : chemin → URL.
 async function signedUrls(paths) {
   if (!paths.length) return {};
   const { data } = await sb.storage.from('photos').createSignedUrls(paths, 3600);
   return Object.fromEntries((data || []).map(d => [d.path, d.signedUrl]));
 }
 
+const n2 = n => String(n).padStart(2, '0');
+const locTag = l => { const m = String(l || '').trim().match(/^(?:mobil[- ]?home|mh)\s*(\d+)$/i); return m ? 'MH ' + n2(m[1]) : String(l || '').trim(); };
+const compactName = s => /^responsable(\s+tech(nique)?)?$/i.test(String(s || '').trim()) ? 'Resp.tech' : (s || '');
+const roleKind = r => TECH.includes(r) ? 'tech' : 'rec';
+const roleOf = e => e.actor_role || S.team.find(m => m.user_id === e.actor_id)?.role || '';
+const hm = d => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+function dayLbl(d) {
+  const x = new Date(d), t = new Date(), k = v => v.toDateString();
+  if (k(x) === k(t)) return "Aujourd'hui";
+  t.setDate(t.getDate() - 1);
+  if (k(x) === k(t)) return 'Hier';
+  return x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+}
+function fmtAgo(d) {
+  if (!d) return '';
+  const x = new Date(d), now = new Date(), t = new Date(now); t.setHours(0, 0, 0, 0);
+  const x0 = new Date(x); x0.setHours(0, 0, 0, 0);
+  const n = Math.round((t - x0) / 864e5), m = Math.max(0, Math.floor((now - x) / 6e4));
+  if (n === 0) {
+    if (m < 1) return "À l'instant";
+    if (m < 60) return `Il y a ${m} minute${m > 1 ? 's' : ''}`;
+    const h = Math.floor(m / 60);
+    return `Il y a ${h} heure${h > 1 ? 's' : ''}`;
+  }
+  if (n === 1) return `Hier à ${n2(x.getHours())}:${n2(x.getMinutes())}`;
+  return `${x.getDate()} ${MONTHS[x.getMonth()]} · ${n2(x.getHours())}:${n2(x.getMinutes())}`;
+}
+
+const pnm = (n, t, r) => `<span class="pnm"><b>${roleKind(r) === 'tech' ? WRENCH : BRIEFCASE}${esc(compactName(n || '—'))}</b><span>${t}</span></span>`;
+const sy = (cls, t, tx) => `<div class="sysl${cls}"><span class="tm">${t}</span><span class="tx">${tx}</span></div>`;
+
+function phMsg(g, own, urls) {
+  const ok = g.filter(x => urls[x.body]); if (!ok.length) return '';
+  const e = g[0], n = ok.length, L = ok.map(x => urls[x.body]);
+  return `<div class="msg prow${own ? ' own' : ''}">${pnm(e.actor_name, hm(g[g.length - 1].created_at), roleOf(e))}<div class="bub pbub"><span class="phpill" role="button" tabindex="0" data-ph="${esc(L.join(' '))}">${L.slice(0, 3).map(u => `<img src="${u}" alt="">`).join('')}<span>${n} photo${n > 1 ? 's' : ''}</span></span></div></div>`;
+}
+
+function bubble(e, own, urls, it = {}) {
+  const who = esc(compactName(e.actor_name || '—'));
+  if (e.type === 'photo') return phMsg([e], own, urls);
+  const cre = sy(' scre', hm(e.created_at), `${esc(compactName(e.actor_name || '—'))} a créé l'intervention`);
+  if (['creee', 'publiee'].includes(e.type)) return cre;
+  if (e.type === 'demande_transfert' && e.body) return sy('', '', `${who} · Demande d'intervention`);
+  if (e.type === 'prise_en_charge' && /^Transférée par /.test(e.body || '')) {
+    const to = (e.body.match(/ à (.*)$/) || [])[1] || '';
+    return sy('', '', `${esc(compactName(to))} · Reprend l'intervention`);
+  }
+  if (e.type === 'modifiee' && e.body) {
+    const P = ['Basse', 'Normale', 'Haute'];
+    const skip = x => x === '—' || /^\d\d\/\d\d \d\d:\d\d/.test(x);
+    return e.body.split('\n').filter(l => {
+      const m = l.match(/^a remplacé « ([\s\S]*) » par « ([\s\S]*) »$/);
+      if (!m) return true;
+      return !(skip(m[1]) && skip(m[2])) && !(P.includes(m[1]) && P.includes(m[2])) && ![it.title, it.description].some(x => (x || '').trim() && m[2] === x);
+    }).map(l => sy('', hm(e.created_at), `${who} ${esc(l)}`)).join('');
+  }
+  if (e.type === 'resolue' && /^Réalisée par /.test(e.body || '')) {
+    const n = e.body.slice(13);
+    if (!S.team.some(m => n === (m.full_name || m.email))) return '';
+    e = { ...e, body: '' };
+  }
+  if (e.type === 'resolue') return sy(' scre', hm(e.created_at), `${esc(compactName(e.actor_name || '—'))} a terminé l'intervention${e.body ? `<span class="syb">« ${esc(e.body)} »</span>` : ''}`);
+  if (e.type === 'reactivee') return sy('', hm(e.created_at), `${esc(EVENTS.reactivee)}${e.body ? `<span class="syb">« ${esc(e.body)} »</span>` : ''}`) + (e.taker ? sy('', hm(e.created_at), `${esc(compactName(e.taker))} · Prend l'intervention`) : '');
+  if (e.type !== 'commentaire') return sy('', hm(e.created_at), `${who} · ${esc(EVENTS[e.type] || e.type)}${e.body ? `<span class="syb">« ${esc(e.body)} »</span>` : ''}`);
+  return `${e.cre ? cre : ''}<div class="msg prow${own ? ' own' : ''}">${pnm(e.actor_name, hm(e.created_at), roleOf(e))}<div class="bub"><span class="btxt">${esc(e.body || '')}</span></div></div>`;
+}
+
+function tagsOf(i) {
+  const id = i.assignee_id || i.proposed_to;
+  if (!id) return '';
+  const m = S.team.find(x => x.user_id === id);
+  return `<span class="cwho">${TECH.includes(m?.role) ? WRENCH : BRIEFCASE}<span>${esc(nameOf(id))}</span></span>`;
+}
+
+function hostModal() { return document.querySelector('.sim #app') || document.body; }
+
+function zoomImg(src, list) {
+  const urls = list && list.length ? list : [src];
+  let i = Math.max(0, urls.indexOf(src));
+  const o = document.createElement('div');
+  o.className = 'phbig';
+  const show = () => { o.innerHTML = `<img src="${urls[i]}" alt="Photo">`; };
+  show();
+  o.onclick = e => {
+    if (e.target === o || urls.length < 2) return o.remove();
+    i = (i + 1) % urls.length; show();
+  };
+  hostModal().append(o);
+}
+
+function closeChooser(id, doDelete, onDone) {
+  const ms = S.team.filter(m => TECH.includes(m.role));
+  const o = document.createElement('div');
+  o.className = 'modal';
+  o.innerHTML = `<div class="mbox cchoose"><p class="mq">Qui a pris en charge l'intervention ?</p>
+    <div class="ctags">${ms.map(m => `<button type="button" class="cwho" data-u="${m.user_id}">${TECH.includes(m.role) ? WRENCH : BRIEFCASE}<span>${esc(m.full_name)}</span></button>`).join('')}<button type="button" class="cwho" data-u="">Quelqu'un d'autre</button></div>
+    <input class="cother" type="text" placeholder="Nom de la personne" hidden>
+    <button type="button" class="ghost danger cdel">Supprimer l'intervention</button>
+    <div class="mbtns"><button type="button" class="ghost" data-r="0">Annuler</button><button type="button" class="primary" data-r="1">Clôturer</button></div></div>`;
+  hostModal().append(o);
+  const oth = o.querySelector('.cother');
+  let sel = null;
+  o.onclick = async e => {
+    const b = e.target.closest('button');
+    if (!b) { if (e.target === o) o.remove(); return; }
+    if (b.dataset.u != null) {
+      sel = b.dataset.u;
+      o.querySelectorAll('.ctags .cwho').forEach(x => x.classList.toggle('on', x === b));
+      oth.hidden = sel !== ''; if (sel === '') oth.focus();
+      return;
+    }
+    if (b.classList.contains('cdel')) { o.remove(); return doDelete(); }
+    if (b.dataset.r === '0') return o.remove();
+    if (b.dataset.r === '1') {
+      b.disabled = true;
+      const { error } = await sb.rpc('close_for', { p_id: id, p_tech: sel || null, p_other: sel ? null : oth.value.trim() });
+      b.disabled = false;
+      if (error) {
+        let p = o.querySelector('.cchoose > .error');
+        if (!p) { p = document.createElement('p'); p.className = 'error'; o.querySelector('.mbtns').before(p); }
+        p.textContent = error.message;
+        return;
+      }
+      o.remove();
+      onDone();
+    }
+  };
+}
+
+function gearMenu(g, acts) {
+  if (Date.now() - (g._shut || 0) < 500) return;
+  document.querySelector('.xmenu')?.remove();
+  const m = document.createElement('div'); m.className = 'xmenu';
+  m.innerHTML = acts.map((a, i) => `<button type="button" data-i="${i}"${a.classList.contains('danger') ? ' class="danger"' : ''}${a.getAttribute('aria-disabled') === 'true' ? ' disabled' : ''}>${esc(a.getAttribute('aria-label') || a.textContent.trim())}</button>`).join('');
+  hostModal().append(m);
+  const r = g.getBoundingClientRect(), box = m.offsetParent?.getBoundingClientRect() || { left: 0, top: 0, width: innerWidth, height: innerHeight };
+  const h = m.offsetHeight, W = box.width, H = box.height;
+  m.style.left = Math.max(8, Math.min(r.right - box.left - m.offsetWidth, W - m.offsetWidth - 8)) + 'px';
+  m.style.top = (r.bottom - box.top + 2 + h > H - 8 ? Math.max(8, r.top - box.top - 2 - h) : r.bottom - box.top + 2) + 'px';
+  const close = () => { g._shut = Date.now(); m.remove(); document.removeEventListener('pointerdown', out, true); removeEventListener('scroll', close, true); };
+  const out = e => { if (!m.contains(e.target)) close(); };
+  setTimeout(() => { document.addEventListener('pointerdown', out, true); addEventListener('scroll', close, true); }, 0);
+  m.onclick = e => { const b = e.target.closest('button'); if (!b) return; close(); const a = acts[+b.dataset.i]; a.click(); };
+}
+
+document.addEventListener('click', e => { if (e.target.closest?.('a[data-edit][aria-disabled="true"]')) { e.preventDefault(); e.stopPropagation(); } }, true);
+
 export async function renderDetail(el, id) {
   el.innerHTML = '<p>Chargement…</p>';
+  const inline = !!el.closest('.unfold');
   const [{ data: i, error }, ev, ph] = await Promise.all([
     sb.from('interventions').select('*').eq('id', id).maybeSingle(),
-    sb.from('intervention_events').select('type, body, actor_name, created_at').eq('intervention_id', id).order('created_at').order('id'),
+    sb.from('intervention_events').select('id, type, body, actor_id, actor_name, actor_role, created_at').eq('intervention_id', id).order('created_at').order('id'),
     sb.from('intervention_photos').select('path, uploaded_by').eq('intervention_id', id).order('created_at'),
   ]);
   if (error || !i) return el.innerHTML = `<p>${esc(error?.message || 'Intervention introuvable.')}</p>`;
   const photos = ph.data || [], urls = await signedUrls(photos.map(p => p.path));
-  const img = path => urls[path] ? `<a class="photo" href="${urls[path]}"><img src="${urls[path]}" alt="Photo"></a>` : '';
-  const events = ev.data || [], chat = S.me.role !== 'client'; // le client n'a pas de tchat : ses photos s'affichent à part
+  const events = ev.data || [], chat = S.me.role !== 'client';
+  const closed = DONE.includes(i.status);
+  const canComment = chat && !closed && (i.status !== 'brouillon' || i.created_by === S.me.id);
   const acts = actions(i), mgr = MGR.includes(S.me.role);
-  const line = e => `<li class="msg"><span class="msg__who"><b>${esc(e.actor_name)}</b><time>${fmt(e.created_at)}</time></span>${e.type === 'photo' ? img(e.body) : `<p>${esc(e.body)}</p>`}</li>`;
-  const closers = S.team.filter(m => TECH.includes(m.role));
+  const evs = events.filter(e => !['validee', 'refusee'].includes(e.type) && !(e.type === 'prise_en_charge' && /^Assignée à /.test(e.body || '')) && !(e.type === 'creee' && events.some(x => x.type === 'publiee')));
+  { let tk = null; [...events].sort((x, y) => new Date(x.created_at) - new Date(y.created_at)).forEach(e => { if (e.type === 'prise_en_charge') { const m = (e.body || '').match(/^(?:Assignée à |Transférée par .* à )(.*)$/); tk = m ? m[1] : e.actor_name; } else if (e.type === 'liberee') tk = null; else if (e.type === 'reactivee') e.taker = tk; }); }
+
+  const dsc = String(i.description || '').trim();
+  if (chat) {
+    const src = events.find(x => ['creee', 'publiee'].includes(x.type) && x.actor_id === i.created_by) || {};
+    const ci = evs.findIndex(x => ['creee', 'publiee'].includes(x.type));
+    const base = { actor_id: i.created_by, actor_role: src.actor_role, actor_name: src.actor_name || nameOf(i.created_by), created_at: ci >= 0 ? evs[ci].created_at : i.created_at };
+    const head = dsc ? { ...base, type: 'commentaire', body: dsc, cre: 1 } : ci >= 0 ? evs[ci] : { ...base, type: 'publiee' };
+    if (ci >= 0) evs.splice(ci, 1);
+    evs.unshift(head);
+  }
+  const items = [];
+  evs.forEach(e => {
+    const g = items[items.length - 1];
+    if (e.type === 'photo' && g && g[0].type === 'photo' && g[0].actor_id === e.actor_id && (g[0].actor_role || '') === (e.actor_role || '') && new Date(e.created_at) - new Date(g[g.length - 1].created_at) < 120000 && dayLbl(e.created_at) === dayLbl(g[0].created_at)) g.push(e);
+    else items.push([e]);
+  });
+  let lastDay = '';
+  const ownE = e => e.actor_id === S.me.id;
+  const chatHtml = items.map(g => {
+    const e = g[0], d = dayLbl(e.created_at), sep = d !== lastDay ? `<div class="cday">${d}</div>` : '';
+    lastDay = d;
+    return sep + (e.type === 'photo' ? phMsg(g, ownE(e), urls) : bubble(e, ownE(e), urls, i));
+  }).join('');
+
+  const phList = !chat ? photos.filter(p => urls[p.path]) : [];
+  const photosHtml = phList.length ? `<div class="phc-w"><div class="phc">${phList.map(p => `<div class="phs"><a href="${urls[p.path]}" target="_blank" rel="noopener"><img src="${urls[p.path]}" alt="Photo"></a></div>`).join('')}</div>${phList.length > 3 ? `<button type="button" class="phc-a phc-p" aria-label="Photo précédente" hidden>‹</button><button type="button" class="phc-a phc-n" aria-label="Photo suivante">›</button>` : ''}${phList.length > 1 ? `<span class="phc-i">Photo ${Math.min(3, phList.length)}/${phList.length}</span>` : ''}</div>` : '';
+
+  const pill = ['publiee', 'prise_en_charge'].includes(i.status) ? '' : (STATUS_L[i.status] ? `<span class="pill">${STATUS_L[i.status]}</span>` : '');
+  const prio = PRIO_L[i.priority] ? `<span class="prio p-${i.priority}">${PRIO_L[i.priority]}</span>` : '';
+  const back = inline
+    ? `<a href="#" class="back xback" aria-label="Replier">${BACK}</a>`
+    : `<a href="#" class="back" aria-label="Retour">${BACK}</a>`;
+  const editBtn = canEdit(i) ? `<a class="btn ghost" href="#i/${i.id}/modifier" data-edit="${i.id}" aria-label="Modifier l'intervention">Modifier</a>` : '';
+  const actBtns = acts.map(([a, l, c, lab]) => `<button type="button" class="${c}" data-act="${a}"${lab ? ` aria-label="${lab}" title="${lab}"` : ''}>${l}</button>`).join('');
+  const closeBtn = canClose(i) ? '<button type="button" class="ghost" data-act="cloturer">Clôturer</button>' : '';
+  const delBtn = mgr ? '<button type="button" class="ghost danger" id="del" aria-label="Supprimer l\'intervention">Supprimer</button>' : '';
+  const dactHtml = editBtn || acts.length || closeBtn || delBtn
+    ? `<div class="dact"><div class="actions">${editBtn}${actBtns}${closeBtn}${delBtn}</div></div>` : '';
+
   el.innerHTML = `
     <article class="detail">
-      <header class="detail__head"><h1>${esc(i.title)}</h1><span class="tag tag--${i.priority}">${PRIORITY[i.priority] || ''}</span><span class="tag">${STATUS[i.status] || esc(i.status)}</span></header>
-      <section class="panel"><dl class="facts">
-        <dt>Lieu</dt><dd>${esc(i.location) || '—'}</dd>
-        <dt>Créée le</dt><dd>${fmt(i.created_at)}</dd>
-        ${i.available_from ? `<dt>Créneau</dt><dd>${fmt(i.available_from)} – ${fmt(i.available_until)}</dd>` : ''}
-        ${i.remind_minutes ? `<dt>Rappel</dt><dd>${REMIND[i.remind_minutes] || `${i.remind_minutes} min avant`}</dd>` : ''}
-      </dl>
-      <p class="desc">${esc(i.description) || 'Pas de description.'}</p></section>
-      ${canEdit(i) ? `<p id="edit" data-id="${i.id}"></p>` : ''}
-      ${acts.length || mgr ? `<p class="actions">${acts.map(([a, l]) => `<button class="primary" data-act="${a}">${l}</button>`).join(' ')} ${mgr ? '<button class="danger" id="del">Supprimer</button>' : ''}</p>` : ''}
-      ${canClose(i) ? `<details class="panel"><summary>Clôturer</summary><form id="close">
-        <label>Qui a fait l'intervention ? <select name="tech">${closers.map(m => `<option value="${m.user_id}">${esc(m.full_name)}</option>`).join('')}<option value="">Quelqu'un d'autre</option></select></label>
-        <label>Nom de la personne <input name="other"></label> <button>Clôturer</button></form></details>` : ''}
+      <div class="dfix">
+        <div class="dtrow">${back}<h1 class="dtitle">${esc(i.title).replace(/ (?=[^ ]*$)/, '&nbsp;')}</h1></div>
+        <section class="dtop">
+          <div class="dmeta3"><div class="drow"><span class="dloc">${i.location ? `<span class="ltag">${esc(locTag(i.location))}</span>` : ''}${i.assignee_id || i.proposed_to ? tagsOf(i) : ''}${i.status === 'publiee' ? '<span class="pill st-publiee">Nouveau</span>' : ''}<span class="ddate">${fmtAgo(i.created_at)}</span></span><span class="dright">${(prio || pill) ? `<span class="drt">${prio}${pill}</span>` : ''}</span></div></div>
+          ${!chat && dsc ? `<p class="ddesc">${esc(dsc)}</p>` : ''}
+          ${photosHtml}
+        </section>
+      </div>
+      ${dactHtml}
       <p class="error" id="acterr"></p>
-      ${!chat && photos.length ? `<section class="panel"><h2>Photos</h2><div class="photos">${photos.map(p => img(p.path)).join('')}</div></section>` : ''}
-      ${chat ? `<section class="panel chat">
-        <h2>Tchat</h2>
-        <ul class="msgs">${events.filter(e => ['commentaire', 'photo'].includes(e.type)).map(line).join('') || '<li class="empty">Aucun message.</li>'}</ul>
-        <form class="chat__form" id="chat"><textarea name="body" maxlength="2000"></textarea>
-          <label>Photos <input type="file" name="photos" accept="image/*" multiple></label> <button class="primary">Envoyer</button><p class="error"></p></form>
-      </section>` : ''}
-      <section class="panel">
-        <h2>Historique</h2>
-        <ul class="history">${events.filter(e => !['commentaire', 'photo'].includes(e.type)).map(e => `<li>${fmt(e.created_at)} · ${esc(e.type)} · ${esc(e.actor_name)}${e.body ? ` · ${esc(e.body)}` : ''}</li>`).join('') || '<li class="empty">Aucun événement.</li>'}</ul>
-      </section>
+      ${chat ? `<div class="chat2"><div class="chrono">${chatHtml}</div>
+        ${canComment ? `<div class="cin"><span class="phadd cph" aria-label="Ajouter une photo"><input id="ph" type="file" accept="image/*" multiple>${CAM}<i id="phn"></i></span><textarea id="cm" rows="1" placeholder="Ajouter un commentaire" maxlength="2000"></textarea><button type="button" class="csend" id="comment" aria-label="Envoyer">${SEND}</button></div>` : ''}
+      </div>` : ''}
     </article>`;
   drawEdit();
-  const fail = error => error && (el.querySelector('#acterr').textContent = error.message);
-  el.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
-    const { error } = b.dataset.act === 'demander' ? await sb.rpc('request_transfer', { p_id: id })
-      : await sb.rpc('transition', { p_id: id, p_action: b.dataset.act, p_comment: '' });
-    fail(error) || renderDetail(el, id);
-  });
-  const del = el.querySelector('#del');
-  if (del) del.onclick = async () => {
+
+  const fail = err => err && (el.querySelector('#acterr').textContent = err.message);
+  const xb = el.querySelector('.xback');
+  if (xb) xb.onclick = e => { e.preventDefault(); el.closest('.unfold')?.previousElementSibling?.querySelector('a.card')?.click(); };
+
+  const row = el.querySelector('.dmeta3 .drow');
+  const actEls = [...el.querySelectorAll('.dact .actions > a, .dact .actions > button')];
+  if (row && actEls.length) {
+    const g = document.createElement('button'); g.type = 'button'; g.className = 'xgear'; g.setAttribute('aria-label', 'Actions'); g.innerHTML = GEAR;
+    row.append(g);
+    el.querySelector('.detail')?.classList.add('xg');
+    g.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); gearMenu(g, actEls); });
+  }
+
+  const phc = el.querySelector('.phc'), phi = el.querySelector('.phc-i');
+  if (phc) {
+    const step = () => (phc.firstElementChild?.offsetWidth || 0) + 8;
+    const upd = () => {
+      const s = step() || 1, i0 = Math.round(phc.scrollLeft / s);
+      const vis = Math.max(1, Math.round((phc.clientWidth + 8) / s));
+      if (phi) phi.textContent = `Photo ${Math.min(phc.children.length, i0 + vis)}/${phc.children.length}`;
+      const p = el.querySelector('.phc-p'), n = el.querySelector('.phc-n');
+      if (p) p.hidden = phc.scrollLeft <= 4;
+      if (n) n.hidden = phc.scrollLeft + phc.clientWidth >= phc.scrollWidth - 4;
+    };
+    phc.addEventListener('scroll', upd, { passive: true });
+    el.querySelectorAll('.phc-a').forEach(b => b.onclick = () => phc.scrollBy({ left: b.classList.contains('phc-n') ? step() : -step(), behavior: 'smooth' }));
+  }
+  el.querySelectorAll('.phs a').forEach(a => a.onclick = e => { e.preventDefault(); zoomImg(a.href, phList.map(p => urls[p.path])); });
+  el.querySelectorAll('.phpill').forEach(p => p.onclick = () => { const L = p.dataset.ph.split(' '); zoomImg(L[0], L); });
+
+  async function doDelete() {
     if (!confirm('Supprimer cette intervention ?')) return;
-    // Photos du stockage d'abord, puis la ligne (qui emporte photos, tchat et historique).
     const r = photos.length ? await sb.storage.from('photos').remove(photos.map(p => p.path)) : {};
     const { error } = r.error ? r : await sb.from('interventions').delete().eq('id', id);
-    fail(error) || (location.hash = '');
-  };
-  const close = el.querySelector('#close');
-  if (close) close.onsubmit = async e => {
-    e.preventDefault();
-    const tech = e.target.tech.value || null;
-    const { error } = await sb.rpc('close_for', { p_id: id, p_tech: tech, p_other: tech ? null : e.target.other.value.trim() });
+    if (error) return fail(error);
+    if (inline) { el.closest('.unfold')?.previousElementSibling?.querySelector('a.card')?.click(); rerender(); }
+    else location.hash = '';
+  }
+  const del = el.querySelector('#del');
+  if (del) del.onclick = doDelete;
+
+  el.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
+    if (b.dataset.act === 'cloturer') return closeChooser(id, doDelete, () => renderDetail(el, id));
+    b.disabled = true;
+    const { error } = b.dataset.act === 'demander'
+      ? await sb.rpc('request_transfer', { p_id: id })
+      : await sb.rpc('transition', { p_id: id, p_action: b.dataset.act, p_comment: '' });
+    b.disabled = false;
     fail(error) || renderDetail(el, id);
-  };
+  });
+
   if (!chat) return;
-  // Tchat ouvert = lu (sans message d'erreur : le labo refuse l'écriture).
   sb.from('intervention_reads').upsert({ user_id: S.me.id, intervention_id: id, last_read_at: new Date().toISOString() }).then(() => {});
-  el.querySelector('#chat').onsubmit = async e => {
-    e.preventDefault();
-    const body = e.target.body.value.trim(), files = [...e.target.photos.files], out = e.target.querySelector('p');
+  const cm = el.querySelector('#cm'), cb = el.querySelector('#comment'), phs = el.querySelector('#ph'), phn = el.querySelector('#phn');
+  if (cm) cm.oninput = () => { cm.style.height = 'auto'; cm.style.height = Math.min(120, cm.scrollHeight) + 'px'; };
+  if (phs && phn) phs.onchange = () => { phn.textContent = phs.files.length || ''; };
+  if (cb) cb.onclick = async () => {
+    const body = cm.value.trim(), files = [...(phs?.files || [])], out = el.querySelector('#acterr');
     if (!body && !files.length) return out.textContent = 'Le message est vide.';
     if (files.length > 10 - photos.filter(p => p.uploaded_by === S.me.id).length) return out.textContent = '10 photos maximum par intervention.';
-    let error = body && (await sb.rpc('add_comment', { p_id: id, p_body: body })).error;
-    if (!error && files.length) error = await uploadPhotos(id, files);
-    error ? out.textContent = error.message : renderDetail(el, id);
+    cb.disabled = true;
+    let err = body && (await sb.rpc('add_comment', { p_id: id, p_body: body })).error;
+    if (!err && files.length) err = await uploadPhotos(id, files);
+    cb.disabled = false;
+    err ? out.textContent = err.message : renderDetail(el, id);
   };
 }

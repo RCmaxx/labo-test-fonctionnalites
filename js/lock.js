@@ -1,5 +1,5 @@
 import { sb } from './sb.js';
-import { S, esc } from './state.js';
+import { S } from './state.js';
 
 // Verrou d'édition (expire seul côté base après 2 min sans renouvellement).
 const LOCKS = new Map(); // intervention_id → { by, name, until }
@@ -13,12 +13,20 @@ export async function loadLocks() {
   data.forEach(l => LOCKS.set(l.intervention_id, { by: l.editing_by, name: l.editing_name, until: Date.now() + l.secs_left * 1000 }));
   drawEdit();
 }
-// « Modifier » sur la fiche ouverte : lien, ou texte si quelqu'un d'autre modifie.
+// « Modifier » sur la fiche ouverte : lien grisé si quelqu'un d'autre modifie.
 export function drawEdit() {
-  const p = document.getElementById('edit');
-  if (!p) return;
-  const l = lockOf(p.dataset.id);
-  p.innerHTML = l ? `<span class="muted">${esc(l.name || 'Quelqu’un')} modifie en ce moment.</span>` : `<a class="btn" href="#i/${p.dataset.id}/modifier">Modifier</a>`;
+  const a = document.querySelector('a[data-edit]');
+  if (!a) return;
+  const l = lockOf(a.dataset.edit);
+  if (l) {
+    a.setAttribute('aria-disabled', 'true');
+    a.tabIndex = -1;
+    a.title = `${l.name || 'Quelqu’un'} modifie en ce moment.`;
+  } else {
+    a.removeAttribute('aria-disabled');
+    a.removeAttribute('tabindex');
+    a.title = 'Modifier';
+  }
 }
 // Prend le verrou ; renvoie un message si on ne peut pas modifier (déjà pris, ou droit insuffisant).
 export async function takeLock(id) {

@@ -43,7 +43,7 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 
 /* Mobile simulé : l'appli dans un cadre de téléphone de 390 px. */
 .sim { --sim-w: 390px; }
-.sim #app { max-width: var(--sim-w); min-height: min(844px, 100dvh - 48px); margin: var(--s6) auto; background: var(--bg); box-shadow: 0 0 0 1px var(--line-strong); border-radius: 40px; overflow: hidden; }
+.sim #app { position: relative; max-width: var(--sim-w); min-height: min(844px, 100dvh - 48px); margin: var(--s6) auto; background: var(--bg); box-shadow: 0 0 0 1px var(--line-strong); border-radius: 40px; overflow: hidden; }
 .sim .fab { right: calc(50vw - var(--sim-w) / 2 + var(--s4)); bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s4)); }
 .sim .tabbar { left: calc(50vw - var(--sim-w) / 2 + 12px); right: calc(50vw - var(--sim-w) / 2 + 12px); bottom: calc(var(--s6) + var(--tab-gap)); }
 
@@ -59,7 +59,5 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
   .fab { right: var(--s4); bottom: calc(var(--tab-gap) + var(--tab) + var(--s4)); }
   main { padding-bottom: calc(var(--tab-gap) + var(--tab) + var(--fab) + var(--s4) * 2); }
   .cards { grid-template-columns: 1fr; }
-  .facts { grid-template-columns: 1fr; gap: 2px; }
-  .facts dd { margin-bottom: var(--s2); }
   h1 { font-size: 19px; }
 }
