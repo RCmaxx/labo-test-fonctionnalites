@@ -13,6 +13,9 @@
 .alerts p { margin: 0; display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow-card); }
 .alerts button { margin-left: auto; }
 
+/* Place gardée sous le contenu pour que le bouton + ne masque jamais la fin de page. */
+main { padding-bottom: calc(56px + var(--s6) * 2); }
+
 /* Bouton + : rond noir fixe, centré entre le bord droit et les cartes quand la marge le permet. */
 .fab {
   --fab: 56px;
@@ -26,12 +29,12 @@
 
 /* Mobile simulé : l'appli dans un cadre de téléphone de 390 px. */
 .sim { --sim-w: 390px; }
-.sim #app { max-width: var(--sim-w); min-height: min(844px, 100dvh - 48px); margin: var(--s6) auto; background: var(--bg); border: 1px solid var(--line-strong); border-radius: 40px; overflow: hidden; }
+.sim #app { max-width: var(--sim-w); min-height: min(844px, 100dvh - 48px); margin: var(--s6) auto; background: var(--bg); box-shadow: 0 0 0 1px var(--line-strong); border-radius: 40px; overflow: hidden; }
 .sim .fab { right: calc(50vw - var(--sim-w) / 2 + var(--s4)); bottom: calc(var(--s6) + var(--s4)); }
 
 /* Mobile (réel et simulé) */
-@media (max-width: 600px) { #app { padding: var(--s4) var(--s4) 96px; } }
-.sim #app { padding: var(--s4) var(--s4) 96px; }
+@media (max-width: 600px) { #app { padding: var(--s4); } }
+.sim #app { padding: var(--s4); }
 @container app (max-width: 600px) {
   .topbar, .search, .group { margin-bottom: var(--s4); }
   .fab { right: var(--s4); bottom: var(--s4); }

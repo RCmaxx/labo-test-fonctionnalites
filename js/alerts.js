@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123215548';
-import { esc, nameOf, TECH, S } from './state.js?v=20261123215548';
+import { sb } from './sb.js?v=20261123215852';
+import { esc, nameOf, TECH, S } from './state.js?v=20261123215852';
 
 // Bandeau d'alertes : demandes de transfert, refus, rappels.
 let transfers = [], refused = [], reminders = [];
