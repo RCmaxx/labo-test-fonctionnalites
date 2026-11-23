@@ -1,4 +1,5 @@
 import { sb } from './sb.js';
+import { renderDetail } from './detail.js';
 import { S, esc, fmtCard, nameOf, DONE, PAGE, route } from './state.js';
 
 let search = '', doneN = PAGE, tq = 0; // recherche et nombre de terminées gardés entre deux affichages
@@ -29,6 +30,8 @@ const GICO = {
   publiee: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></svg>',
   fini: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
 };
+let openId = null; // carte dépliée, gardée quand la liste se redessine (temps réel)
+
 export async function renderList(el) {
   el.innerHTML = `<p class="search"><label>Rechercher <input type="search" id="q" value="${esc(search)}"></label></p><div id="rows"><p>Chargement…</p></div>`;
   const qel = el.querySelector('#q'), rows = el.querySelector('#rows');
@@ -59,8 +62,29 @@ export async function renderList(el) {
     if (tabn) tabn.textContent = groups[2][2].length;
     rows.innerHTML = (route()[0] === 'nouvelles' ? [groups[2]] : groups).map(([k, t, list]) => `<section class="group"><h2 class="group__title">${GICO[k]}<span class="count">${list.length}</span><span>${t}</span></h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`).join('')
       + (more ? '<p class="more"><button id="more">Plus de terminées</button></p>' : '');
+    const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
+    if (again) unfold(again, false); else openId = null;
     const btn = rows.querySelector('#more');
     if (btn) btn.onclick = () => { doneN += PAGE; renderList(el); };
+  };
+  // Dépliage sur place, comme l'appli : la fiche s'ouvre sous la carte, une seule à la fois ; re-clic = repli.
+  const fold = u => {
+    if (!u.classList.contains('is-open')) return u.remove();
+    u.classList.remove('is-open');
+    u.addEventListener('transitionend', () => u.remove(), { once: true });
+  };
+  const unfold = (a, anim = true) => {
+    const id = a.getAttribute('href').split('/')[1], cur = rows.querySelector('.unfold');
+    if (cur) { fold(cur); if (cur.dataset.id === id && anim) return openId = null; }
+    openId = id;
+    a.parentElement.insertAdjacentHTML('afterend', `<li class="unfold${anim ? '' : ' is-open is-now'}" data-id="${id}"><div><div class="unfold__body"></div></div></li>`);
+    const u = a.parentElement.nextElementSibling;
+    renderDetail(u.querySelector('.unfold__body'), id).then(() => anim && requestAnimationFrame(() => u.classList.add('is-open')));
+  };
+  rows.onclick = e => {
+    const a = e.target.closest('a.card');
+    if (!a || e.metaKey || e.ctrlKey) return;
+    e.preventDefault(); unfold(a);
   };
   const load = async () => {
     const words = search.trim().split(/\s+/).filter(Boolean);

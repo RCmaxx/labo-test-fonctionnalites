@@ -9,7 +9,7 @@
 .count { font-size: 34px; font-weight: 700; line-height: 29px; color: var(--ink); }
 .empty { color: var(--ink-3); margin: 0; padding: 0 10px; }
 
-.cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); grid-auto-flow: row dense; }
 
 /* Carte, mesurée sur l'appli (mobile 390 px) : titre, ligne lieu · tech · date, présence client. */
 .card {
@@ -45,3 +45,10 @@
 /* Non lus : pastille grise posée sur le coin haut gauche de la carte, comme dans l'appli. */
 .badge { position: absolute; top: -6px; left: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--r-pill); background: var(--ink-2); color: var(--surface); font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 .more { margin: 0; text-align: center; }
+
+/* Fiche dépliée sous la carte : toute la largeur de la grille, hauteur animée de 0 à son contenu. */
+.unfold { grid-column: 1 / -1; display: grid; grid-template-rows: 0fr; transition: grid-template-rows .28s cubic-bezier(.3, .8, .3, 1); }
+.unfold.is-open { grid-template-rows: 1fr; }
+.unfold.is-now { transition: none; }
+.unfold > div { min-height: 0; overflow: hidden; }
+.unfold__body { padding: var(--s2) var(--s1) var(--s4); }

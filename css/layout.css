@@ -35,8 +35,8 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 
 /* Barre d'onglets du bas (mobile seulement), comme l'appli : pilule blanche flottante, deux onglets égaux. */
 :root { --tab: 52px; --tab-gap: 10px; }
-.tabbar { display: none; position: fixed; left: 12px; right: 12px; bottom: var(--tab-gap); z-index: 10; height: var(--tab); box-sizing: border-box; padding: 4px; border-radius: 30px; background: var(--surface); box-shadow: 0 6px 24px rgba(20,20,40,.12), 0 1px 3px rgba(20,20,40,.08); }
-.tabbar a { flex: 1; display: grid; place-items: center; border-radius: 22px; color: #333; text-decoration: none; }
+.tabbar { display: none; position: fixed; left: 12px; right: 12px; bottom: var(--tab-gap); z-index: 10; height: var(--tab); box-sizing: border-box; padding: 4px; border-radius: 30px; background: var(--surface); box-shadow: var(--shadow-bar); }
+.tabbar a { flex: 1; display: grid; place-items: center; border-radius: 22px; color: var(--tab-fg); text-decoration: none; }
 .tabbar a.on { background: var(--tab-on); }
 .tabbar__n { min-width: 18px; height: 28px; padding: 0 7px; border-radius: 14px; display: grid; place-items: center; background: var(--alert-bg); color: var(--alert-fg); font-size: 14px; font-weight: 800; }
 .tabbar__n:empty { display: none; }
