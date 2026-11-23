@@ -1,6 +1,6 @@
-import { sb } from './sb.js?v=20261123211258';
-import { S, app, esc, fmt, options, rerender, ACCOUNTS, ROLES, VERSION } from './state.js?v=20261123211258';
-import { stopLive } from './live.js?v=20261123211258';
+import { sb } from './sb.js?v=20261123212531';
+import { S, app, esc, fmt, options, rerender, ACCOUNTS, ROLES, VERSION } from './state.js?v=20261123212531';
+import { stopLive } from './live.js?v=20261123212531';
 
 export function renderLogin(error = '', intro = '') {
   app.innerHTML = `${intro}
@@ -39,20 +39,54 @@ export function renderOrg(user) {
   };
 }
 
-// Lien d'invitation : #invitation/<token>.
+// Lien d'invitation : #invitation/<token>. Inscription (signUp) puis accept_invitation.
+// Les @test.local n'ont pas de boîte mail : un trigger confirme ces comptes à la création.
+async function acceptInvite(token, name, out) {
+  const { error } = await sb.rpc('accept_invitation', { p_token: token, p_full_name: name });
+  if (error) { if (out) out.textContent = error.message; return; }
+  stopLive(); S.me = null; location.hash = '';
+}
 export async function renderInvitation(token, session) {
   const { data, error } = await sb.rpc('invitation_info', { p_token: token });
   const inv = data?.[0];
   if (!inv) return app.innerHTML = `<h1>Invitation</h1><p>${esc(error?.message || 'Invitation invalide, expirée ou déjà utilisée.')}</p><a href="#">Connexion</a>`;
   const intro = `<h1>Invitation</h1><p>Rejoindre ${esc(inv.org_name)} en tant que ${ROLES[inv.role] || esc(inv.role)} (${esc(inv.email)}).</p>`;
-  if (!session) return renderLogin('', intro);
+  if (!session) {
+    app.innerHTML = `${intro}
+      <form id="signup">
+        <label>Votre nom <input name="name" required maxlength="12"></label>
+        <label>Mot de passe <input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
+        <button>Créer le compte et rejoindre</button><p></p>
+      </form>
+      <p>Déjà un compte ? Connectez-vous ci-dessous, puis cette page s'affichera à nouveau.</p>
+      <form id="inlogin">
+        <label>E-mail <input name="email" type="email" required value="${esc(inv.email)}" autocomplete="username"></label>
+        <label>Mot de passe <input name="password" type="password" required autocomplete="current-password"></label>
+        <button>Se connecter</button><p></p>
+      </form>`;
+    app.querySelector('#signup').onsubmit = async e => {
+      e.preventDefault();
+      const name = e.target.name.value.trim(), password = e.target.password.value, out = e.target.querySelector('p');
+      const { data, error } = await sb.auth.signUp({ email: inv.email, password, options: { data: { full_name: name } } });
+      if (error) return out.textContent = error.message;
+      if (!data.session) {
+        const { error: e2 } = await sb.auth.signInWithPassword({ email: inv.email, password });
+        if (e2) return out.textContent = "Compte créé, mais il n'est pas encore confirmé. Les adresses @test.local ne reçoivent pas d'e-mail : confirmez le compte dans Supabase (Authentication) puis rouvrez ce lien.";
+      }
+      await acceptInvite(token, name, out);
+    };
+    app.querySelector('#inlogin').onsubmit = async e => {
+      e.preventDefault();
+      const { error } = await sb.auth.signInWithPassword(Object.fromEntries(new FormData(e.target)));
+      error ? e.target.querySelector('p').textContent = error.message : rerender();
+    };
+    return;
+  }
   app.innerHTML = `${intro}
     <form><label>Votre nom <input name="name" required maxlength="12"></label> <button>Accepter l'invitation</button><p></p></form>`;
   app.querySelector('form').onsubmit = async e => {
     e.preventDefault();
-    const { error } = await sb.rpc('accept_invitation', { p_token: token, p_full_name: e.target.name.value.trim() });
-    if (error) return e.target.querySelector('p').textContent = error.message;
-    stopLive(); S.me = null; location.hash = '';
+    await acceptInvite(token, e.target.name.value.trim(), e.target.querySelector('p'));
   };
 }
 

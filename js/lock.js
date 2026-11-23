@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123211258';
-import { S, esc } from './state.js?v=20261123211258';
+import { sb } from './sb.js?v=20261123212531';
+import { S, esc } from './state.js?v=20261123212531';
 
 // Verrou d'édition (expire seul côté base après 2 min sans renouvellement).
 const LOCKS = new Map(); // intervention_id → { by, name, until }
@@ -20,13 +20,13 @@ export function drawEdit() {
   const l = lockOf(p.dataset.id);
   p.innerHTML = l ? `Modifier (${esc(l.name || 'quelqu’un')} modifie en ce moment)` : `<a href="#i/${p.dataset.id}/modifier">Modifier</a>`;
 }
-// Prend le verrou ; renvoie le nom de celui qui le tient déjà, sinon rien. En cas d'erreur, on ne bloque pas.
+// Prend le verrou ; renvoie un message si on ne peut pas modifier (déjà pris, ou droit insuffisant).
 export async function takeLock(id) {
   releaseLock();
   const { data, error } = await sb.rpc('edit_lock', { p_id: id, p_action: 'take' });
-  if (error) return;
+  if (error) return error.message;
   const l = data?.[0] || {};
-  if (!l.ok) return l.editing_name || 'Quelqu’un';
+  if (!l.ok) return `${l.editing_name || 'Quelqu’un'} modifie déjà cette intervention.`;
   held = id;
   renew = setInterval(() => sb.rpc('edit_lock', { p_id: id, p_action: 'take' }).then(() => {}), 45000);
 }

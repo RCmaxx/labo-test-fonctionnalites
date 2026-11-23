@@ -1,12 +1,28 @@
-import { sb } from './sb.js?v=20261123211258';
-import { S, esc, options, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123211258';
-import { takeLock } from './lock.js?v=20261123211258';
+import { sb } from './sb.js?v=20261123212531';
+import { S, esc, options, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123212531';
+import { takeLock } from './lock.js?v=20261123212531';
+
+// Réduit la photo (1600 px max, JPEG ~0,8) pour un envoi plus léger ; garde l'original si la conversion échoue ou n'apporte rien.
+async function shrink(file) {
+  try {
+    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+    bmp.close?.();
+    return b && b.size < file.size ? b : file;
+  } catch { return file; }
+}
 
 // Envoie les photos dans le stockage puis les rattache à l'intervention (un message photo s'ajoute au tchat). Renvoie la première erreur.
 export async function uploadPhotos(iid, files) {
   for (const file of files) {
-    const path = `${S.me.org_id}/${iid}/${crypto.randomUUID()}.${(file.name.split('.').pop() || 'jpg').toLowerCase()}`;
-    const { error } = await sb.storage.from('photos').upload(path, file, { contentType: file.type || 'image/jpeg' })
+    const f = await shrink(file);
+    const ext = f === file ? ((file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg') : 'jpg';
+    const path = `${S.me.org_id}/${iid}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await sb.storage.from('photos').upload(path, f, { contentType: f.type || 'image/jpeg' })
       .then(r => r.error ? r : sb.from('intervention_photos').insert({ intervention_id: iid, path }));
     if (error) return error;
   }
@@ -15,7 +31,7 @@ export async function uploadPhotos(iid, files) {
 export async function renderForm(el, id) {
   // Verrou d'édition : une seule personne modifie à la fois.
   const by = id && await takeLock(id);
-  if (by) return el.innerHTML = `<p>${esc(by)} modifie déjà cette intervention.</p>`;
+  if (by) return el.innerHTML = `<p>${esc(by)}</p>`;
   const [cur, places, techs] = await Promise.all([
     id ? sb.from('interventions').select('*').eq('id', id).maybeSingle() : { data: { priority: 'normale' } },
     sb.from('places').select('label').order('num', { nullsFirst: false }).order('label').limit(2000),
