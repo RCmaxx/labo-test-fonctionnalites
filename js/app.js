@@ -1,11 +1,11 @@
-import { sb } from './sb.js?v=20261123215900';
-import { S, app, route, VERSION } from './state.js?v=20261123215900';
-import { renderLogin, renderOrg, renderInvitation, renderMe } from './auth.js?v=20261123215900';
-import { renderList } from './list.js?v=20261123215900';
-import { renderDetail } from './detail.js?v=20261123215900';
-import { renderForm } from './form.js?v=20261123215900';
-import { startLive } from './live.js?v=20261123215900';
-import { drawAlerts } from './alerts.js?v=20261123215900';
+import { sb } from './sb.js?v=20261123220622';
+import { S, app, route, VERSION } from './state.js?v=20261123220622';
+import { renderLogin, renderOrg, renderInvitation, renderMe } from './auth.js?v=20261123220622';
+import { renderList } from './list.js?v=20261123220622';
+import { renderDetail } from './detail.js?v=20261123220622';
+import { renderForm } from './form.js?v=20261123220622';
+import { startLive } from './live.js?v=20261123220622';
+import { drawAlerts } from './alerts.js?v=20261123220622';
 
 async function render() {
   const [page, id] = route();

@@ -6,32 +6,39 @@
 .count { font-size: var(--fs-s); font-weight: var(--fw-meta); color: var(--ink-2); background: var(--soft); border-radius: var(--r-pill); padding: 2px var(--s2); }
 .empty { color: var(--ink-3); margin: 0; }
 
-.cards { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
 
+/* Carte, mesurée sur l'appli (mobile 390 px) : titre, ligne lieu · tech · date, présence client. */
 .card {
   --card-bg: var(--surface);
-  display: grid; gap: var(--s2); padding: var(--s4); border-radius: var(--r-l);
+  position: relative; display: grid; padding: 7px 10px 9px; border-radius: var(--r-l);
   background: var(--card-bg); box-shadow: var(--shadow-card); text-decoration: none; color: var(--ink);
+  transition: box-shadow .15s;
 }
-.card { transition: box-shadow .15s; }
 @media (any-hover: hover) { .card:hover { box-shadow: var(--shadow-float); } }
 .card--done { --card-bg: var(--done-bg); color: var(--ink-2); }
-.card__head { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
-.card__title { flex: 1; min-width: 0; font-weight: var(--fw-title); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.card__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); font-size: var(--fs-s); color: var(--ink-2); }
-.card__meta time { margin-left: auto; font-weight: var(--fw-meta); }
+.card__title { font-size: 18px; font-weight: var(--fw-title); letter-spacing: -.01em; line-height: 1.17; }
+.card__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: var(--s1); }
+.card__meta time { font-size: var(--fs-s); font-weight: var(--fw-meta); color: var(--neutral-sub); }
+.card__presence { display: flex; align-items: center; gap: var(--s1); margin-top: 6px; font-size: 13px; font-weight: 500; color: var(--neutral-sub); }
+.card__presence svg { width: 11px; height: 11px; color: var(--presence-fg); }
 
 /* Étiquette : base neutre ; les variantes ne changent que les deux couleurs.
    Couleurs de priorité : source unique, partagée avec les choix du formulaire (.choice). */
 .tag {
   --tag-bg: var(--neutral-bg); --tag-fg: var(--neutral-sub);
-  display: inline-flex; align-items: center; padding: 3px var(--s2); border-radius: var(--r-pill);
-  background: var(--tag-bg); color: var(--tag-fg); font-size: var(--fs-s); font-weight: var(--fw-meta); white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 3px; height: 20px; padding: 0 7px; border-radius: 7px;
+  background: var(--tag-bg); color: var(--tag-fg); font-size: var(--fs-s); font-weight: var(--fw-title); white-space: nowrap;
 }
+.tag svg { flex: none; }
+/* Lieu : un cran plus grand, « MH » en petit devant le numéro. */
+.tag--place { height: 22px; border-radius: var(--r-s); font-size: 12px; font-weight: 700; }
+.tag--place small { font-size: 8px; }
 .tag--haute, .tag--urgente, .choice--haute, .choice--urgente { --tag-bg: var(--prio-haute-bg); --tag-fg: var(--prio-haute-fg); }
 .tag--normale, .choice--normale { --tag-bg: var(--prio-normale-bg); --tag-fg: var(--prio-normale-fg); }
 .tag--basse, .choice--basse { --tag-bg: var(--prio-basse-bg); --tag-fg: var(--prio-basse-fg); }
 .tag--tech { --tag-bg: var(--tech-bg); --tag-fg: var(--tech-fg); }
 
-.badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--r-pill); background: var(--danger); color: var(--surface); font-size: var(--fs-s); font-weight: var(--fw-title); display: inline-grid; place-items: center; }
+/* Non lus : pastille grise posée sur le coin haut gauche de la carte, comme dans l'appli. */
+.badge { position: absolute; top: -6px; left: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--r-pill); background: var(--ink-2); color: var(--surface); font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 .more { margin: 0; text-align: center; }

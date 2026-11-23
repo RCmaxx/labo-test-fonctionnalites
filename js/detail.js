@@ -1,7 +1,7 @@
-import { sb } from './sb.js?v=20261123215900';
-import { S, esc, fmt, DONE, STATUS, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123215900';
-import { uploadPhotos } from './form.js?v=20261123215900';
-import { drawEdit } from './lock.js?v=20261123215900';
+import { sb } from './sb.js?v=20261123220622';
+import { S, esc, fmt, DONE, STATUS, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123220622';
+import { uploadPhotos } from './form.js?v=20261123220622';
+import { drawEdit } from './lock.js?v=20261123220622';
 
 // Actions possibles selon le rôle et le statut (mêmes règles que l'app main, lot 408).
 function actions(i) {
