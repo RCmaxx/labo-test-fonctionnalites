@@ -1,0 +1,26 @@
+/* Formulaire d'intervention. Les champs eux-mêmes sont stylés dans base.css. */
+.iform { max-width: 640px; }
+.iform p { margin: 0; }
+.iform textarea { min-height: 96px; resize: vertical; }
+
+fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); }
+legend { padding: 0; margin-bottom: var(--s2); font-weight: var(--fw-meta); }
+
+/* Choix de priorité : pastille qui prend la couleur de sa priorité une fois cochée. */
+.choice {
+  --tag-bg: var(--neutral-bg); --tag-fg: var(--ink-2);
+  flex-direction: row; align-items: center; cursor: pointer;
+  padding: var(--s2) var(--s3); border-radius: var(--r-pill);
+  background: var(--soft); color: var(--ink-2); font-weight: var(--fw-meta);
+}
+.choice input { position: absolute; opacity: 0; pointer-events: none; }
+.choice:has(input:checked) { background: var(--tag-bg); color: var(--tag-fg); }
+.choice:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+.choice--haute, .choice--urgente { --tag-bg: var(--prio-haute-bg); --tag-fg: var(--prio-haute-fg); }
+.choice--normale { --tag-bg: var(--prio-normale-bg); --tag-fg: var(--prio-normale-fg); }
+.choice--basse { --tag-bg: var(--prio-basse-bg); --tag-fg: var(--prio-basse-fg); }
+
+.slot { align-items: end; }
+.slot label { flex: 1 1 120px; }
+.check { flex: 1 1 100%; flex-direction: row; align-items: center; gap: var(--s2); }
+.check input { width: auto; }

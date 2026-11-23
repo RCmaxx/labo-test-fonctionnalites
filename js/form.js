@@ -1,6 +1,6 @@
-import { sb } from './sb.js?v=20261123214956';
-import { S, esc, options, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123214956';
-import { takeLock } from './lock.js?v=20261123214956';
+import { sb } from './sb.js?v=20261123215029';
+import { S, esc, options, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123215029';
+import { takeLock } from './lock.js?v=20261123215029';
 
 // Réduit la photo (1600 px max, JPEG ~0,8) pour un envoi plus léger ; garde l'original si la conversion échoue ou n'apporte rien.
 async function shrink(file) {
@@ -44,25 +44,25 @@ export async function renderForm(el, id) {
   const day = d => d ? d.toLocaleDateString('sv') : '', hm = d => d ? d.toTimeString().slice(0, 5) : '';
   el.innerHTML = `
     <h1>${id ? "Modifier l'intervention" : 'Nouvelle intervention'}</h1>
-    <form>
+    <form class="panel iform">
       <p><label>Titre <input name="title" required maxlength="70" value="${esc(i.title)}"></label></p>
       <p><label>Lieu <input name="location" list="places" value="${esc(i.location)}"></label>
         <datalist id="places">${(places.data || []).map(p => `<option value="${esc(p.label)}">`).join('')}</datalist></p>
       <p><label>Description <textarea name="description">${esc(i.description)}</textarea></label></p>
-      <fieldset><legend>Priorité</legend>${Object.entries(PRIORITY).map(([k, v]) =>
-        `<label><input type="radio" name="priority" value="${k}" ${k === i.priority ? 'checked' : ''}> ${v}</label>`).join(' ')}</fieldset>
+      <fieldset class="choices"><legend>Priorité</legend>${Object.entries(PRIORITY).map(([k, v]) =>
+        `<label class="choice choice--${k}"><input type="radio" name="priority" value="${k}" ${k === i.priority ? 'checked' : ''}> ${v}</label>`).join('')}</fieldset>
       ${mgr ? `<p><label>Assigner à <select name="assign"><option value="">Personne</option>${(techs.data || []).map(t =>
         `<option value="${t.user_id}" ${t.user_id === i.proposed_to ? 'selected' : ''}>${esc(t.full_name)}</option>`).join('')}</select></label></p>` : ''}
-      <fieldset><legend>Passage</legend>
-        <label><input type="checkbox" name="presence" ${i.client_presence || from ? 'checked' : ''}> Présence client requise</label>
+      <fieldset class="slot"><legend>Passage</legend>
+        <label class="check"><input type="checkbox" name="presence" ${i.client_presence || from ? 'checked' : ''}> Présence client requise</label>
         <label>Jour <input type="date" name="d" value="${day(from)}"></label>
         <label>De <input type="time" name="a" step="900" value="${hm(from)}"></label>
         <label>À <input type="time" name="b" step="900" value="${hm(until)}"></label>
         <label>Rappel <select name="remind"><option value="">Aucun</option>${options(REMIND, i.remind_minutes)}</select></label>
       </fieldset>
       <p><label>Photos (10 max) <input type="file" name="photos" accept="image/*" multiple></label></p>
-      ${id ? '<button value="save">Enregistrer</button>' : '<button value="draft">Brouillon</button> <button value="publier">Créer et publier</button>'}
-      <p id="ferr"></p>
+      <p class="actions">${id ? '<button class="primary" value="save">Enregistrer</button>' : '<button value="draft">Brouillon</button><button class="primary" value="publier">Créer et publier</button>'}</p>
+      <p class="error" id="ferr"></p>
     </form>`;
   el.querySelector('form').onsubmit = async e => {
     e.preventDefault();
