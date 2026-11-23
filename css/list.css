@@ -7,7 +7,7 @@
 .group__title svg { flex: none; width: 20px; height: 20px; margin-bottom: 4px; color: var(--ink); }
 .group__title span:last-child { padding-bottom: 3px; }
 .count { font-size: 34px; font-weight: 700; line-height: 29px; color: var(--ink); }
-.empty { color: var(--ink-3); margin: 0; }
+.empty { color: var(--ink-3); margin: 0; padding: 0 10px; }
 
 .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
 
