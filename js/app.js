@@ -1,4 +1,4 @@
-import { sb } from './sb.js';
+import { sb } from './sb.js?v=1795462919';
 
 const ACCOUNTS = ['admin.a', 'resp.a', 'tech.a', 'tech.bis', 'client'];
 const ROLES = { admin: 'Admin', directeur: 'Directeur', responsable_tech: 'Responsable tech', technicien: 'Technicien', reception: 'Réception', client: 'Client' };
