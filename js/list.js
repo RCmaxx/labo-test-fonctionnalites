@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123215119';
-import { S, esc, fmt, nameOf, DONE, PRIORITY, PAGE } from './state.js?v=20261123215119';
+import { sb } from './sb.js?v=20261123215127';
+import { S, esc, fmt, nameOf, DONE, PRIORITY, PAGE } from './state.js?v=20261123215127';
 
 let search = '', doneN = PAGE, tq = 0; // recherche et nombre de terminées gardés entre deux affichages
 const COLS = 'id, title, location, description, status, priority, assignee_id, created_by, created_at, resolved_at, validated_at';

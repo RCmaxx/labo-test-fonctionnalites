@@ -8,7 +8,7 @@
 .alerts p { margin: 0; display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow-card); }
 .alerts button { margin-left: auto; }
 
-/* Bouton + : rond noir fixe, centré dans la marge droite quand elle existe. */
+/* Bouton + : rond noir fixe, centré entre le bord droit et les cartes quand la marge le permet. */
 .fab {
   --fab: 56px;
   position: fixed; right: var(--s6); bottom: var(--s6);
@@ -17,7 +17,7 @@
   background: var(--ink); color: var(--surface); box-shadow: var(--shadow-float);
   font-size: 28px; line-height: 1; text-decoration: none;
 }
-@media (min-width: 1352px) { .fab { right: calc((100vw - 1240px) / 4 - var(--fab) / 2); } }
+@media (min-width: 1352px) { .fab { right: calc(((100vw - 1240px) / 2 + var(--s6)) / 2 - var(--fab) / 2); } }
 
 /* Mobile : marges réduites, place gardée sous le contenu pour le bouton +. */
 @media (max-width: 600px) {
