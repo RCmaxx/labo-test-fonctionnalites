@@ -5,6 +5,7 @@ const ROLES = { admin: 'Admin', directeur: 'Directeur', responsable_tech: 'Respo
 const PRIORITY = { basse: 'Basse', normale: 'Normale', haute: 'Haute', urgente: 'Urgente' };
 const DONE = ['resolue', 'validee'];
 const STATUS = { brouillon: 'Brouillon', publiee: 'Nouvelle', prise_en_charge: 'En cours', resolue: 'Terminée', validee: 'Validée' };
+const VERSION = 'v6';
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 const fmt = d => d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '';
@@ -19,7 +20,7 @@ async function render() {
     me = { id: session.user.id, email: session.user.email, full_name: m?.full_name, org_id: m?.org_id, role: m?.role === 'admin' && m.acting_role ? m.acting_role : m?.role };
   }
   const [route, id, sub] = location.hash.slice(1).split('/');
-  app.innerHTML = `<nav><a href="#">Interventions</a> · <a href="#nouvelle">Nouvelle intervention</a> · <a href="#compte">Mon compte</a></nav><main></main>`;
+  app.innerHTML = `<nav><a href="#">Interventions</a> · <a href="#nouvelle">Nouvelle intervention</a> · <a href="#compte">Mon compte</a> · ${VERSION}</nav><main></main>`;
   const el = app.querySelector('main');
   route === 'compte' ? renderMe(el) : route === 'nouvelle' ? renderForm(el)
     : route === 'i' ? (sub === 'modifier' ? renderForm(el, id) : renderDetail(el, id)) : renderList(el);
@@ -27,7 +28,7 @@ async function render() {
 
 function renderLogin(error = '') {
   app.innerHTML = `
-    <h1>Connexion</h1>
+    <h1>Connexion</h1><p>${VERSION}</p>
     <form id="login">
       <label>Compte <select name="email">${ACCOUNTS.map(a => `<option value="${a}@test.local">${a}</option>`).join('')}</select></label>
       <label>Mot de passe <input name="password" type="password" required autocomplete="current-password"></label>
