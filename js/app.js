@@ -79,6 +79,19 @@ async function renderList(el) {
     `<h2>${t} (${list.length})</h2>${list.length ? `<ul>${list.map(item).join('')}</ul>` : '<p>Aucune.</p>'}`).join('');
 }
 
+// Actions possibles selon le rôle et le statut (mêmes règles que l'app main, lot 408).
+function actions(i) {
+  const r = me.role, mgr = ['admin', 'directeur', 'responsable_tech'].includes(r), mine = i.assignee_id === me.id, tech = ['technicien', 'responsable_tech'].includes(r);
+  const a = [];
+  if (i.status === 'brouillon' && (mgr || (['reception', 'technicien'].includes(r) && i.created_by === me.id))) a.push(['publier', 'Publier']);
+  if (i.status === 'publiee' && tech && !i.assignee_id && (!i.proposed_to || i.proposed_to === me.id)) a.push(['prendre', "Commencer l'intervention"]);
+  if (i.status === 'prise_en_charge' && (mine || ['directeur', 'responsable_tech'].includes(r))) a.push(['resoudre', "Terminer l'intervention"]);
+  if (i.status === 'prise_en_charge' && mine) a.push(['liberer', "Ne plus prendre l'intervention"]);
+  if (i.status === 'prise_en_charge' && tech && i.assignee_id && !mine) a.push(['demander', "Demander l'intervention"]);
+  if (DONE.includes(i.status) && (mgr || mine)) a.push(['renvoyer', 'Renvoyer active']);
+  return a;
+}
+
 async function renderDetail(el, id) {
   el.innerHTML = '<p>Chargement…</p>';
   const [{ data: i, error }, ev, ph] = await Promise.all([
@@ -90,6 +103,7 @@ async function renderDetail(el, id) {
   const paths = (ph.data || []).map(p => p.path);
   const urls = paths.length ? (await sb.storage.from('photos').createSignedUrls(paths, 3600)).data || [] : [];
   const events = ev.data || [];
+  const acts = actions(i);
   const line = e => `<li><b>${esc(e.actor_name)}</b> · ${fmt(e.created_at)}<br>${esc(e.body)}</li>`;
   el.innerHTML = `
     <article>
@@ -102,6 +116,7 @@ async function renderDetail(el, id) {
         ${i.available_from ? `<dt>Créneau</dt><dd>${fmt(i.available_from)} – ${fmt(i.available_until)}</dd>` : ''}
       </dl>
       <p>${esc(i.description) || 'Pas de description.'}</p>
+      ${acts.length ? `<p>${acts.map(([a, l]) => `<button data-act="${a}">${l}</button>`).join(' ')}</p><p id="acterr"></p>` : ''}
       ${urls.length ? `<section><h2>Photos</h2>${urls.map(u => u.signedUrl ? `<img src="${u.signedUrl}" alt="" width="160">` : '').join('')}</section>` : ''}
       <section>
         <h2>Tchat</h2>
@@ -113,6 +128,11 @@ async function renderDetail(el, id) {
         <ul>${events.filter(e => e.type !== 'commentaire').map(e => `<li>${fmt(e.created_at)} · ${esc(e.type)} · ${esc(e.actor_name)}</li>`).join('') || '<li>Aucun événement.</li>'}</ul>
       </section>
     </article>`;
+  el.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
+    const { error } = b.dataset.act === 'demander' ? await sb.rpc('request_transfer', { p_id: id })
+      : await sb.rpc('transition', { p_id: id, p_action: b.dataset.act, p_comment: '' });
+    error ? el.querySelector('#acterr').textContent = error.message : renderDetail(el, id);
+  });
   el.querySelector('form').onsubmit = async e => {
     e.preventDefault();
     const { error } = await sb.rpc('add_comment', { p_id: id, p_body: e.target.body.value });
