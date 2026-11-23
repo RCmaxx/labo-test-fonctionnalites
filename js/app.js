@@ -1,14 +1,16 @@
-import { sb } from './sb.js?v=20261123155224';
-import { state, loadMember, role, isRealAdmin, isAdmin, ROLE_NAMES, PNAME, memberName } from './state.js?v=20261123155224';
-import { $, esc, toast, errMsg, ROLES, avatar, confirmBox } from './ui.js?v=20261123155224';
-import * as auth from './views/auth.js?v=20261123155224';
-import * as list from './views/list.js?v=20261123155224';
-import * as detail from './views/detail.js?v=20261123155224';
-import * as form from './views/form.js?v=20261123155224';
-import * as settings from './views/settings.js?v=20261123155224';
-import { startRealtime, stopRealtime } from './rt.js?v=20261123155224';
+import { sb } from './sb.js?v=20261123193833';
+import { state, loadMember, role, isRealAdmin, ROLE_NAMES, PNAME, memberName } from './state.js?v=20261123193833';
+import { $, esc, toast, errMsg, ROLES, avatar, confirmBox } from './ui.js?v=20261123193833';
+import * as auth from './views/auth.js?v=20261123193833';
+import * as list from './views/list.js?v=20261123193833';
+import * as detail from './views/detail.js?v=20261123193833';
+import * as form from './views/form.js?v=20261123193833';
+import * as settings from './views/settings.js?v=20261123193833';
+import { startRealtime, stopRealtime } from './rt.js?v=20261123193833';
 
 const app = $('#app');
+// gopen : écran d'arrivée mobile déjà imposé ; bpos : position de l'indicateur de la barre du bas ; tsy : défilement de Terminées ; mclose : écouteur de fermeture du menu posé.
+let gopen = 0, bpos = null, tsy = 0, mclose = 0;
 const PHONE = matchMedia('(max-width: 600px)');
 const top = $('#top');
 
@@ -31,7 +33,6 @@ export function go(path) {
   else location.hash = '#/' + path;
 }
 
-const initials = n => String(n || '').replace(/@.*/, '').split(/[\s._-]+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 
 function header() {
   // Sélecteur : admin, ou admin passé sur un compte de test réel (Tech bis / Client) pour pouvoir revenir.
@@ -72,18 +73,18 @@ function header() {
     ${isRealAdmin() ? `<a href="#/parametres" aria-label="Profils" class="${['parametres', 'equipe'].includes(cur) ? 'on' : ''}">${ico('gear')}</a>` : ''}`;
   // Lot 177 : indicateur animé qui glisse vers l'onglet actif.
   if (tech) {
-    const on = bn.querySelector('a.on'), pos = window.__bpos;
+    const on = bn.querySelector('a.on'), pos = bpos;
     if (on) {
       const ind = document.createElement('i'); ind.className = 'bind'; bn.prepend(ind);
       const set = o => { ind.style.left = o.left + 'px'; ind.style.width = o.width + 'px'; };
       const now = { left: on.offsetLeft, width: on.offsetWidth };
       if (pos) { set(pos); ind.getBoundingClientRect(); requestAnimationFrame(() => { ind.style.transition = 'left .28s cubic-bezier(.3,.8,.3,1), width .28s cubic-bezier(.3,.8,.3,1)'; set(now); }); } else set(now);
-      window.__bpos = now;
+      bpos = now;
     }
   }
   top.innerHTML = `
     <div class="bar">
-      ${tech ? `<span class="ptit">${({ nouvelles: 'Interventions', encours: 'En cours', planifiees: 'Planifiées', terminees: 'Terminées', routines: 'Routines', parametres: 'Profils', equipe: 'Profils', nouvelle: 'Nouvelle intervention', intervention: 'Intervention' })[cur] || 'Interventions'}</span><span class="pcnt">${['nouvelles', 'encours', 'planifiees'].includes(cur) ? (window.__pcnt || '') : ''}</span>${['nouvelles', 'encours'].includes(cur) ? '' : `<button type="button" class="burg" aria-label="Compte" aria-expanded="false"><span class="av" aria-hidden="true" style="background:${avatar(avName, undefined, r).bg}">${avatar(avName, undefined, r).e}</span></button>`}<div class="tmenu">` : ''}
+      ${tech ? `<span class="ptit">${({ nouvelles: 'Interventions', encours: 'En cours', planifiees: 'Planifiées', terminees: 'Terminées', routines: 'Routines', parametres: 'Profils', equipe: 'Profils', nouvelle: 'Nouvelle intervention', intervention: 'Intervention' })[cur] || 'Interventions'}</span><span class="pcnt">${['nouvelles', 'encours', 'planifiees'].includes(cur) ? (state.pcnt || '') : ''}</span>${['nouvelles', 'encours'].includes(cur) ? '' : `<button type="button" class="burg" aria-label="Compte" aria-expanded="false"><span class="av" aria-hidden="true" style="background:${avatar(avName, undefined, r).bg}">${avatar(avName, undefined, r).e}</span></button>`}<div class="tmenu">` : ''}
       <span class="brand">Labo</span>
       ${tech ? '' : `<nav>
         <a href="#/" class="${!searching && ['', 'interventions', 'intervention', 'nouvelle'].includes(cur) ? 'on' : ''}">Interventions</a>
@@ -103,7 +104,7 @@ function header() {
       </div>${tech ? '</div>' : ''}
     </div>`;
   // Lot 365 : mobile, camping + profil + déconnexion dans le menu du compte ; titre de page en haut. Lot 367 (FA 766) : l'avatar ouvre ce menu (plus de symbole burger).
-  { const bg = top.querySelector('.burg'); if (bg) bg.onclick = e => { e.stopPropagation(); const o = top.classList.toggle('mopen'); bg.setAttribute('aria-expanded', String(o)); }; if (!window.__mclose) { window.__mclose = 1; document.addEventListener('click', e => { const t = document.getElementById('top'); if (t?.classList.contains('mopen') && !e.target.closest('.tmenu')) { t.classList.remove('mopen'); t.querySelector('.burg')?.setAttribute('aria-expanded', 'false'); } }); } }
+  { const bg = top.querySelector('.burg'); if (bg) bg.onclick = e => { e.stopPropagation(); const o = top.classList.toggle('mopen'); bg.setAttribute('aria-expanded', String(o)); }; if (!mclose) { mclose = 1; document.addEventListener('click', e => { const t = document.getElementById('top'); if (t?.classList.contains('mopen') && !e.target.closest('.tmenu')) { t.classList.remove('mopen'); t.querySelector('.burg')?.setAttribute('aria-expanded', 'false'); } }); } }
   $('#logout').onclick = async () => { localStorage.removeItem(ADM); localStorage.removeItem(MOB); localStorage.removeItem(ACT); await sb.auth.signOut(); go('connexion'); };
   // Retour au compte admin enregistré avant le passage sur un compte de test réel.
   const backToAdmin = async () => {
@@ -145,7 +146,7 @@ function header() {
       }
       if (rm) localStorage.setItem(MOB, 'client'); else localStorage.removeItem(MOB);
       toast(rm ? 'Connecté en tant que Client mobile.' : `Connecté en tant que ${nm}.`);
-      window.__gopen = 0; // Lot 207 : passage en mobile simulé → « Nouvelles interventions ».
+      gopen = 0; // Lot 207 : passage en mobile simulé → « Nouvelles interventions ».
       go('');
       return render();
     }
@@ -163,7 +164,7 @@ function header() {
     localStorage.setItem(ACT, pr);
     await loadMember();
     toast(pr === 'admin' ? 'Vous êtes de nouveau administrateur.' : `Vous voyez l'appli en tant que ${pm ? sel.selectedOptions[0].text : ROLE_NAMES[pr]}.`);
-    window.__gopen = 0; // Lot 207 : passage en mobile simulé → « Nouvelles interventions ».
+    gopen = 0; // Lot 207 : passage en mobile simulé → « Nouvelles interventions ».
     render();
   };
 }
@@ -195,14 +196,14 @@ export async function render() {
     return view(app, { q });
   }
   if (!state.member) {
-    window.__gopen = 0;
+    gopen = 0;
     top.hidden = true;
     if (key === 'invitation' || sessionStorage.getItem('invite')) return auth.invitation(app, { q });
     return auth.onboarding(app);
   }
   header();
   // Lot 206 : mobile (vrai et simulé) : chaque ouverture de l'app (démarrage, connexion, retour) arrive sur « Nouvelles interventions ».
-  if (!window.__gopen && role() !== 'client' && document.body.classList.contains('tech')) { window.__gopen = 1; if (key !== 'nouvelles' && key !== 'invitation' && !(key === 'intervention' && parts[1])) return go('nouvelles'); }
+  if (!gopen && role() !== 'client' && document.body.classList.contains('tech')) { gopen = 1; if (key !== 'nouvelles' && key !== 'invitation' && !(key === 'intervention' && parts[1])) return go('nouvelles'); }
   if (n !== rendering) return;
   try {
     if (key === '' || key === 'interventions') return await list.view(app, { q });
@@ -268,7 +269,6 @@ function parentHash() {
   if (parts[0] === 'intervention' && parts[2] === 'modifier') return '#/intervention/' + parts[1];
   return '#/';
 }
-const EDGE = 44;
 // Zone visible de l'appli (le cadre téléphone en mode tech sur iPad, sinon l'écran).
 const frame = () => { const sh = document.body.classList.contains('tech') && document.documentElement.clientWidth > 600 ? document.getElementById('shell') : null; return sh ? sh.getBoundingClientRect() : { left: 0, top: 0, width: innerWidth, height: innerHeight }; };
 function underlay() {
@@ -351,7 +351,7 @@ document.addEventListener('click', e => {
   if (!a || e.metaKey || e.ctrlKey) return;
   e.preventDefault();
   // Lot 185 : changement de page par le footer : la page s'ouvre en haut, sauf Terminées qui reprend où on s'était arrêté.
-  if (a.closest('#bnav') && location.hash !== a.getAttribute('href')) { const sc = document.documentElement.clientWidth > 600 ? app : document.scrollingElement; const isT = h => /^(#\/?)?(terminees|interventions)?(\?.*)?$/.test(h || ''); if (isT(location.hash)) window.__tsy = sc.scrollTop; window.__fnav = isT(a.getAttribute('href')) ? (window.__tsy || 0) : 0; }
+  if (a.closest('#bnav') && location.hash !== a.getAttribute('href')) { const sc = document.documentElement.clientWidth > 600 ? app : document.scrollingElement; const isT = h => /^(#\/?)?(terminees|interventions)?(\?.*)?$/.test(h || ''); if (isT(location.hash)) tsy = sc.scrollTop; state.fnav = isT(a.getAttribute('href')) ? tsy : 0; }
   if (location.hash !== a.getAttribute('href')) location.replace(a.getAttribute('href'));
 });
 document.addEventListener('touchcancel', finish, { passive: true });
@@ -380,7 +380,7 @@ function checkReminders() {
     seen.push(r.id);
     const n = document.createElement('div');
     n.className = 'notif';
-    n.innerHTML = `<b>Rappel</b> « ${r.title.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))} » est disponible`;
+    n.innerHTML = `<b>Rappel</b> « ${esc(r.title)} » est disponible`;
     n.onclick = () => { n.remove(); go('intervention/' + r.id); };
     (document.getElementById('shell') || document.body).appendChild(n);
     setTimeout(() => n.remove(), 10000);
@@ -435,11 +435,11 @@ document.addEventListener('visibilitychange', checkTransfers);
   document.addEventListener('input', e => { if (e.target.closest?.('.cef, textarea, input[type=text], input[type=search]:not(.tsearch)')) dirty = true; }, true);
   addEventListener('hashchange', () => { dirty = false; });
   document.addEventListener('submit', () => { dirty = false; }, true);
-  addEventListener('beforeunload', e => { if (window.__giReload || (navigator.maxTouchPoints > 1 && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) || !dirty || ![...document.querySelectorAll('#app .cef, #app textarea, #app input[type=text]')].some(x => (x.value ?? x.innerText ?? '').trim())) return; e.preventDefault(); e.returnValue = 'Attention, recharger la page fera perdre le texte en cours.'; return e.returnValue; }); }
+  addEventListener('beforeunload', e => { if ((navigator.maxTouchPoints > 1 && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) || !dirty || ![...document.querySelectorAll('#app .cef, #app textarea, #app input[type=text]')].some(x => (x.value ?? x.innerText ?? '').trim())) return; e.preventDefault(); e.returnValue = 'Attention, recharger la page fera perdre le texte en cours.'; return e.returnValue; }); }
 
 // Lot 206 : retour dans l'app (cache Safari, appli rouverte après 5 min) → « Nouvelles interventions » en mobile.
-addEventListener('pageshow', e => { if (e.persisted) { window.__gopen = 0; render(); } });
-{ let hid = 0; document.addEventListener('visibilitychange', () => { if (document.hidden) hid = Date.now(); else if (hid && Date.now() - hid > 300000) { window.__gopen = 0; render(); } }); }
+addEventListener('pageshow', e => { if (e.persisted) { gopen = 0; render(); } });
+{ let hid = 0; document.addEventListener('visibilitychange', () => { if (document.hidden) hid = Date.now(); else if (hid && Date.now() - hid > 300000) { gopen = 0; render(); } }); }
 // Lot 211 : bouton + calé à 16 px au-dessus du footer réel (mobile réel et simulé)
 (() => {
   let ro, cur;

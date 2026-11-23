@@ -1,9 +1,9 @@
-import { sb } from '../sb.js?v=20261123155224';
-import { state, assigneeName, isManager, isRealAdmin, memberName, role, ROLE_NAMES, compactName, roleKind } from '../state.js?v=20261123155224';
-import { $, $$, esc, errMsg, statusPill, fmtCreated, fmtAgo, fmtDate, fmtDateTime, PRIORITY, WRENCH, BRIEFCASE, STATUS, ROLES, CLOCK, confirmBox, toast, n2, stackSticky, ACTMSG, isDone, DONE_STATUSES } from '../ui.js?v=20261123155224';
-import { go, render } from '../app.js?v=20261123155224';
-import * as form from './form.js?v=20261123155224';
-import { lockedByOther, loadLocks } from '../lock.js?v=20261123155224';
+import { sb } from '../sb.js?v=20261123193833';
+import { state, assigneeName, isManager, isRealAdmin, role, ROLE_NAMES, compactName, memberRole, roleIco, assTag } from '../state.js?v=20261123193833';
+import { $, $$, esc, errMsg, statusPill, fmtCreated, fmtAgo, fmtDate, STATUS, ROLES, confirmBox, toast, n2, stackSticky, ACTMSG, isDone, DONE_STATUSES, PIN, day0 } from '../ui.js?v=20261123193833';
+import { go, render } from '../app.js?v=20261123193833';
+import * as form from './form.js?v=20261123193833';
+import { lockedByOther, loadLocks } from '../lock.js?v=20261123193833';
 
 // Liste unique (lot 13) : mes interventions, signalées, prises par les autres, brouillons, puis terminées repliées.
 const STATUSES = ['publiee', 'prise_en_charge']; // Lot 225 : la requête de liste exclut les clôturées.
@@ -11,9 +11,10 @@ const STATUSES = ['publiee', 'prise_en_charge']; // Lot 225 : la requête de lis
 // liste client, recherche), par pages de 50, de la plus récente à la plus ancienne ; gardées en mémoire entre deux rendus.
 const DONE_ST = DONE_STATUSES, CPAGE = 50;
 let CL = null; // { rows, more, stale, uid }
+const closedQ = (me, a, b) => { let x = sb.from('interventions').select(COLS).in('status', DONE_ST); if (role() === 'client') x = x.eq('created_by', me); return x.order('resolved_at', { ascending: false, nullsFirst: false }).order('id').range(a, b); };
 async function closedLoad(me, all) {
   if (!CL || CL.uid !== me) CL = { rows: [], more: true, stale: false, uid: me };
-  const q = (a, b) => { let x = sb.from('interventions').select(COLS).in('status', DONE_ST); if (role() === 'client') x = x.eq('created_by', me); return x.order('resolved_at', { ascending: false, nullsFirst: false }).order('id').range(a, b); };
+  const q = (a, b) => closedQ(me, a, b);
   if (CL.stale) { const n = Math.max(CL.rows.length, CPAGE); const { data, error } = await q(0, n - 1); if (error) return error; CL.rows = data; CL.more = data.length === n; CL.stale = false; }
   else if (!CL.rows.length && CL.more) { const { data, error } = await q(0, CPAGE - 1); if (error) return error; CL.rows = data; CL.more = data.length === CPAGE; }
   while (all && CL.more) { const { data, error } = await q(CL.rows.length, CL.rows.length + CPAGE - 1); if (error) return error; CL.rows.push(...data); CL.more = data.length === CPAGE; }
@@ -21,7 +22,7 @@ async function closedLoad(me, all) {
 }
 async function closedMore(bt) {
   if (!CL || !CL.more || bt.disabled) return; bt.disabled = true;
-  const { data, error } = await sb.from('interventions').select(COLS).in('status', DONE_ST).match(role() === 'client' ? { created_by: ME } : {}).order('resolved_at', { ascending: false, nullsFirst: false }).order('id').range(CL.rows.length, CL.rows.length + CPAGE - 1);
+  const { data, error } = await closedQ(ME, CL.rows.length, CL.rows.length + CPAGE - 1);
   if (error) { bt.disabled = false; return toast(errMsg(error), true); }
   const ids = new Set(CL.rows.map(r => r.id)); CL.rows.push(...data.filter(r => !ids.has(r.id))); CL.more = data.length === CPAGE;
   const sc = [mscr(), ...$$('.gcol')].map(e => [e, e.scrollTop]);
@@ -87,7 +88,7 @@ export async function view(app, { q, done = false, page = '' }) {
       apply();
     }));
   }
-  if (MY == null && window.__fnav != null) { MY = window.__fnav; window.__fnav = null; } // Lot 185
+  if (MY == null && state.fnav != null) { MY = state.fnav; state.fnav = null; } // Lot 185
   if (MY != null && $('#rows .group')) mscr().scrollTop = MY;
   else if (MY != null) mscr().scrollTop = 0;
   await load(f, searching);
@@ -247,18 +248,17 @@ async function load(f, searching, patch) {
   // Lot 83 : mobile, seules les programmées des jours suivants restent dans leur onglet ; le jour J elles rejoignent les autres piles.
   const mob = document.body.classList.contains('tech') || VW() <= 600;
   const S = r => sched(r); // Lot 172 : mobile, toutes les planifiées (y compris le jour J) restent dans la page « Planifiées ».
-  const pmine = r => r.status === 'publiee' && !S(r) && !!r.proposed_to && ['technicien', 'responsable_tech'].includes(role()) && (r.proposed_to === me || (isRealAdmin() && ROLE_OF(r.proposed_to) === role()));
+  const pmine = r => r.status === 'publiee' && !S(r) && !!r.proposed_to && ['technicien', 'responsable_tech'].includes(role()) && (r.proposed_to === me || (isRealAdmin() && memberRole(r.proposed_to) === role()));
   const open = data.filter(r => !isDone(r));
   // Directeur / RT : interventions qu'ils ont assignées à quelqu'un.
   const dem = ['directeur', 'responsable_tech'].includes(role());
   const asked = r => dem && r.assigned_by === me && !mine(r) && !pmine(r) && !S(r);
   // Lot 54 : programmée assignée, le jour venu → « En cours » pour les autres profils.
-  const sOn = () => false; // Lot 61 : les programmées restent dans leur colonne.
   const groups = [
     ['mes', 'Mes interventions', open.filter(r => (r.status === 'prise_en_charge' && mine(r)) || pmine(r)).sort(byArrival)],
     ['dem', 'Mes demandes d\'intervention', open.filter(asked)],
     ['publiee', 'Nouvelles interventions', open.filter(r => r.status === 'publiee' && !pmine(r) && !asked(r)).sort(byArrival)], // Lot 309 : ordre de date seul, sans tri par priorité. Lot 279 : les programmées rejoignent les nouvelles (plus de catégorie ni de sous-catégories par jour).
-    ['prise_en_charge', ['technicien', 'responsable_tech'].includes(role()) ? 'Autres interventions en cours' : 'En cours', open.filter(r => (r.status === 'prise_en_charge' && !mine(r) && !asked(r)) || sOn(r)).sort(byArrival)],
+    ['prise_en_charge', ['technicien', 'responsable_tech'].includes(role()) ? 'Autres interventions en cours' : 'En cours', open.filter(r => (r.status === 'prise_en_charge' && !mine(r) && !asked(r))).sort(byArrival)],
     // Lot 60 : les terminées ont leur propre page (restent trouvables par la recherche).
     // Lot 330 : les brouillons ne s'affichent plus en colonne ni dans le feed ; uniquement via le bouton Brouillon du formulaire.
     // Lot 332 : colonne standard « Terminées aujourd'hui » (resolved_at / validated_at du jour).
@@ -304,7 +304,7 @@ async function load(f, searching, patch) {
     const std = !DONE && !document.body.classList.contains('tech') && VW() > 600 && role() !== 'client';
     const fold = k => document.body.classList.contains('tech') || (DONE && ['auj', 'sem', 'avant'].includes(k)); // Lot 96 : sous-catégories des terminées pliables partout. // Lot 91 : catégories pliables seulement sur mobile.
     const sec = ([k, label, rows]) => `<section class="group${fold(k) && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${fold(k) ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${DONE ? '' : `${GICO[k] || ''}<span class="count">${rows.length}</span>`}<span class="glab">${DONE ? (GICO[k] || '') : ''}${label}</span>${DONE ? '<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>' : ''}</h2>
-      ${!rows.length ? '' : k === 'sem' ? days(rows) : k === 'prog' ? pdays(rows) : table(rows, '', [], false, k === 'publiee', (k === 'prise_en_charge' || k === 'mes'))}${(k === 'avant' || (k === 'dem' && role() === 'client')) && CL?.more ? '<button type="button" class="ghost cmore">Voir plus</button>' : ''}</section>`;
+      ${!rows.length ? '' : table(rows, '', [], false, k === 'publiee', (k === 'prise_en_charge' || k === 'mes'))}${(k === 'avant' || (k === 'dem' && role() === 'client')) && CL?.more ? '<button type="button" class="ghost cmore">Voir plus</button>' : ''}</section>`;
     const shown = groups.filter(g => g[2].length || DONE || (std && (g[0] === 'prog' || g[0] === 'auj')));
     const COL = { mes: 0, dem: 0, publiee: 0, prise_en_charge: 1, auj: 2, prog: 2, resolue: 2 }; // Lot 332 : 3e colonne = Terminées aujourd'hui.
     if (PAGE && !shown.length) { box.innerHTML = '<p class="muted pempty">Aucune intervention pour le moment.</p>'; } else box.innerHTML = std ? `<div class="gcols">${[0, 1, 2].map(c => { const gs = shown.filter(g => COL[g[0]] === c), H = /<h2[\s\S]*?<\/h2>/; if (!gs.length) return '<div class="gcolw"><div class="gcol"></div></div>'; const s0 = sec(gs[0]); return `<div class="gcolw"><div class="gcol ghd"><section class="group" data-g="${gs[0][0]}">${s0.match(H)[0]}</section></div><div class="gcol">${s0.replace(H, '')}${gs.slice(1).map(sec).join('')}</div></div>`; }).join('')}</div>` : DONE && !document.body.classList.contains('tech') && VW() > 600 ? `<div class="gcols gdone">${['', '', 'avant'].map(k => `<div class="gcol">${shown.filter(g => g[0] === k).map(sec).join('')}</div>`).join('')}</div>` : shown.map(sec).join(''); // Lot 102 : terminées, défilement interne comme les colonnes.
@@ -315,7 +315,7 @@ async function load(f, searching, patch) {
     { const g = $('.gcol:not(.ghd)'); if (g) document.documentElement.style.setProperty('--gtop', Math.round(g.getBoundingClientRect().top + window.scrollY + 16) + 'px'); }
     $$('.gcol').forEach(c => stackSticky(c, '.group > h2', 0));
     // Lot 367 (FA 767) : mobile, icône de la page + compteur dans l'en-tête ; compteurs retirés de la page.
-    { const pc = document.querySelector('#top .pcnt'), on = document.body.classList.contains('tech') && !!PAGE && shown.length > 0; box.classList.toggle('hcnt', on); window.__pcnt = on ? (GICO[shown[0][0]] || '') + '<span class="pcn">' + shown.reduce((n, g) => n + g[2].length, 0) + '</span>' : ''; if (pc) pc.innerHTML = window.__pcnt; if (on && shown.length === 1) box.querySelector('.group')?.classList.remove('closed'); }
+    { const pc = document.querySelector('#top .pcnt'), on = document.body.classList.contains('tech') && !!PAGE && shown.length > 0; box.classList.toggle('hcnt', on); state.pcnt = on ? (GICO[shown[0][0]] || '') + '<span class="pcn">' + shown.reduce((n, g) => n + g[2].length, 0) + '</span>' : ''; if (pc) pc.innerHTML = state.pcnt; if (on && shown.length === 1) box.querySelector('.group')?.classList.remove('closed'); }
     { const st = document.body.classList.contains('tech') && PAGE === 'encours'; box.classList.toggle('stk2', st); if (st) stk2(box); } // Lot 281 : mobile, sous-titres de En cours collants et empilés.
     gsbars();
     $$('#rows .group h2[role=button]').forEach(h => (h.onclick = h.onkeydown = e => {
@@ -344,11 +344,11 @@ async function load(f, searching, patch) {
   // Lot 61 : vue standard, le détail se déplie sous sa carte (même largeur) au lieu d'ouvrir une page.
   const inl = !searching && role() !== 'client'; // Lot 165 : déploiement du détail dans la carte aussi en mobile.
   // Lot 71 : module du détail préchargé, données lancées dès l'appui (pointerdown).
-  const dmod = import('./detail.js?v=20261123155224');
+  const dmod = import('./detail.js?v=20261123193833');
   $$('#rows tr[data-id]').forEach(tr => tr.addEventListener('pointerdown', () => { if (role() !== 'client' && !tr.classList.contains('xopen')) dmod.then(m => m.prefetch(tr.dataset.id)); }));
   // Lot 225 : plus de préchargement en tâche de fond des fiches affichées ; fiche complète chargée à l'ouverture (appui ou clic).
   // Lot 384 : fiches des cartes visibles préchargées en tâche de fond (12 max, une à une), dépliage sans attente.
-  if (role() !== 'client') { const ids = $$('#rows tr[data-id]').filter(tr => tr.getBoundingClientRect().top < innerHeight * 2).slice(0, 12).map(tr => tr.dataset.id); const idle = window.requestIdleCallback || (f => setTimeout(f, 200)); clearTimeout(window.__pfT); const tk = window.__pfK = (window.__pfK || 0) + 1; window.__pfT = setTimeout(() => dmod.then(m => { const nx = () => { const id = ids.shift(); if (id && tk === window.__pfK) idle(() => Promise.resolve(m.prefetch(id, 60000)).then(nx)); }; nx(); }), 3000); } // Lot 391 : démarré 3 s après le dernier affichage, pour ne pas ralentir le chargement
+  if (role() !== 'client') { const ids = $$('#rows tr[data-id]').filter(tr => tr.getBoundingClientRect().top < innerHeight * 2).slice(0, 12).map(tr => tr.dataset.id); const idle = window.requestIdleCallback || (f => setTimeout(f, 200)); clearTimeout(pfT); const tk = ++pfK; pfT = setTimeout(() => dmod.then(m => { const nx = () => { const id = ids.shift(); if (id && tk === pfK) idle(() => Promise.resolve(m.prefetch(id, 60000)).then(nx)); }; nx(); }), 3000); } // Lot 391 : démarré 3 s après le dernier affichage, pour ne pas ralentir le chargement
   qaInit();
   $$('#rows .cmore').forEach(b => (b.onclick = () => closedMore(b))); // Lot 225
   if (document.body.classList.contains('tech')) { if (MY != null) { mscr().scrollTop = MY; MY = null; } if (!searching) MCACHE[PAGE || +DONE] = box.innerHTML; }
@@ -441,15 +441,13 @@ export function table(rows, hl = '', sf = [], pl = false, nv = false, ec = false
 }
 // Compte admin : nom du profil qui a pris l'intervention.
 const who = r => { const n = assigneeName(r); return r.assignee_role && Object.values(ROLE_NAMES).includes(n) ? ROLE_NAMES[r.assignee_role] : n; };
-let REP = {}, UNR = {}, TOT = {};
-// Lot 74 : bulle de discussion « … » avec pastille (non lus en rouge, sinon total des commentaires).
-const BUB = '<svg class="icm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><circle cx="8" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg><svg class="ics" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/><circle cx="8.5" cy="12" r=".6" fill="currentColor"/><circle cx="12" cy="12" r=".6" fill="currentColor"/><circle cx="15.5" cy="12" r=".6" fill="currentColor"/></svg>';
+let REP = {}, UNR = {}, TOT = {}, pfK = 0, pfT; // pfK/pfT : préchargement des fiches en cours
 const cnt = n => n > 99 ? '99+' : n;
 const chatIco = id => TOT[id] ? `<span class="cbub${UNR[id] ? ' unr' : ''}" aria-label="${UNR[id] ? UNR[id] + ' non lus' : TOT[id] + ' commentaires'}"><b>${cnt(UNR[id] || TOT[id])}</b></span>` : '';
 // Version J : signaleur en retrait (petit, en haut) ; dessous, décalée, le technicien en charge, « Nouveau », sinon le statut.
 function tag(r) {
   let main;
-  if (['prise_en_charge', 'resolue', 'validee'].includes(r.status) && r.assignee_id) main = `<span class="cwho cw-tech st-tag tk">${ico(r.assignee_role || mrole(r.assignee_id))}<span>${esc(who(r))}</span></span>`;
+  if (['prise_en_charge', 'resolue', 'validee'].includes(r.status) && r.assignee_id) main = `<span class="cwho cw-tech st-tag tk">${roleIco(r.assignee_role || memberRole(r.assignee_id))}<span>${esc(who(r))}</span></span>`;
   else if (r.status === 'publiee') main = `${r.proposed_to ? assTag(r.proposed_to) : ''}`;
   else main = statusPill(r.status);
   return main; // Lot 73 : commanditaire retiré des listes
@@ -459,80 +457,21 @@ const COMMON = ['réception', 'camp saisonnier', 'sanitaire 1', 'sanitaire 2', '
 function place(l, hl) {
   const v = String(l).trim(), m = v.match(/^(?:mobil[- ]?home|mh)?\s*(\d+)$/i);
   if (m) return `<span class="ltag stacked"><span class="mhpre">MH</span><span class="mhnum">${mark(n2(m[1]), hl)}</span></span>`;
-  return `<span class="ltag ptag"><svg class="pin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-4.8 7-11a7 7 0 1 0-14 0c0 6.2 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>${mark(v, hl)}</span>`;
+  return `<span class="ltag ptag">${PIN}${mark(v, hl)}</span>`;
 }
-const hm = d => { const x = new Date(d); return `${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`; };
-// « Aujourd'hui entre 10:00 et 11:00 », « Demain… », « Après-demain… », sinon la date.
-const PHONE = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>';
 // Lot 265 (FA 734) : icônes des sous-titres
 const GICO = {publiee: '<span class="gico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></svg></span>', prog: '<span class="gico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>', prise_en_charge: '<span class="gico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/></svg></span>', mes: '<span class="gico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/></svg></span>', auj: '<span class="gico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg></span>'};
 // Lot 300 (FA 737) : présence client requise = icône Lucide « hand » juste après le titre, avant l'appareil photo (style : .thand dans app.css).
 export const HANDI = '<span class="thand" aria-label="Présence client requise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></span>';
 const CAMI = ''; // Lot 407 : appareil photo retiré des cartes d'intervention
 let PHI = new Set();
-// Lot 53 : « Aujourd'hui / Demain / Hier entre 17 et 18 h », « Le 20 novembre entre … », plus ancien « Le 12 novembre ».
-const hh = d => { const x = new Date(d); return x.getMinutes() ? `${x.getHours()} h ${String(x.getMinutes()).padStart(2, '0')}` : `${x.getHours()}`; };
-export const slotTxt = r => slot(r);
-// Lot 263 (FA 730) : fin d'affichage = fin enregistrée, sinon début + 15 min (données anciennes sans fin ; la base n'est pas modifiée).
-const endOf = r => r.available_until || new Date(new Date(r.available_from).getTime() + 9e5).toISOString();
-const slot = r => {
-  const f = new Date(r.available_from), t0 = new Date(); t0.setHours(0, 0, 0, 0);
-  const n = Math.round((new Date(f).setHours(0, 0, 0, 0) - t0) / 864e5);
-  const le = `${f.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`;
-  if (n < -1) return le;
-  const day = { '-1': 'Hier', 0: 'Aujourd\'hui', 1: 'Demain' }[n] || le;
-  const a = hh(f), b = hh(endOf(r));
-  const H = x => /h/.test(x) ? x : `${x} h`;
-  return /h/.test(a) || /h/.test(b) ? `${day} entre ${H(a)} et ${H(b)}` : `${day} entre ${a} et ${b} h`;
-};
-// Lot 330 : créneau carte, heures compactes (21h15-21h30) pour tenir sur une ligne avec « Présence client ».
-const slotCard = r => {
-  const f = new Date(r.available_from), t0 = new Date(); t0.setHours(0, 0, 0, 0);
-  const n = Math.round((new Date(f).setHours(0, 0, 0, 0) - t0) / 864e5);
-  const le = `${f.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`;
-  if (n < -1) return le;
-  const day = { '-1': 'Hier', 0: 'Aujourd\'hui', 1: 'Demain' }[n] || le;
-  return `${day} ${hfr(f)}-${hfr(endOf(r))}`;
-};
-// Lot 54 : programmée dont le jour n'est pas encore arrivé → « Interventions programmées ».
-const day0 = d => new Date(d).setHours(0, 0, 0, 0);
 // Lot 61 : toute intervention programmée non prise va dans « Interventions programmées » ; celles du jour en tête.
 const sched = r => r.status === 'publiee' && !!r.available_from;
-const future = r => r.status === 'publiee' && !!r.available_from && day0(r.available_from) > Date.now();
 // Arrivée en haut de pile : création, puis (programmées) jour J, H-1 et H-30 min.
 const arrival = r => { const c = new Date(r.created_at).getTime(); if (!r.available_from) return c; const f = new Date(r.available_from).getTime(), n = Date.now(); return Math.max(c, ...[day0(f), f - 36e5, f - 18e5].filter(t => t <= n)); };
 const byArrival = (a, b) => arrival(b) - arrival(a);
 const prio = r => r.priority;
-// Trois points : une description a été saisie au signalement.
-const DOTS = ' <svg class="dots" width="18" height="6" viewBox="0 0 18 6" aria-label="Description"><circle cx="3" cy="3" r="2"/><circle cx="9" cy="3" r="2"/><circle cx="15" cy="3" r="2"/></svg>';
-const ROLE_OF = id => (state.members || []).find(x => x.user_id === id)?.role;
-const mrole = id => (state.members || []).find(x => x.user_id === id)?.role;
-const ico = ro => roleKind(ro) === 'tech' ? WRENCH : BRIEFCASE;
-const assTag = id => `<span class="cwho">${ico(mrole(id))}<span>${esc(memberName(id))}</span></span>`;
-const firstName = n => String(n || '').split(/[\s@]/)[0];
 
-// Lot 201 : planifiées regroupées par jour, horaire en tête de carte.
-const p2h = d => { const x = new Date(d); return `${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`; };
-const pslot = r => { const f = new Date(r.available_from); if (!f.getHours() && !f.getMinutes() && !r.available_until) return 'Dans la journée'; return `${p2h(f)} – ${p2h(endOf(r))}`; };
-// Lot 219 : planifiée prise par un technicien → date / horaire en tête de carte, comme les planifiées nouvelles.
-const tslot = r => r.status === 'prise_en_charge' && !!r.available_from;
-// Lot 220 : en tête de carte, jour relatif + créneau (« Aujourd'hui 9h - 11h », début seul « Demain 9h15 »), sans « entre » ni « Dès ».
-const hfr = d => { const x = new Date(d), m = x.getMinutes(); return `${x.getHours()}h${m ? String(m).padStart(2, '0') : ''}`; };
-const rday = f => { const n = Math.round((day0(f) - day0(Date.now())) / 864e5); return { '-2': 'Avant-hier', '-1': 'Hier', 0: 'Aujourd\'hui', 1: 'Demain', 2: 'Après-demain' }[n] || `${new Date(f).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`; };
-// Lot 222 : début seul précédé de « Dès » — Lot 263 (FA 730) : supprimé, toujours début - fin (fin = début + 15 min si absente).
-export const pslotR = r => { const f = new Date(r.available_from), d = rday(f); if (!f.getHours() && !f.getMinutes() && !r.available_until) return `${d} dans la journée`; return `${d} <strong>${hfr(f)} - ${hfr(endOf(r))}</strong>`; }; // Lot 280 (FA 738) : format et style de la date de signalement, seule l'heure en gras. // Lot 224 : heure à la taille, couleur et graisse de la date, sans horloge.
-const pslotD = r => { const f = new Date(r.available_from), n = Math.round((day0(f) - day0(Date.now())) / 864e5); const d = { '-1': 'Hier', 0: 'Aujourd\'hui', 1: 'Demain' }[n] || `${f.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`; if (n < -1) return d; const t = pslot(r); return t === 'Dans la journée' ? d : `${d} · ${t}`; };
-function pdays(rows) {
-  const by = new Map(), t0 = day0(Date.now());
-  [...rows].sort((a, b) => new Date(a.available_from) - new Date(b.available_from)).forEach(r => { const k = day0(r.available_from); if (!by.has(k)) by.set(k, []); by.get(k).push(r); });
-  return [...by.entries()].map(([k, rs]) => { const d = new Date(k), n = Math.round((k - t0) / 864e5); const w = d.toLocaleDateString('fr-FR', { weekday: 'long' }); const lab = { '-1': 'Hier', 0: 'Aujourd\'hui', 1: 'Demain' }[n] || w[0].toUpperCase() + w.slice(1); const dt = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }); return `<h3 class="pday"><span>${lab}</span><em>${dt}</em></h3>${table(rs, '', [], true)}`; }).join('');
-}
-// Lot 114 : sous-catégories par jour dans « Terminées cette semaine ».
-function days(rows) {
-  const fin = r => new Date(r.resolved_at || r.validated_at || r.updated_at), by = new Map();
-  rows.forEach(r => { const d = fin(r), k = d.toDateString(); if (!by.has(k)) by.set(k, [d, []]); by.get(k)[1].push(r); });
-  return [...by.values()].map(([d, rs]) => { const l = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }); return `<h3 class="gday">${l[0].toUpperCase() + l.slice(1)}</h3>${table(rs)}`; }).join('');
-}
 
 // Lot 76 : barre de défilement fine, dessinée par l'appli (toujours visible quand la colonne déborde, même sur iPad).
 function gsbars() {
@@ -603,7 +542,7 @@ const qRun = async (id, a, quiet) => {
   const { error } = a === 'demander' ? await sb.rpc('request_transfer', { p_id: id }) : await sb.rpc('transition', { p_id: id, p_action: a, p_comment: '' });
   if (error) return toast(errMsg(error), true);
   // Lot 111 : « Intervention terminée » animée aussi depuis les étiquettes de la carte.
-  if (a === 'resoudre') return (await import('./detail.js?v=20261123155224')).doneScreen('Intervention terminée', render);
+  if (a === 'resoudre') return (await import('./detail.js?v=20261123193833')).doneScreen('Intervention terminée', render);
   if (!quiet && a !== 'prendre') toast(ACTMSG(a)); render(); // Lot 116 : prise par appui long sans message.
 };
 function qaInit() { // Lot 132 : appui long sur toute la carte (vue mobile, réelle et simulée).

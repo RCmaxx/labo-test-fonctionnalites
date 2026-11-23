@@ -1,9 +1,9 @@
-import { sb } from '../sb.js?v=20261123155224';
-import { state, role, isManager, isRealAdmin, memberName, assigneeName, ROLE_NAMES, compactName, roleKind, PNAME } from '../state.js?v=20261123155224';
-import { $, $$, esc, toast, errMsg, busy, statusPill, fmtDate, fmtDateTime, PRIORITY, EVENTS, cef, initCef, fmtAgo, CLOCK, confirmBox, WRENCH, BRIEFCASE, zoomImg, sbar, n2, ACTMSG, pcolor, isDone } from '../ui.js?v=20261123155224';
-import { uploadPhotos, signedUrls, photoTray } from '../photos.js?v=20261123155224';
-import { go, render } from '../app.js?v=20261123155224';
-import { lockedByOther, peekLock } from '../lock.js?v=20261123155224';
+import { sb } from '../sb.js?v=20261123193833';
+import { state, role, isManager, isRealAdmin, memberName, assigneeName, compactName, roleKind, PNAME, roleIco, assTag } from '../state.js?v=20261123193833';
+import { $, $$, esc, toast, errMsg, busy, statusPill, PRIORITY, EVENTS, initCef, fmtAgo, confirmBox, WRENCH, BRIEFCASE, zoomImg, hm, sbar, n2, ACTMSG, pcolor, isDone } from '../ui.js?v=20261123193833';
+import { uploadPhotos, signedUrls, photoTray } from '../photos.js?v=20261123193833';
+import { go, render } from '../app.js?v=20261123193833';
+import { lockedByOther, peekLock } from '../lock.js?v=20261123193833';
 
 // Lot 71 : chargement lancé dès l'appui sur la carte (avant le clic), consommé une seule fois.
 const PRE = new Map();
@@ -79,8 +79,6 @@ export async function view(app, { id, inline = false }) {
   // Client (sans tchat) : les photos restent en carrousel dans le détail.
   const phList = noChat ? (photos || []).filter(p => urls[p.path]) : [];
   const photosHtml = phList.length ? `<div class="phc-w"><div class="phc">${phList.map(p => `<div class="phs"><a href="${urls[p.path]}" target="_blank" rel="noopener"><img src="${urls[p.path]}" alt="Photo"></a></div>`).join('')}</div>${phList.length > 3 ? `<button type="button" class="phc-a phc-p" aria-label="Photo précédente" hidden>‹</button><button type="button" class="phc-a phc-n" aria-label="Photo suivante">›</button>` : ''}${phList.length > 1 ? `<span class="phc-i">Photo ${Math.min(3, phList.length)}/${phList.length}</span>` : ''}</div>` : '';
-  const STATUS_L = { prise_en_charge: 'En cours', resolue: 'Terminée', validee: 'Clôturée', brouillon: 'Brouillon' };
-  const editBtn = canEdit ? `<a class="btn ghost ibtn" href="#/intervention/${it.id}/modifier" aria-label="Modifier" title="Modifier"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></a>` : '';
   let lastDay = '';
   // Lot 77 : photos envoyées ensemble (même auteur, moins de 2 min d'écart) regroupées en une série sur une ligne.
   // Description affichée en premier message du tchat (toutes les interventions, anciennes comprises).
@@ -106,7 +104,6 @@ export async function view(app, { id, inline = false }) {
       </div>`;
   const dactHtml = actions.length || canEdit || mgr ? `<div class="dact"><div class="actions solo">${canEdit ? `<a class="btn ghost" href="#/intervention/${it.id}/modifier" data-edit="${it.id}" aria-label="Modifier l'intervention"${lkO ? ' aria-disabled="true" tabindex="-1"' : ''}>Modifier</a>` : ''}${actions.map(([a, l, c]) => `<button class="${c}" data-act="${a}"${a === 'liberer' ? ' aria-label="Ne plus prendre l\'intervention" title="Ne plus prendre l\'intervention"' : ''}>${l}</button>`).join('')}${mgr ? '<button class="ghost danger" id="del" aria-label="Supprimer l\'intervention">Supprimer</button>' : ''}</div></div>` : '';
   const bg = `dbg-${it.status}`;
-  const summary = [it.location ? locTag(it.location) : '', it.assignee_id ? assigneeName(it) : '', it.status === 'publiee' ? 'Nouveau' : (STATUS_L[it.status] || '')].filter(Boolean).join(' · ');
   app.innerHTML = `
     <div class="page dpage${noChat ? '' : ' dmob'}">
       <div class="dfix ${bg}">
@@ -250,16 +247,14 @@ export function doneScreen(msg, after) {
   setTimeout(() => { o.remove(); after ? after() : go(''); }, 800);
 }
 const CWI = {
-  tech: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+  tech: WRENCH,
   cli: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>',
-  rec: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+  rec: BRIEFCASE,
 };
 
 const CAM = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M9.2 4.5h5.6l1.5 2.2H19a2.5 2.5 0 0 1 2.5 2.5v8.3A2.5 2.5 0 0 1 19 20H5a2.5 2.5 0 0 1-2.5-2.5V9.2A2.5 2.5 0 0 1 5 6.7h2.7zM12 9.6a3.6 3.6 0 1 0 0 7.2a3.6 3.6 0 1 0 0-7.2z"/><circle cx="12" cy="13.2" r="2.1" fill="currentColor"/></svg>'; // Lot 280 (FA 735) : même dessin que l'icône photo des cartes.
 // Lieu court : « MH 12 » pour un mobil-home, sinon le lieu tel quel.
 const locTag = l => { const m = String(l).trim().match(/^(?:mobil[- ]?home|mh)?\s*(\d+)$/i); return m ? 'MH ' + n2(m[1]) : String(l).trim(); };
-// Personne assignée (pas encore acceptée) : son étiquette nom/fonction.
-const assTag = id => { const m = (state.members || []).find(x => x.user_id === id); return `<span class="cwho">${['technicien', 'responsable_tech'].includes(m?.role) ? WRENCH : BRIEFCASE}<span>${esc(memberName(id))}</span></span>`; };
 // Clôture d'une intervention non prise : qui l'a faite (membre, ou « Autres » + nom), ou suppression.
 function closeChooser(id, doDelete) {
   const ms = (state.members || []).filter(m => ['technicien', 'responsable_tech'].includes(m.role));
@@ -293,13 +288,10 @@ function closeChooser(id, doDelete) {
     });
   };
 }
-const firstName = n => String(n || '').split(/[\s@]/)[0];
 
 // Étiquette = auteur de l'action (orange/clé : tech ; bleu : réception) ; l'action en gris dessous.
 // Tchat : message en bulle, les miens à droite, ceux des autres à gauche (étiquette nom au-dessus).
 const UNTAKE = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 4 1.5"/><path d="M16 19h6"/></svg>';
-const hm = d => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-const dhm = d => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) + ' ' + hm(d);
 function dayLbl(d) { const x = new Date(d), t = new Date(); const k = v => v.toDateString(); if (k(x) === k(t)) return 'Aujourd\'hui'; t.setDate(t.getDate() - 1); if (k(x) === k(t)) return 'Hier'; return x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }); }
 // Tchat : événements en ligne centrée grise, messages en bulles (les miens à droite, en noir).
 // Rôle d'un prénom affiché (destinataire d'un transfert) : membre réel, sinon profil de l'admin.
@@ -311,7 +303,7 @@ function roleOfName(n) {
 const pc = n => pcolor(n, state.members || [], PNAME);
 const pav = (n, w, c = 'pav') => { const k = pc(n); return `<span class="${c}" style="background:${k.bg};color:${k.fg}" aria-hidden="true">${CWI[w] || ''}</span>`; };
 // Lot 385 (FA 786) : prénom en étiquette grise avec icône (clé : technicien ; attaché-case : direction, réception).
-const pnm = (n, t, r) => `<span class="pnm"><b>${roleKind(r) === 'tech' ? WRENCH : BRIEFCASE}${esc(compactName(n || '—'))}</b><span>${t}</span></span>`;
+const pnm = (n, t, r) => `<span class="pnm"><b>${roleIco(r)}${esc(compactName(n || '—'))}</b><span>${t}</span></span>`;
 // Lot 222 (L1) : ligne automatique = heure en colonne (.tm) + texte (.tx) ; même texte, même ordre.
 const sy = (cls, t, tx) => `<div class="sysl${cls}"><span class="tm">${t}</span><span class="tx">${tx}</span></div>`;
 function phMsg(g, own, urls) {

@@ -1,10 +1,10 @@
-import { sb } from '../sb.js?v=20261123155224';
-import { state, isManager, isRealAdmin, role, memberName } from '../state.js?v=20261123155224';
-import { $, esc, toast, errMsg, busy, formData, confirmBox, PRIORITY, cef, initCef, sbar, WRENCH, BRIEFCASE, padMH, CLOCK, fmtAgo } from '../ui.js?v=20261123155224';
-import { uploadPhotos, photoTray } from '../photos.js?v=20261123155224';
-import { slotTxt, table, pslotR } from './list.js?v=20261123155224';
-import { go } from '../app.js?v=20261123155224';
-import { takeLock } from '../lock.js?v=20261123155224';
+import { sb } from '../sb.js?v=20261123193833';
+import { state, isManager, isRealAdmin, role, memberName } from '../state.js?v=20261123193833';
+import { $, esc, toast, errMsg, busy, formData, confirmBox, PRIORITY, cef, initCef, sbar, WRENCH, BRIEFCASE, padMH, CLOCK, slot as slotTxt, pslotR, PIN } from '../ui.js?v=20261123193833';
+import { uploadPhotos, photoTray } from '../photos.js?v=20261123193833';
+import { table } from './list.js?v=20261123193833';
+import { go } from '../app.js?v=20261123193833';
+import { takeLock } from '../lock.js?v=20261123193833';
 
 // Création / modification d'une intervention (gestionnaires).
 export async function view(app, { id }) {
@@ -313,10 +313,9 @@ export async function view(app, { id }) {
   const loc = $('#f [data-name=location]'), ul = $('#f .ac-list');
   // Lieu choisi : affiché en étiquette dans le champ (hors saisie).
   // Lot 220 : suggestions au style des étiquettes de lieu (épingle masquée en mobile).
-  const LPIN = '<svg class="pin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-4.8 7-11a7 7 0 1 0-14 0c0 6.2 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
   // Lot 222 : lieu choisi et suggestions = étiquette de lieu de la carte (badge MH empilé pour les mobil-homes) ; le texte inséré reste le libellé.
   const mhN = v => (String(v).trim().match(/^(?:mh|mobil[- ]?home)?\s*(\d+)$/i) || [])[1];
-  const tagIn = v => { const n = mhN(v); return n ? `<span class="mhpre">MH</span><span class="mhnum">${esc(String(n).padStart(2, '0'))}</span>` : `${LPIN}<span class="ltx">${esc(v)}</span>`; };
+  const tagIn = v => { const n = mhN(v); return n ? `<span class="mhpre">MH</span><span class="mhnum">${esc(String(n).padStart(2, '0'))}</span>` : `${PIN}<span class="ltx">${esc(v)}</span>`; };
   const liH = l => `<li role="option" class="${mhN(l) ? 'lmh stacked' : 'lpt'}" data-v="${esc(l)}">${tagIn(l)}</li>`;
   const ltag = document.createElement('span'); ltag.className = 'ltag loc-tag'; loc.after(ltag);
   // Lot 118.2 : le lieu choisi n'est plus éditable au toucher ; une petite croix le retire.
@@ -409,9 +408,9 @@ export async function view(app, { id }) {
            const k = Math.max(0, fit - tray.children.length); [...ps.children].forEach((x, i) => x.style.setProperty('display', i < k ? 'flex' : 'none', 'important')); ps.style.setProperty('display', k ? 'flex' : 'none', 'important'); };
          L.__lay = lay; new ResizeObserver(lay).observe(L); new MutationObserver(lay).observe(tray, { childList: true }); requestAnimationFrame(lay); } } } }
   if (DK) { const f = $('#f'), MSG = 'Attention, actualiser la page fera perdre le contenu en cours de création';
-    const save = () => { if (window.__giReload || !document.contains(f) || snap0 === null) return; if (snap() !== snap0) sessionStorage.setItem('gi:nwlost', '1'); else sessionStorage.removeItem('gi:nwlost'); };
+    const save = () => { if (!document.contains(f) || snap0 === null) return; if (snap() !== snap0) sessionStorage.setItem('gi:nwlost', '1'); else sessionStorage.removeItem('gi:nwlost'); };
     let tm; const later = () => { clearTimeout(tm); tm = setTimeout(save, 250); }; f.addEventListener('input', later); f.addEventListener('change', later);
-        const bu = e => { if (window.__giReload) return; if (!document.contains(f)) { removeEventListener('beforeunload', bu); removeEventListener('pagehide', save); return; } save(); if ((navigator.maxTouchPoints > 1 && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent))) return; /* Lot 129.1 : Safari iPad/iPhone annule l'actualisation sans afficher de message ; on la laisse passer (toast au retour). */ if (snap0 !== null && snap() !== snap0) { e.preventDefault(); e.returnValue = MSG; return MSG; } };
+        const bu = e => { if (!document.contains(f)) { removeEventListener('beforeunload', bu); removeEventListener('pagehide', save); return; } save(); if ((navigator.maxTouchPoints > 1 && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent))) return; /* Lot 129.1 : Safari iPad/iPhone annule l'actualisation sans afficher de message ; on la laisse passer (toast au retour). */ if (snap0 !== null && snap() !== snap0) { e.preventDefault(); e.returnValue = MSG; return MSG; } };
     addEventListener('beforeunload', bu); addEventListener('pagehide', save); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); }); }
   { const f = $('#f'), pb = f.querySelector('button[value=publier]'); let st = 1;
     const ok1 = d => (d.title || '').trim() && (d.location || '').trim(); // Lot 129 : priorité facultative.

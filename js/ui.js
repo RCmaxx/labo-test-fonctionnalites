@@ -65,6 +65,8 @@ export const EVENTS = {
   reactivee: 'L’intervention n’est plus clôturée',
 };
 
+// Heure « 09:05 ».
+export const hm = d => { const x = new Date(d); return `${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`; };
 const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 export function fmtDate(d) {
   if (!d) return '';
@@ -74,14 +76,14 @@ export function fmtDate(d) {
 export function fmtDateTime(d) {
   if (!d) return '';
   const x = new Date(d);
-  return `${x.getDate()} ${MONTHS[x.getMonth()]} · ${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`;
+  return `${x.getDate()} ${MONTHS[x.getMonth()]} · ${hm(x)}`;
 }
 // Date de création : « Aujourd'hui / Hier / Avant-hier à HH:MM », puis la date seule.
 export function fmtCreated(d) {
   if (!d) return '';
   const x = new Date(d), t = new Date(); t.setHours(0, 0, 0, 0);
   const x0 = new Date(x); x0.setHours(0, 0, 0, 0);
-  const n = Math.round((t - x0) / 86400000), h = `${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`;
+  const n = Math.round((t - x0) / 86400000), h = hm(x);
   return n === 0 ? `Aujourd'hui à ${h}` : n === 1 ? `Hier à ${h}` : n === 2 ? `Avant-hier à ${h}` : `${x.getDate()} ${x.toLocaleDateString('fr-FR', { month: 'long' })}${x.getFullYear() !== t.getFullYear() ? ' ' + x.getFullYear() : ''}`; // Lot 106 : mois en toutes lettres.
 }
 // Chronologie : « il y a X minutes / heures » le jour même, « Hier à HH:MM », sinon date et heure.
@@ -92,9 +94,32 @@ function fmtAgo0(d) {
   const x0 = new Date(x); x0.setHours(0, 0, 0, 0);
   const n = Math.round((t - x0) / 864e5), m = Math.max(0, Math.floor((now - x) / 6e4));
   if (n === 0) { if (m < 1) return 'À l\'instant'; if (m < 60) return `il y a ${m} minute${m > 1 ? 's' : ''}`; const h = Math.floor(m / 60); return `il y a ${h} heure${h > 1 ? 's' : ''}`; }
-  if (n === 1) return `Hier à ${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`;
+  if (n === 1) return `Hier à ${hm(x)}`;
   return fmtDateTime(d);
 }
+// Créneaux (available_from / available_until).
+export const day0 = d => new Date(d).setHours(0, 0, 0, 0);
+const dayN = d => Math.round((day0(d) - day0(Date.now())) / 864e5);
+const dayLong = d => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+// Lot 263 (FA 730) : fin d'affichage = fin enregistrée, sinon début + 15 min (données anciennes sans fin ; la base n'est pas modifiée).
+const endOf = r => r.available_until || new Date(new Date(r.available_from).getTime() + 9e5).toISOString();
+const hh = d => { const x = new Date(d); return x.getMinutes() ? `${x.getHours()} h ${String(x.getMinutes()).padStart(2, '0')}` : `${x.getHours()}`; };
+const hfr = d => { const x = new Date(d), m = x.getMinutes(); return `${x.getHours()}h${m ? String(m).padStart(2, '0') : ''}`; };
+// Lot 53 : « Aujourd'hui / Demain / Hier entre 17 et 18 h », « 20 novembre entre … », plus ancien « 12 novembre ».
+export const slot = r => {
+  const f = new Date(r.available_from), n = dayN(f);
+  if (n < -1) return dayLong(f);
+  const day = { '-1': 'Hier', 0: 'Aujourd\'hui', 1: 'Demain' }[n] || dayLong(f);
+  const a = hh(f), b = hh(endOf(r));
+  const H = x => /h/.test(x) ? x : `${x} h`;
+  return /h/.test(a) || /h/.test(b) ? `${day} entre ${H(a)} et ${H(b)}` : `${day} entre ${a} et ${b} h`;
+};
+// Lot 280 (FA 738) : jour relatif + créneau, seule l'heure en gras (« Aujourd'hui <strong>9h - 11h</strong> »).
+export const pslotR = r => {
+  const f = new Date(r.available_from), d = { '-2': 'Avant-hier', '-1': 'Hier', 0: 'Aujourd\'hui', 1: 'Demain', 2: 'Après-demain' }[dayN(f)] || dayLong(f);
+  if (!f.getHours() && !f.getMinutes() && !r.available_until) return `${d} dans la journée`;
+  return `${d} <strong>${hfr(f)} - ${hfr(endOf(r))}</strong>`;
+};
 export const CLOCK = '<svg class="clk" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Intervention programmée"><circle cx="12" cy="12" r="9" fill="#fff"/><path d="M12 7v5l3 2"/></svg>';
 
 export const statusPill = s => `<span class="pill st-${s}">${STATUS[s] || s}</span>`;
@@ -156,6 +181,7 @@ export function initCef(root = document) {
 
 // Clé à molette des étiquettes technicien (orange).
 export const WRENCH = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
+export const PIN = '<svg class="pin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-4.8 7-11a7 7 0 1 0-14 0c0 6.2 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
 export const BRIEFCASE = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>';
 
 // Couleur propre à chaque profil (cercle de fonction du tchat) : rang du prénom dans l'équipe (ordre d'arrivée), jamais deux fois la même jusqu'à 14 membres.

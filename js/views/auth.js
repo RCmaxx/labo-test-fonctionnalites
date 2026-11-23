@@ -1,7 +1,7 @@
-import { sb, APP_URL } from '../sb.js?v=20261123155224';
-import { state, loadMember } from '../state.js?v=20261123155224';
-import { $, esc, toast, errMsg, busy, formData, ROLES } from '../ui.js?v=20261123155224';
-import { go, render } from '../app.js?v=20261123155224';
+import { sb, APP_URL } from '../sb.js?v=20261123193833';
+import { state, loadMember } from '../state.js?v=20261123193833';
+import { $, esc, toast, errMsg, busy, formData, ROLES } from '../ui.js?v=20261123193833';
+import { go } from '../app.js?v=20261123193833';
 
 const card = (title, body, foot = '') => `
   <section class="auth">

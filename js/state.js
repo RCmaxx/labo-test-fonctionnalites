@@ -1,4 +1,5 @@
-import { sb } from './sb.js?v=20261123155224';
+import { sb } from './sb.js?v=20261123193833';
+import { esc, WRENCH, BRIEFCASE } from './ui.js?v=20261123193833';
 
 // État de session partagé entre les vues.
 export const state = {
@@ -7,6 +8,8 @@ export const state = {
   member: null, // { user_id, org_id, role, acting_role, full_name, email }
   org: null,
   members: [], // membres de l'entreprise (pour les noms)
+  pcnt: '', // compteur de la page affiché dans la barre du haut (mobile)
+  fnav: null, // défilement à restaurer après un changement d'onglet (barre du bas)
 };
 
 // Rôle effectif (un admin peut simuler un autre rôle).
@@ -52,3 +55,7 @@ export const memberName = (id, as) => {
   if (m.role === 'admin') return PNAME[as || m.acting_role || 'admin'];
   return compactName(m.full_name || m.email);
 };
+export const memberRole = id => state.members.find(x => x.user_id === id)?.role;
+export const roleIco = r => roleKind(r) === 'tech' ? WRENCH : BRIEFCASE;
+// Étiquette nom + fonction d'un membre.
+export const assTag = id => `<span class="cwho">${roleIco(memberRole(id))}<span>${esc(memberName(id))}</span></span>`;

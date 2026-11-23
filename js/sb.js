@@ -1,5 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_URL, SUPABASE_KEY } from './config.js?v=20261123155224';
+import { SUPABASE_URL, SUPABASE_KEY } from './config.js?v=20261123193833';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { flowType: 'pkce', persistSession: true, detectSessionInUrl: true },

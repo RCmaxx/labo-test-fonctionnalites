@@ -1,8 +1,8 @@
 // Lot 223 : verrou d'édition. Pendant qu'un utilisateur modifie une intervention, « Modifier » est grisé
 // pour les autres (détail, rouage, appui long). Le verrou expire seul après 2 min sans renouvellement.
-import { sb } from './sb.js?v=20261123155224';
-import { SUPABASE_URL, SUPABASE_KEY } from './config.js?v=20261123155224';
-import { state } from './state.js?v=20261123155224';
+import { sb } from './sb.js?v=20261123193833';
+import { SUPABASE_URL, SUPABASE_KEY } from './config.js?v=20261123193833';
+import { state } from './state.js?v=20261123193833';
 
 const LOCKS = new Map(); // id → { by, name, until (ms, horloge locale) }
 const fresh = (l, s) => ({ by: l.editing_by, name: l.editing_name || '', until: Date.now() + (s ?? l.secs_left) * 1000 });
@@ -49,7 +49,6 @@ export function releaseLock(beacon) {
   if (beacon && token) { try { fetch(`${SUPABASE_URL}/rest/v1/rpc/edit_lock`, { method: 'POST', keepalive: true, headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_id: id, p_action: 'release' }) }); } catch {} return; }
   sb.rpc('edit_lock', { p_id: id, p_action: 'release' }).then(() => {});
 }
-export const heldLock = () => cur;
 // Fermeture ou rechargement de la page : libération immédiate.
 addEventListener('pagehide', () => releaseLock(true));
 // Sortie du formulaire d'édition (retour, annulation, enregistrement, autre écran) : libération.
