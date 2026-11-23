@@ -1,6 +1,6 @@
-import { sb } from './sb.js?v=20261123215401';
-import { S, app, esc, fmt, options, rerender, ACCOUNTS, ROLES, VERSION } from './state.js?v=20261123215401';
-import { stopLive } from './live.js?v=20261123215401';
+import { sb } from './sb.js?v=20261123215548';
+import { S, app, esc, fmt, options, rerender, ACCOUNTS, ROLES, VERSION } from './state.js?v=20261123215548';
+import { stopLive } from './live.js?v=20261123215548';
 
 export function renderLogin(error = '', intro = '') {
   app.innerHTML = `<div class="auth">${intro}

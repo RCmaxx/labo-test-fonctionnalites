@@ -21,15 +21,16 @@
 .card__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); font-size: var(--fs-s); color: var(--ink-2); }
 .card__meta time { margin-left: auto; font-weight: var(--fw-meta); }
 
-/* Étiquette : base neutre ; les variantes ne changent que les deux couleurs. */
+/* Étiquette : base neutre ; les variantes ne changent que les deux couleurs.
+   Couleurs de priorité : source unique, partagée avec les choix du formulaire (.choice). */
 .tag {
   --tag-bg: var(--neutral-bg); --tag-fg: var(--neutral-sub);
   display: inline-flex; align-items: center; padding: 3px var(--s2); border-radius: var(--r-pill);
   background: var(--tag-bg); color: var(--tag-fg); font-size: var(--fs-s); font-weight: var(--fw-meta); white-space: nowrap;
 }
-.tag--haute, .tag--urgente { --tag-bg: var(--prio-haute-bg); --tag-fg: var(--prio-haute-fg); }
-.tag--normale { --tag-bg: var(--prio-normale-bg); --tag-fg: var(--prio-normale-fg); }
-.tag--basse { --tag-bg: var(--prio-basse-bg); --tag-fg: var(--prio-basse-fg); }
+.tag--haute, .tag--urgente, .choice--haute, .choice--urgente { --tag-bg: var(--prio-haute-bg); --tag-fg: var(--prio-haute-fg); }
+.tag--normale, .choice--normale { --tag-bg: var(--prio-normale-bg); --tag-fg: var(--prio-normale-fg); }
+.tag--basse, .choice--basse { --tag-bg: var(--prio-basse-bg); --tag-fg: var(--prio-basse-fg); }
 .tag--tech { --tag-bg: var(--tech-bg); --tag-fg: var(--tech-fg); }
 
 .badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--r-pill); background: var(--danger); color: var(--surface); font-size: var(--fs-s); font-weight: var(--fw-title); display: inline-grid; place-items: center; }
