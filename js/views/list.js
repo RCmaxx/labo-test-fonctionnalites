@@ -1,9 +1,9 @@
-import { sb } from '../sb.js?v=20261123193833';
-import { state, assigneeName, isManager, isRealAdmin, role, ROLE_NAMES, compactName, memberRole, roleIco, assTag } from '../state.js?v=20261123193833';
-import { $, $$, esc, errMsg, statusPill, fmtCreated, fmtAgo, fmtDate, STATUS, ROLES, confirmBox, toast, n2, stackSticky, ACTMSG, isDone, DONE_STATUSES, PIN, day0 } from '../ui.js?v=20261123193833';
-import { go, render } from '../app.js?v=20261123193833';
-import * as form from './form.js?v=20261123193833';
-import { lockedByOther, loadLocks } from '../lock.js?v=20261123193833';
+import { sb } from '../sb.js?v=20261123201223';
+import { state, assigneeName, isManager, isRealAdmin, role, ROLE_NAMES, compactName, memberRole, roleIco, assTag } from '../state.js?v=20261123201223';
+import { $, $$, esc, errMsg, statusPill, fmtCreated, fmtAgo, fmtDate, STATUS, ROLES, confirmBox, toast, n2, stackSticky, ACTMSG, isDone, DONE_STATUSES, PIN, day0 } from '../ui.js?v=20261123201223';
+import { go, render } from '../app.js?v=20261123201223';
+import * as form from './form.js?v=20261123201223';
+import { lockedByOther, loadLocks } from '../lock.js?v=20261123201223';
 
 // Liste unique (lot 13) : mes interventions, signalées, prises par les autres, brouillons, puis terminées repliées.
 const STATUSES = ['publiee', 'prise_en_charge']; // Lot 225 : la requête de liste exclut les clôturées.
@@ -344,7 +344,7 @@ async function load(f, searching, patch) {
   // Lot 61 : vue standard, le détail se déplie sous sa carte (même largeur) au lieu d'ouvrir une page.
   const inl = !searching && role() !== 'client'; // Lot 165 : déploiement du détail dans la carte aussi en mobile.
   // Lot 71 : module du détail préchargé, données lancées dès l'appui (pointerdown).
-  const dmod = import('./detail.js?v=20261123193833');
+  const dmod = import('./detail.js?v=20261123201223');
   $$('#rows tr[data-id]').forEach(tr => tr.addEventListener('pointerdown', () => { if (role() !== 'client' && !tr.classList.contains('xopen')) dmod.then(m => m.prefetch(tr.dataset.id)); }));
   // Lot 225 : plus de préchargement en tâche de fond des fiches affichées ; fiche complète chargée à l'ouverture (appui ou clic).
   // Lot 384 : fiches des cartes visibles préchargées en tâche de fond (12 max, une à une), dépliage sans attente.
@@ -542,7 +542,7 @@ const qRun = async (id, a, quiet) => {
   const { error } = a === 'demander' ? await sb.rpc('request_transfer', { p_id: id }) : await sb.rpc('transition', { p_id: id, p_action: a, p_comment: '' });
   if (error) return toast(errMsg(error), true);
   // Lot 111 : « Intervention terminée » animée aussi depuis les étiquettes de la carte.
-  if (a === 'resoudre') return (await import('./detail.js?v=20261123193833')).doneScreen('Intervention terminée', render);
+  if (a === 'resoudre') return (await import('./detail.js?v=20261123201223')).doneScreen('Intervention terminée', render);
   if (!quiet && a !== 'prendre') toast(ACTMSG(a)); render(); // Lot 116 : prise par appui long sans message.
 };
 function qaInit() { // Lot 132 : appui long sur toute la carte (vue mobile, réelle et simulée).

@@ -1,12 +1,12 @@
-import { sb } from './sb.js?v=20261123193833';
-import { state, loadMember, role, isRealAdmin, ROLE_NAMES, PNAME, memberName } from './state.js?v=20261123193833';
-import { $, esc, toast, errMsg, ROLES, avatar, confirmBox } from './ui.js?v=20261123193833';
-import * as auth from './views/auth.js?v=20261123193833';
-import * as list from './views/list.js?v=20261123193833';
-import * as detail from './views/detail.js?v=20261123193833';
-import * as form from './views/form.js?v=20261123193833';
-import * as settings from './views/settings.js?v=20261123193833';
-import { startRealtime, stopRealtime } from './rt.js?v=20261123193833';
+import { sb } from './sb.js?v=20261123201223';
+import { state, loadMember, role, isRealAdmin, ROLE_NAMES, PNAME, memberName } from './state.js?v=20261123201223';
+import { $, esc, toast, errMsg, ROLES, avatar, confirmBox } from './ui.js?v=20261123201223';
+import * as auth from './views/auth.js?v=20261123201223';
+import * as list from './views/list.js?v=20261123201223';
+import * as detail from './views/detail.js?v=20261123201223';
+import * as form from './views/form.js?v=20261123201223';
+import * as settings from './views/settings.js?v=20261123201223';
+import { startRealtime, stopRealtime } from './rt.js?v=20261123201223';
 
 const app = $('#app');
 // gopen : écran d'arrivée mobile déjà imposé ; bpos : position de l'indicateur de la barre du bas ; tsy : défilement de Terminées ; mclose : écouteur de fermeture du menu posé.

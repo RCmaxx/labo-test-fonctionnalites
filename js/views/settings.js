@@ -1,8 +1,8 @@
-import { sb } from '../sb.js?v=20261123193833';
-import { state, isRealAdmin, loadMember, role } from '../state.js?v=20261123193833';
-import { $, esc, toast, errMsg, busy, formData, ROLES } from '../ui.js?v=20261123193833';
-import { render } from '../app.js?v=20261123193833';
-import * as team from './team.js?v=20261123193833';
+import { sb } from '../sb.js?v=20261123201223';
+import { state, isRealAdmin, loadMember, role } from '../state.js?v=20261123201223';
+import { $, esc, toast, errMsg, busy, formData, ROLES } from '../ui.js?v=20261123201223';
+import { render } from '../app.js?v=20261123201223';
+import * as team from './team.js?v=20261123201223';
 
 export async function view(app) {
   // Paramètres réservés à l'admin ; page vide pour les autres rôles.

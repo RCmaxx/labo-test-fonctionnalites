@@ -1,10 +1,10 @@
-import { sb } from '../sb.js?v=20261123193833';
-import { state, isManager, isRealAdmin, role, memberName } from '../state.js?v=20261123193833';
-import { $, esc, toast, errMsg, busy, formData, confirmBox, PRIORITY, cef, initCef, sbar, WRENCH, BRIEFCASE, padMH, CLOCK, slot as slotTxt, pslotR, PIN } from '../ui.js?v=20261123193833';
-import { uploadPhotos, photoTray } from '../photos.js?v=20261123193833';
-import { table } from './list.js?v=20261123193833';
-import { go } from '../app.js?v=20261123193833';
-import { takeLock } from '../lock.js?v=20261123193833';
+import { sb } from '../sb.js?v=20261123201223';
+import { state, isManager, isRealAdmin, role, memberName } from '../state.js?v=20261123201223';
+import { $, esc, toast, errMsg, busy, formData, confirmBox, PRIORITY, cef, initCef, sbar, WRENCH, BRIEFCASE, padMH, CLOCK, slot as slotTxt, pslotR, PIN } from '../ui.js?v=20261123201223';
+import { uploadPhotos, photoTray } from '../photos.js?v=20261123201223';
+import { table } from './list.js?v=20261123201223';
+import { go } from '../app.js?v=20261123201223';
+import { takeLock } from '../lock.js?v=20261123201223';
 
 // Création / modification d'une intervention (gestionnaires).
 export async function view(app, { id }) {

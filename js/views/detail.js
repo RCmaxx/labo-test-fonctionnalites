@@ -1,9 +1,9 @@
-import { sb } from '../sb.js?v=20261123193833';
-import { state, role, isManager, isRealAdmin, memberName, assigneeName, compactName, roleKind, PNAME, roleIco, assTag } from '../state.js?v=20261123193833';
-import { $, $$, esc, toast, errMsg, busy, statusPill, PRIORITY, EVENTS, initCef, fmtAgo, confirmBox, WRENCH, BRIEFCASE, zoomImg, hm, sbar, n2, ACTMSG, pcolor, isDone } from '../ui.js?v=20261123193833';
-import { uploadPhotos, signedUrls, photoTray } from '../photos.js?v=20261123193833';
-import { go, render } from '../app.js?v=20261123193833';
-import { lockedByOther, peekLock } from '../lock.js?v=20261123193833';
+import { sb } from '../sb.js?v=20261123201223';
+import { state, role, isManager, isRealAdmin, memberName, assigneeName, compactName, roleKind, PNAME, roleIco, assTag } from '../state.js?v=20261123201223';
+import { $, $$, esc, toast, errMsg, busy, statusPill, PRIORITY, EVENTS, initCef, fmtAgo, confirmBox, WRENCH, BRIEFCASE, zoomImg, hm, sbar, n2, ACTMSG, pcolor, isDone } from '../ui.js?v=20261123201223';
+import { uploadPhotos, signedUrls, photoTray } from '../photos.js?v=20261123201223';
+import { go, render } from '../app.js?v=20261123201223';
+import { lockedByOther, peekLock } from '../lock.js?v=20261123201223';
 
 // Lot 71 : chargement lancé dès l'appui sur la carte (avant le clic), consommé une seule fois.
 const PRE = new Map();

@@ -1,8 +1,8 @@
 // Lot 223 : verrou d'édition. Pendant qu'un utilisateur modifie une intervention, « Modifier » est grisé
 // pour les autres (détail, rouage, appui long). Le verrou expire seul après 2 min sans renouvellement.
-import { sb } from './sb.js?v=20261123193833';
-import { SUPABASE_URL, SUPABASE_KEY } from './config.js?v=20261123193833';
-import { state } from './state.js?v=20261123193833';
+import { sb } from './sb.js?v=20261123201223';
+import { SUPABASE_URL, SUPABASE_KEY } from './config.js?v=20261123201223';
+import { state } from './state.js?v=20261123201223';
 
 const LOCKS = new Map(); // id → { by, name, until (ms, horloge locale) }
 const fresh = (l, s) => ({ by: l.editing_by, name: l.editing_name || '', until: Date.now() + (s ?? l.secs_left) * 1000 });

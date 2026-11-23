@@ -1,8 +1,8 @@
 // Lot 225 : temps réel Supabase à la place du polling (8 s transferts, 30 s rappels).
 // Une seule connexion (un canal) par client ; reconnexion automatique par supabase-js ; événements filtrés par la RLS.
 // Repli : polling lent (60 s) seulement tant que le canal est déconnecté.
-import { sb } from './sb.js?v=20261123193833';
-import { state } from './state.js?v=20261123193833';
+import { sb } from './sb.js?v=20261123201223';
+import { state } from './state.js?v=20261123201223';
 
 let ch = null, uid = null, slow = null, handlers = null;
 const emit = (name, detail) => dispatchEvent(new CustomEvent(name, { detail }));

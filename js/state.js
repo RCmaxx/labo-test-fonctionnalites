@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123193833';
-import { esc, WRENCH, BRIEFCASE } from './ui.js?v=20261123193833';
+import { sb } from './sb.js?v=20261123201223';
+import { esc, WRENCH, BRIEFCASE } from './ui.js?v=20261123201223';
 
 // État de session partagé entre les vues.
 export const state = {
