@@ -5,7 +5,7 @@ const ROLES = { admin: 'Admin', directeur: 'Directeur', responsable_tech: 'Respo
 const PRIORITY = { basse: 'Basse', normale: 'Normale', haute: 'Haute', urgente: 'Urgente' };
 const DONE = ['resolue', 'validee'];
 const STATUS = { brouillon: 'Brouillon', publiee: 'Nouvelle', prise_en_charge: 'En cours', resolue: 'Terminée', validee: 'Validée' };
-const VERSION = 'v6';
+const VERSION = 'v7';
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 const fmt = d => d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '';
@@ -98,6 +98,16 @@ function actions(i) {
 const canEdit = i => (i.created_by === me.id || (!!i.available_from && (i.proposed_to === me.id || ['admin', 'directeur', 'responsable_tech'].includes(me.role))))
   && ['brouillon', 'publiee'].includes(i.status) && !i.assignee_id;
 
+// Envoie les photos dans le stockage puis les rattache à l'intervention. Renvoie la première erreur.
+async function uploadPhotos(iid, files) {
+  for (const file of files) {
+    const path = `${me.org_id}/${iid}/${crypto.randomUUID()}.${(file.name.split('.').pop() || 'jpg').toLowerCase()}`;
+    const { error } = await sb.storage.from('photos').upload(path, file, { contentType: file.type || 'image/jpeg' })
+      .then(r => r.error ? r : sb.from('intervention_photos').insert({ intervention_id: iid, path }));
+    if (error) return error;
+  }
+}
+
 async function renderForm(el, id) {
   const [cur, places, techs] = await Promise.all([
     id ? sb.from('interventions').select('*').eq('id', id).maybeSingle() : { data: { priority: 'normale' } },
@@ -126,6 +136,7 @@ async function renderForm(el, id) {
         <label>De <input type="time" name="a" step="900" value="${hm(from)}"></label>
         <label>À <input type="time" name="b" step="900" value="${hm(until)}"></label>
       </fieldset>
+      <p><label>Photos (10 max) <input type="file" name="photos" accept="image/*" multiple></label></p>
       ${id ? '<button value="save">Enregistrer</button>' : '<button value="draft">Brouillon</button> <button value="publier">Créer et publier</button>'}
       <p id="ferr"></p>
     </form>`;
@@ -140,6 +151,8 @@ async function renderForm(el, id) {
       if (!id && new Date(row.available_from) < Date.now() - 6e4) return err.textContent = 'Ce créneau est déjà passé.';
       row.available_until = new Date(f.b ? `${f.d}T${f.b}` : new Date(row.available_from).getTime() + 9e5).toISOString(); // fin par défaut : début + 15 min
     }
+    const files = [...e.target.photos.files];
+    if (files.length > 10) return err.textContent = '10 photos maximum par intervention.';
     const mode = e.submitter?.value, who = f.assign || null;
     const run = async () => {
       if (id) {
@@ -153,7 +166,8 @@ async function renderForm(el, id) {
       if (!r.error && who) r = await sb.rpc('assign_tech', { p_id: data.id, p_tech: who });
       return [r.error, data.id];
     };
-    const [error, iid] = await run();
+    let [error, iid] = await run();
+    if (!error && files.length) error = await uploadPhotos(iid, files);
     error ? err.textContent = error.message : location.hash = `i/${iid}`;
   };
 }
