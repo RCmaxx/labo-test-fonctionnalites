@@ -33,10 +33,19 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 }
 @media (min-width: 1352px) { .fab { right: calc(((100vw - 1240px) / 2 + var(--s6)) / 2 - var(--fab) / 2); } }
 
+/* Barre d'onglets du bas (mobile seulement), comme l'appli : pilule blanche flottante, deux onglets égaux. */
+:root { --tab: 52px; --tab-gap: 10px; }
+.tabbar { display: none; position: fixed; left: 12px; right: 12px; bottom: var(--tab-gap); z-index: 10; height: var(--tab); box-sizing: border-box; padding: 4px; border-radius: 30px; background: var(--surface); box-shadow: 0 6px 24px rgba(20,20,40,.12), 0 1px 3px rgba(20,20,40,.08); }
+.tabbar a { flex: 1; display: grid; place-items: center; border-radius: 22px; color: #333; }
+.tabbar a.on { background: var(--tab-on); }
+.tabbar__n { min-width: 18px; height: 28px; padding: 0 7px; border-radius: 14px; display: grid; place-items: center; background: var(--alert-bg); color: var(--alert-fg); font-size: 14px; font-weight: 800; }
+.tabbar__n:empty { display: none; }
+
 /* Mobile simulé : l'appli dans un cadre de téléphone de 390 px. */
 .sim { --sim-w: 390px; }
 .sim #app { max-width: var(--sim-w); min-height: min(844px, 100dvh - 48px); margin: var(--s6) auto; background: var(--bg); box-shadow: 0 0 0 1px var(--line-strong); border-radius: 40px; overflow: hidden; }
-.sim .fab { right: calc(50vw - var(--sim-w) / 2 + var(--s4)); bottom: calc(var(--s6) + var(--s4)); }
+.sim .fab { right: calc(50vw - var(--sim-w) / 2 + var(--s4)); bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s4)); }
+.sim .tabbar { left: calc(50vw - var(--sim-w) / 2 + 12px); right: calc(50vw - var(--sim-w) / 2 + 12px); bottom: calc(var(--s6) + var(--tab-gap)); }
 
 /* Mobile (réel et simulé) */
 @media (max-width: 600px) { #app { --pad: var(--s4); } }
@@ -44,7 +53,11 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 @container app (max-width: 600px) {
   .topbar { margin-bottom: var(--s4); }
   .search, .group { margin-bottom: var(--s4); }
-  .fab { right: var(--s4); bottom: var(--s4); }
+  .topbar a[href="#"] { display: none; }
+  .tabbar { display: flex; }
+  /* Bouton + au-dessus de la barre d'onglets, même écart de 16 px ; contenu dégagé des deux. */
+  .fab { right: var(--s4); bottom: calc(var(--tab-gap) + var(--tab) + var(--s4)); }
+  main { padding-bottom: calc(var(--tab-gap) + var(--tab) + var(--fab) + var(--s4) * 2); }
   .cards { grid-template-columns: 1fr; }
   .facts { grid-template-columns: 1fr; gap: 2px; }
   .facts dd { margin-bottom: var(--s2); }

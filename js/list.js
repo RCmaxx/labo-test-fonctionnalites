@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123221515';
-import { S, esc, fmtCard, nameOf, DONE, PAGE } from './state.js?v=20261123221515';
+import { sb } from './sb.js?v=20261123221655';
+import { S, esc, fmtCard, nameOf, DONE, PAGE, route } from './state.js?v=20261123221655';
 
 let search = '', doneN = PAGE, tq = 0; // recherche et nombre de terminées gardés entre deux affichages
 // Icônes de l'appli (clé du technicien, main de la présence client).
@@ -55,7 +55,9 @@ export async function renderList(el) {
       ['cours', 'En cours', open.filter(r => r.status === 'prise_en_charge' && r.assignee_id !== S.me.id)],
       ['fini', 'Terminées', done],
     ];
-    rows.innerHTML = groups.map(([k, t, list]) => `<section class="group"><h2 class="group__title">${GICO[k]}<span class="count">${list.length}</span><span>${t}</span></h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`).join('')
+    const tabn = document.getElementById('tabn');
+    if (tabn) tabn.textContent = groups[2][2].length;
+    rows.innerHTML = (route()[0] === 'nouvelles' ? [groups[2]] : groups).map(([k, t, list]) => `<section class="group"><h2 class="group__title">${GICO[k]}<span class="count">${list.length}</span><span>${t}</span></h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`).join('')
       + (more ? '<p class="more"><button id="more">Plus de terminées</button></p>' : '');
     const btn = rows.querySelector('#more');
     if (btn) btn.onclick = () => { doneN += PAGE; renderList(el); };
