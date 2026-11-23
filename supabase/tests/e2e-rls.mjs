@@ -1,0 +1,62 @@
+import { createClient } from '@supabase/supabase-js';
+if(!process.env.GI_TEST_PASSWORD)throw new Error('GI_TEST_PASSWORD manquant (mot de passe des comptes de test, jamais dans le code)');
+const URL='https://alkmkdzazprskhchcofp.supabase.co', KEY='sb_publishable_D13UiBp5EkFGvcxVSgjunA_lfATuT7w';
+const mk=async(email)=>{const c=createClient(URL,KEY,{auth:{persistSession:false}});const {error}=await c.auth.signInWithPassword({email,password:process.env.GI_TEST_PASSWORD});if(error)throw error;return c};
+const ok=(cond,msg)=>{console.log((cond?'OK  ':'FAIL')+' '+msg);if(!cond)process.exitCode=1};
+const A=await mk('admin.a@test.local'), T=await mk('tech.a@test.local'), R=await mk('resp.a@test.local'), B=await mk('admin.b@test.local');
+let r=await A.rpc('create_organization',{p_name:'Camping A',p_full_name:'Alice Admin'}); ok(!r.error,'org A créée '+(r.error?.message||''));
+const orgA=r.data;
+r=await B.rpc('create_organization',{p_name:'Camping B',p_full_name:'Bob Admin'}); ok(!r.error,'org B créée');
+r=await A.rpc('create_organization',{p_name:'X',p_full_name:'x'}); ok(!!r.error,'2e org refusée');
+// invitations
+r=await A.from('invitations').insert({org_id:orgA,email:'tech.a@test.local',role:'technicien',invited_by:(await A.auth.getUser()).data.user.id}).select().single(); ok(!r.error,'invitation tech '+(r.error?.message||''));
+const tokT=r.data.token;
+r=await A.from('invitations').insert({org_id:orgA,email:'resp.a@test.local',role:'responsable_tech',invited_by:(await A.auth.getUser()).data.user.id}).select().single();
+const tokR=r.data.token;
+r=await B.rpc('accept_invitation',{p_token:tokT,p_full_name:'x'}); ok(!!r.error,'invitation refusée pour autre email');
+r=await T.rpc('accept_invitation',{p_token:tokT,p_full_name:'Théo Tech'}); ok(!r.error,'tech accepte '+(r.error?.message||''));
+r=await R.rpc('accept_invitation',{p_token:tokR,p_full_name:'Rita Resp'}); ok(!r.error,'resp accepte');
+const anon=createClient(URL,KEY,{auth:{persistSession:false}});
+// workflow
+r=await T.from('interventions').insert({org_id:orgA,title:'nope'}); ok(!!r.error,'tech ne peut pas créer');
+r=await R.from('interventions').insert({org_id:orgA,title:'Fuite douche',location:'MH 12',description:'Fuite sous le bac'}).select().single(); ok(!r.error,'resp crée '+(r.error?.message||''));
+const I=r.data; ok(I.status==='brouillon','statut brouillon');
+r=await T.from('interventions').select().eq('id',I.id); ok(r.data.length===0,'tech ne voit pas le brouillon');
+const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==','base64');
+const path=`${orgA}/${I.id}/test.png`;
+r=await R.storage.from('photos').upload(path,png,{contentType:'image/png'}); ok(!r.error,'upload photo '+(r.error?.message||''));
+r=await R.from('intervention_photos').insert({intervention_id:I.id,path}); ok(!r.error,'photo enregistrée '+(r.error?.message||''));
+r=await R.from('interventions').update({status:'validee'}).eq('id',I.id); ok(!!r.error,'statut direct refusé');
+r=await R.rpc('transition',{p_id:I.id,p_action:'publier',p_comment:'À faire vite'}); ok(r.data==='publiee','publiée '+(r.error?.message||''));
+r=await T.rpc('add_comment',{p_id:I.id,p_body:'Je passe à 14h'}); ok(!r.error,'commentaire tech');
+r=await T.rpc('transition',{p_id:I.id,p_action:'valider'}); ok(!!r.error,'tech ne peut pas valider');
+r=await T.rpc('transition',{p_id:I.id,p_action:'prendre'}); ok(r.data==='prise_en_charge','prise en charge '+(r.error?.message||''));
+r=await T.rpc('transition',{p_id:I.id,p_action:'resoudre',p_comment:'Joint changé'}); ok(r.data==='resolue','résolue');
+r=await R.rpc('transition',{p_id:I.id,p_action:'valider'}); ok(r.data==='validee','validée');
+// impersonation admin -> technicien
+r=await R.from('interventions').insert({org_id:orgA,title:'Ampoule',location:'MH 3'}).select().single(); const J=r.data;
+await R.rpc('transition',{p_id:J.id,p_action:'publier'});
+r=await A.rpc('transition',{p_id:J.id,p_action:'prendre'}); ok(!!r.error,'admin (sans simulation) ne prend pas');
+r=await A.rpc('set_acting_role',{p_role:'technicien'}); ok(!r.error,'admin simule technicien');
+r=await A.from('interventions').insert({org_id:orgA,title:'x'}); ok(!!r.error,'admin-technicien ne crée pas');
+r=await A.from('invitations').select(); ok(r.data.length===0,'admin-technicien ne voit plus les invitations');
+r=await A.rpc('transition',{p_id:J.id,p_action:'prendre'}); ok(r.data==='prise_en_charge','admin-technicien prend');
+r=await A.rpc('transition',{p_id:J.id,p_action:'resoudre'}); ok(r.data==='resolue','admin-technicien résout');
+r=await A.rpc('transition',{p_id:J.id,p_action:'valider'}); ok(!!r.error,'admin-technicien ne valide pas');
+r=await T.rpc('set_acting_role',{p_role:'admin'}); ok(!!r.error,'tech ne peut pas simuler');
+r=await A.rpc('set_acting_role',{p_role:'admin'}); ok(!r.error,'retour admin');
+r=await A.rpc('transition',{p_id:J.id,p_action:'valider'}); ok(r.data==='validee','admin valide');
+r=await T.from('members').update({acting_role:'admin'}).eq('user_id',(await T.auth.getUser()).data.user.id); 
+r=await T.from('members').select('role,acting_role').eq('email','tech.a@test.local').single(); ok(r.data.acting_role===null && r.data.role==='technicien','tech ne peut pas se promouvoir');
+r=await T.from('members').update({role:'admin'}).eq('email','tech.a@test.local').select(); ok(!!r.error || r.data.length===0,'tech ne change pas son rôle');
+// timeline
+r=await T.from('intervention_events').select('type,actor_name,body').eq('intervention_id',I.id).order('created_at'); console.log(r.data.map(e=>e.type+':'+e.actor_name).join(' > '));
+ok(r.data.length===7,'7 événements');
+// isolation
+r=await B.from('interventions').select(); ok(r.data.length===0,'org B ne voit rien de A');
+r=await B.from('members').select(); ok(r.data.length===1,'org B voit 1 membre');
+r=await B.from('intervention_events').select(); ok(r.data.length===0,'org B ne voit pas les événements');
+r=await B.storage.from('photos').download(path); ok(!!r.error,'org B ne lit pas la photo');
+r=await T.storage.from('photos').download(path); ok(!r.error,'tech lit la photo');
+r=await anon.from('interventions').select(); ok((r.data||[]).length===0,'anon ne voit rien');
+r=await anon.rpc('invitation_info',{p_token:tokT}); ok(!r.error && r.data.length===0,'invitation acceptée non listée');
