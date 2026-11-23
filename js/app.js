@@ -2,11 +2,24 @@ import { sb } from './sb.js';
 
 const ACCOUNTS = ['admin.a', 'resp.a', 'tech.a', 'tech.bis', 'client'];
 const ROLES = { admin: 'Admin', directeur: 'Directeur', responsable_tech: 'Responsable tech', technicien: 'Technicien', reception: 'Réception', client: 'Client' };
+const PRIORITY = { basse: 'Basse', normale: 'Normale', haute: 'Haute', urgente: 'Urgente' };
+const DONE = ['resolue', 'validee'];
 const app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+const fmt = d => d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+let me = null; // { id, email, full_name, role }
 
 async function render() {
   const { data: { session } } = await sb.auth.getSession();
-  return session ? renderMe(session.user) : renderLogin();
+  if (!session) return renderLogin();
+  if (!me) {
+    const { data: m, error } = await sb.from('members').select('full_name, role, acting_role').eq('user_id', session.user.id).maybeSingle();
+    if (error) return renderLogin(error.message);
+    me = { id: session.user.id, email: session.user.email, full_name: m?.full_name, role: m?.role === 'admin' && m.acting_role ? m.acting_role : m?.role };
+  }
+  const page = location.hash === '#compte' ? renderMe : renderList;
+  app.innerHTML = `<nav><a href="#">Interventions</a> · <a href="#compte">Mon compte</a></nav><section></section>`;
+  page(app.querySelector('section'));
 }
 
 function renderLogin(error = '') {
@@ -16,26 +29,53 @@ function renderLogin(error = '') {
       <label>Compte <select name="email">${ACCOUNTS.map(a => `<option value="${a}@test.local">${a}</option>`).join('')}</select></label>
       <label>Mot de passe <input name="password" type="password" required autocomplete="current-password"></label>
       <button>Se connecter</button>
-      <p>${error}</p>
+      <p>${esc(error)}</p>
     </form>`;
   app.querySelector('#login').onsubmit = async e => {
     e.preventDefault();
-    const { email, password } = Object.fromEntries(new FormData(e.target));
-    const { error } = await sb.auth.signInWithPassword({ email, password });
+    const { error } = await sb.auth.signInWithPassword(Object.fromEntries(new FormData(e.target)));
     error ? renderLogin(error.message) : render();
   };
 }
 
-async function renderMe(user) {
-  const { data: m } = await sb.from('members').select('full_name, email, role, acting_role').eq('user_id', user.id).maybeSingle();
-  const role = m?.role === 'admin' && m.acting_role ? m.acting_role : m?.role;
-  app.innerHTML = `
+function renderMe(el) {
+  el.innerHTML = `
     <h1>Mon compte</h1>
-    <p>Nom : ${m?.full_name || '—'}</p>
-    <p>E-mail : ${user.email}</p>
-    <p>Rôle : ${ROLES[role] || role || 'aucun'}</p>
-    <button id="logout">Se déconnecter</button>`;
-  app.querySelector('#logout').onclick = async () => { await sb.auth.signOut(); render(); };
+    <p>Nom : ${esc(me.full_name) || '—'}</p>
+    <p>E-mail : ${esc(me.email)}</p>
+    <p>Rôle : ${esc(ROLES[me.role] || me.role || 'aucun')}</p>
+    <button>Se déconnecter</button>`;
+  el.querySelector('button').onclick = async () => { await sb.auth.signOut(); me = null; location.hash = ''; render(); };
 }
 
+async function renderList(el) {
+  el.innerHTML = '<h1>Interventions</h1><p>Chargement…</p>';
+  const cols = 'id, title, location, status, priority, assignee_id, created_by, created_at, resolved_at, validated_at';
+  const scope = q => me.role === 'client' ? q.eq('created_by', me.id) : q;
+  const [open, done, names] = await Promise.all([
+    scope(sb.from('interventions').select(cols).not('status', 'in', `(${DONE})`)).order('created_at', { ascending: false }),
+    scope(sb.from('interventions').select(cols).in('status', DONE)).order('resolved_at', { ascending: false, nullsFirst: false }).limit(50),
+    sb.from('members').select('user_id, full_name'),
+  ]);
+  const err = open.error || done.error;
+  if (err) return el.innerHTML = `<h1>Interventions</h1><p>${esc(err.message)}</p>`;
+  const who = Object.fromEntries((names.data || []).map(m => [m.user_id, m.full_name]));
+  const rows = open.data;
+  const groups = [
+    ['Brouillons', rows.filter(r => r.status === 'brouillon' && (me.role !== 'technicien' || r.created_by === me.id))],
+    ['Mes interventions', rows.filter(r => r.status === 'prise_en_charge' && r.assignee_id === me.id)],
+    ['Nouvelles interventions', rows.filter(r => r.status === 'publiee')],
+    ['En cours', rows.filter(r => r.status === 'prise_en_charge' && r.assignee_id !== me.id)],
+    ['Terminées', done.data],
+  ];
+  const item = r => `<li>
+      <b>${esc(r.title)}</b> · ${esc(r.location) || 'sans lieu'} · ${PRIORITY[r.priority] || ''}
+      · ${r.assignee_id ? esc(who[r.assignee_id] || 'Technicien') : 'Non assignée'}
+      · ${fmt(DONE.includes(r.status) ? r.resolved_at || r.validated_at : r.created_at)}
+    </li>`;
+  el.innerHTML = '<h1>Interventions</h1>' + groups.map(([t, list]) =>
+    `<h2>${t} (${list.length})</h2>${list.length ? `<ul>${list.map(item).join('')}</ul>` : '<p>Aucune.</p>'}`).join('');
+}
+
+addEventListener('hashchange', render);
 render();
