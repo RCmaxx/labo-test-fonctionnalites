@@ -1,7 +1,7 @@
-import { sb } from './sb.js?v=20261123221841';
-import { route } from './state.js?v=20261123221841';
-import { loadReminders, checkTransfers } from './alerts.js?v=20261123221841';
-import { loadLocks } from './lock.js?v=20261123221841';
+import { sb } from './sb.js';
+import { route } from './state.js';
+import { loadReminders, checkTransfers } from './alerts.js';
+import { loadLocks } from './lock.js';
 
 // Temps réel : un canal par session ; la vue ouverte se rafraîchit via show (sauf formulaire ou saisie en cours).
 let live = null, wait = null, onChange = null;

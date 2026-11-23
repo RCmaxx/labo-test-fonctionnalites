@@ -1,6 +1,6 @@
-import { sb } from './sb.js?v=20261123221841';
-import { S, esc, options, PRIORITY, REMIND, MGR, TECH } from './state.js?v=20261123221841';
-import { takeLock } from './lock.js?v=20261123221841';
+import { sb } from './sb.js';
+import { S, esc, options, PRIORITY, REMIND, MGR, TECH } from './state.js';
+import { takeLock } from './lock.js';
 
 // Réduit la photo (1600 px max, JPEG ~0,8) pour un envoi plus léger ; garde l'original si la conversion échoue ou n'apporte rien.
 async function shrink(file) {

@@ -1,21 +1,21 @@
-import { sb } from './sb.js?v=20261123221841';
-import { S, app, esc, fmt, options, rerender, ACCOUNTS, ROLES, VERSION } from './state.js?v=20261123221841';
-import { stopLive } from './live.js?v=20261123221841';
+import { sb } from './sb.js';
+import { S, app, esc, fmt, options, rerender, ACCOUNTS, ROLES, VERSION } from './state.js';
+import { stopLive } from './live.js';
 
-export function renderLogin(error = '', intro = '') {
-  app.innerHTML = `<div class="auth">${intro}
-    <h1>Connexion</h1><p class="muted">${VERSION}</p>
-    <form class="panel" id="login">
-      <label>Compte <select name="email">${ACCOUNTS.map(a => `<option value="${a}@test.local">${a}</option>`).join('')}</select></label>
-      <label>Mot de passe <input name="password" type="password" required autocomplete="current-password"></label>
-      <button class="primary">Se connecter</button>
-      <p class="error">${esc(error)}</p>
-    </form></div>`;
-  app.querySelector('#login').onsubmit = async e => {
-    e.preventDefault();
-    const { error } = await sb.auth.signInWithPassword(Object.fromEntries(new FormData(e.target)));
-    error ? renderLogin(error.message, intro) : rerender();
-  };
+// Formulaire de connexion unique : le champ e-mail varie (liste des comptes de test, ou e-mail invité).
+const loginForm = (emailField, error = '') => `<form class="panel" id="login">${emailField}
+  <label>Mot de passe <input name="password" type="password" required autocomplete="current-password"></label>
+  <button class="primary">Se connecter</button><p class="error">${esc(error)}</p></form>`;
+const bindLogin = () => app.querySelector('#login').onsubmit = async e => {
+  e.preventDefault();
+  const { error } = await sb.auth.signInWithPassword(Object.fromEntries(new FormData(e.target)));
+  error ? e.target.querySelector('.error').textContent = error.message : rerender();
+};
+
+export function renderLogin(error = '') {
+  app.innerHTML = `<div class="auth"><h1>Connexion</h1><p class="muted">${VERSION}</p>
+    ${loginForm(`<label>Compte <select name="email">${ACCOUNTS.map(a => `<option value="${a}@test.local">${a}</option>`).join('')}</select></label>`, error)}</div>`;
+  bindLogin();
 }
 
 export async function signOut() { await sb.auth.signOut(); stopLive(); S.me = null; location.hash = ''; rerender(); }
@@ -59,11 +59,7 @@ export async function renderInvitation(token, session) {
         <button class="primary">Créer le compte et rejoindre</button><p class="error"></p>
       </form>
       <p>Déjà un compte ? Connectez-vous ci-dessous, puis cette page s'affichera à nouveau.</p>
-      <form class="panel" id="inlogin">
-        <label>E-mail <input name="email" type="email" required value="${esc(inv.email)}" autocomplete="username"></label>
-        <label>Mot de passe <input name="password" type="password" required autocomplete="current-password"></label>
-        <button>Se connecter</button><p></p>
-      </form>`;
+      ${loginForm(`<label>E-mail <input name="email" type="email" required value="${esc(inv.email)}" autocomplete="username"></label>`)}`;
     app.querySelector('#signup').onsubmit = async e => {
       e.preventDefault();
       const name = e.target.name.value.trim(), password = e.target.password.value, out = e.target.querySelector('p');
@@ -75,11 +71,7 @@ export async function renderInvitation(token, session) {
       }
       await acceptInvite(token, name, out);
     };
-    app.querySelector('#inlogin').onsubmit = async e => {
-      e.preventDefault();
-      const { error } = await sb.auth.signInWithPassword(Object.fromEntries(new FormData(e.target)));
-      error ? e.target.querySelector('p').textContent = error.message : rerender();
-    };
+    bindLogin();
     return;
   }
   app.innerHTML = `<div class="auth">${intro}
