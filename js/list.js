@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123215127';
-import { S, esc, fmt, nameOf, DONE, PRIORITY, PAGE } from './state.js?v=20261123215127';
+import { sb } from './sb.js?v=20261123215401';
+import { S, esc, fmt, nameOf, DONE, PRIORITY, PAGE } from './state.js?v=20261123215401';
 
 let search = '', doneN = PAGE, tq = 0; // recherche et nombre de terminées gardés entre deux affichages
 const COLS = 'id, title, location, description, status, priority, assignee_id, created_by, created_at, resolved_at, validated_at';
@@ -38,7 +38,7 @@ export async function renderList(el) {
       ['Terminées', done],
     ];
     rows.innerHTML = groups.map(([t, list]) => `<section class="group"><h2 class="group__title">${t} <span class="count">${list.length}</span></h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`).join('')
-      + (more ? '<button id="more">Plus de terminées</button>' : '');
+      + (more ? '<p class="more"><button id="more">Plus de terminées</button></p>' : '');
     const btn = rows.querySelector('#more');
     if (btn) btn.onclick = () => { doneN += PAGE; renderList(el); };
   };

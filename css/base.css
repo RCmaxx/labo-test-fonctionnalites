@@ -21,13 +21,15 @@ input:disabled { background: var(--soft); color: var(--ink-2); }
 input[type="checkbox"], input[type="radio"] { width: auto; }
 textarea { resize: vertical; }
 
-/* Boutons : une base, les variantes ne changent que les 3 variables. */
-button {
+/* Boutons (et liens en forme de bouton) : une base, les variantes ne changent que les 3 variables. */
+button, .btn {
   --btn-bg: var(--surface); --btn-fg: var(--ink); --btn-bd: var(--line-strong);
   font: inherit; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   padding: 9px 14px; border-radius: var(--r-s); border: 1px solid var(--btn-bd);
-  background: var(--btn-bg); color: var(--btn-fg); cursor: pointer; white-space: nowrap;
+  background: var(--btn-bg); color: var(--btn-fg); cursor: pointer; white-space: nowrap; text-decoration: none;
 }
-button.primary { --btn-bg: var(--ink); --btn-bd: var(--ink); --btn-fg: var(--surface); }
-button.danger { --btn-fg: var(--danger); }
+.primary { --btn-bg: var(--ink); --btn-bd: var(--ink); --btn-fg: var(--surface); }
+.danger { --btn-fg: var(--danger); }
 button:disabled { opacity: .5; cursor: default; }
+@media (any-hover: hover) { button:hover, .btn:hover { filter: brightness(.96); } }
+.muted { color: var(--ink-3); }

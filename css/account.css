@@ -1,0 +1,15 @@
+/* Pages de compte : connexion, entreprise, invitation, Mon compte. */
+.auth { max-width: 400px; margin: 10vh auto 0; display: grid; gap: var(--s4); }
+.auth h1, .auth p { margin: 0; }
+.account { display: grid; gap: var(--s4); max-width: 640px; }
+.account h1 { margin: 0; }
+.account p { margin: 0; }
+
+/* Formulaire sur une ligne : champs puis bouton, qui passent à la ligne si besoin. */
+.inline { display: flex; flex-wrap: wrap; align-items: end; gap: var(--s3); }
+.inline label { flex: 1 1 180px; }
+.inline .error { flex-basis: 100%; }
+
+.invs { list-style: none; margin: var(--s4) 0 0; padding: 0; display: grid; }
+.invs li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); padding: var(--s3) 0; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.invs button { margin-left: auto; }

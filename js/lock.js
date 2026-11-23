@@ -1,5 +1,5 @@
-import { sb } from './sb.js?v=20261123215127';
-import { S, esc } from './state.js?v=20261123215127';
+import { sb } from './sb.js?v=20261123215401';
+import { S, esc } from './state.js?v=20261123215401';
 
 // Verrou d'édition (expire seul côté base après 2 min sans renouvellement).
 const LOCKS = new Map(); // intervention_id → { by, name, until }
@@ -18,7 +18,7 @@ export function drawEdit() {
   const p = document.getElementById('edit');
   if (!p) return;
   const l = lockOf(p.dataset.id);
-  p.innerHTML = l ? `Modifier (${esc(l.name || 'quelqu’un')} modifie en ce moment)` : `<a href="#i/${p.dataset.id}/modifier">Modifier</a>`;
+  p.innerHTML = l ? `<span class="muted">${esc(l.name || 'Quelqu’un')} modifie en ce moment.</span>` : `<a class="btn" href="#i/${p.dataset.id}/modifier">Modifier</a>`;
 }
 // Prend le verrou ; renvoie un message si on ne peut pas modifier (déjà pris, ou droit insuffisant).
 export async function takeLock(id) {

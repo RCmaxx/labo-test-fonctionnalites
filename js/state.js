@@ -6,8 +6,9 @@ export const STATUS = { brouillon: 'Brouillon', publiee: 'Nouvelle', prise_en_ch
 export const REMIND = { 15: '15 min avant', 30: '30 min avant', 60: '1 h avant', 120: '2 h avant', 1440: '1 jour avant' };
 export const MGR = ['admin', 'directeur', 'responsable_tech'], TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v17';
+export const VERSION = 'v18';
 export const app = document.getElementById('app');
+document.documentElement.classList.toggle('sim', !!localStorage.labosim); // mobile simulé : même CSS que le mobile réel
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 export const fmt = d => d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '';
 export const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
