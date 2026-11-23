@@ -1,0 +1,32 @@
+/* Jetons de design du labo : seule source des couleurs, rayons, ombres, espacements et polices. */
+:root {
+  /* Texte et fonds */
+  --ink: #1A1A1A; --ink-2: #5C5C5C; --ink-3: #9A9A9A;
+  --line: #E4E4E4; --soft: #F4F4F4; --bg: #F5F6F7; --surface: #FFFFFF;
+  --danger: #B42318;
+
+  /* Priorités : fond / texte */
+  --prio-haute-bg: #FFE0E0;   --prio-haute-fg: #C62828;
+  --prio-normale-bg: #FFF1BF; --prio-normale-fg: #8A6500;
+  --prio-basse-bg: #E1EEE5;   --prio-basse-fg: #1F5C3A;
+
+  /* Étiquettes et états */
+  --tech-bg: #E2EAFA; --tech-fg: #2F5FC0;
+  --neutral-bg: #F3F4F6; --neutral-sub: #6B6B6B;
+  --done-bg: #E2E5EA;
+  --presence-fg: #B45309;
+
+  /* Rayons */
+  --r-s: 8px; --r: 10px; --r-l: 16px; --r-pill: 999px;
+
+  /* Ombres */
+  --shadow-float: 0 8px 22px rgba(0, 0, 0, .26), 0 2px 6px rgba(0, 0, 0, .14);
+
+  /* Espacements (pas de 4 px) */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px;
+
+  /* Typographie */
+  --font: 'Inter', -apple-system, system-ui, sans-serif;
+  --fs: 14px; --fs-s: 11px; --fs-h1: 22px; --fs-h2: 15px;
+  --fw: 400; --fw-meta: 550; --fw-title: 600;
+}
