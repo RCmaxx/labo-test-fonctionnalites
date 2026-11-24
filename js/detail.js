@@ -1,6 +1,7 @@
 import { sb } from './sb.js';
 import { S, esc, isMob, DONE, MGR, TECH, REMIND, nameOf, rerender } from './state.js';
 import { drawEdit } from './lock.js';
+import { hostModal } from './slot.js';
 import { initComposer } from './composer.js';
 import { cardOf } from './list.js';
 import { pcolor } from './pcolor.js';
@@ -199,10 +200,6 @@ function tagsOf(i) {
   if (!id) return '';
   const m = S.team.find(x => x.user_id === id);
   return `<span class="cwho">${TECH.includes(m?.role) ? WRENCH : BRIEFCASE}<span>${esc(nameOf(id))}</span></span>`;
-}
-
-function hostModal() {
-  return document.querySelector('.sim #app') || document.body;
 }
 
 function slotLine(i) {
