@@ -391,8 +391,10 @@ export async function renderForm(el, id) {
     chk();
   };
   const ok1 = () => !!(f.title.value.trim() && f.location.value.trim());
+  const sv = f.querySelector('.bdsave');
   const chk = () => {
     if (pb && !id) pb.disabled = st === 1 && !ok1();
+    if (sv) sv.disabled = !f.title.value.trim(); // brouillon : il faut au moins un titre, comme l'appli tech
   };
   if (!id && pb) {
     chk();

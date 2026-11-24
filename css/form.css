@@ -111,6 +111,11 @@
   max-height: max(136px, calc(5lh + 22px));
   resize: vertical;
 }
+/* Textes indicatifs (Titre, Lieu, Description) : gris clair de l'appli tech */
+.nform ::placeholder {
+  color: var(--ink-3);
+  opacity: 1;
+}
 .nform .nf input:focus,
 .nform .nf textarea:focus {
   outline: none;
@@ -677,16 +682,6 @@
   flex-direction: column;
 }
 
-@container app (max-width: 600px) {
-  .nf-row {
-    flex-direction: column;
-  }
-  .nf-row > .nf.ac {
-    flex: 1 1 auto;
-    width: 100%;
-  }
-}
-
 .nform.stp1 .s2,
 .nform.stp1 .s3,
 .nform.stp1 .fsum,
@@ -734,53 +729,49 @@
   overflow-y: auto;
 }
 
-/* Mobile : champs dans une carte blanche ; brouillon + Suivant sur une ligne, sans Annuler (la croix ferme), comme l'appli tech */
-@container app (max-width: 600px) {
-  .nform .s1 {
-    padding: var(--s3);
-    border-radius: var(--r-l);
-    background: var(--surface);
-  }
-  .nform .nactions {
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    gap: var(--s2);
-  }
-  .nform .nactions .bdwrap {
-    order: 1;
-    flex: 1 1 0;
-  }
-  .nform .nactions .primary {
-    order: 2;
-    flex: 1 1 0;
-  }
-  .nform .nactions a.btn {
-    display: none;
-  }
-}
-
-/* Mobile : croix de fermeture dans un rond blanc */
-@container app (max-width: 600px) {
-  .fhead .fx {
-    width: 44px;
-    height: 44px;
-    background: var(--surface);
-    box-shadow: var(--shadow-card);
-  }
-}
-
-/* Bouton Priorité et date du jour : mobile uniquement */
+/* Mobile, comme l'appli tech : formulaire de bord à bord, champs dans un cadre blanc (titre + Priorité, puis lieu + date),
+   brouillon et Suivant sur une ligne, sans Annuler (la croix ferme). */
 .pbw,
 .ndate {
   display: none;
 }
 @container app (max-width: 600px) {
+  .fpage {
+    margin-inline: calc(-1 * var(--card-inset));
+  }
+  .fhead {
+    margin-bottom: var(--form-gap);
+  }
+  .fhead h1 {
+    font-size: var(--fs-title-mob);
+    font-weight: var(--fw-title);
+    line-height: 1.4;
+    color: var(--ink);
+  }
+  .fhead .fx {
+    width: var(--fx);
+    height: var(--fx);
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .fhead .fx svg {
+    width: var(--fx-icon);
+  }
+  .nform {
+    gap: var(--form-gap);
+  }
+  .nform .s1 {
+    padding: var(--s3);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: var(--surface);
+  }
   .nf-row {
     display: grid;
-    grid-template-columns: 110px minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) var(--prio-w);
     align-items: center;
-    gap: 10px;
+    gap: var(--s2) 6px;
   }
   .nf-row > .nf:first-child {
     grid-column: 1 / 3;
@@ -788,7 +779,15 @@
   .nf-row > .nf.ac {
     grid-row: 2;
     grid-column: 1;
-    width: auto;
+  }
+  .nform .nf.ac input[type='text'] {
+    width: var(--loc-min);
+    min-height: 0;
+    height: var(--loc-h);
+    padding: 6px 13px;
+  }
+  .nform .nf.ac input.tagged {
+    width: var(--tagw, var(--loc-min));
   }
   .pbw {
     display: block;
@@ -796,25 +795,47 @@
     grid-column: 3;
   }
   .pbtn {
-    height: 40px;
-    padding: 0 var(--s3);
+    width: 100%;
+    height: var(--loc-h);
+    padding: 0 6px;
     border: 1px solid var(--line);
     border-radius: var(--r-pill);
     background: var(--surface);
-    color: var(--ink);
+    color: var(--ink-2);
     font: inherit;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
+    line-height: 1.1;
   }
   .ndate {
     display: block;
     grid-row: 2;
     grid-column: 2 / 4;
-    color: var(--ink-date);
-    font-size: 12px;
+    margin-left: var(--s1);
+    color: var(--ink-2);
+    font-size: 11.5px;
     font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
   }
   .nform:not(.pop) .seg {
+    display: none;
+  }
+  .nform .nactions {
+    grid-template-columns: 1fr 1fr;
+  }
+  .nform .nactions .bdwrap {
+    order: 1;
+  }
+  .nform .nactions .bdchev {
+    gap: 0;
+  }
+  .nform .nactions .primary {
+    order: 2;
+    grid-column: auto;
+    padding-inline: var(--s1);
+  }
+  .nform .nactions a.btn {
     display: none;
   }
 }
