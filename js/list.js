@@ -5,6 +5,8 @@ import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, STATUS, isMob, route } from 
 
 // Page des terminées : #terminees, et sur mobile la page d'accueil (premier onglet).
 const onDonePage = () => route()[0] === 'terminees' || (isMob() && !route()[0] && S.me.role !== 'client');
+const DC = { n: 0, at: 0, data: null };   // terminées : dernière réponse gardée 90 s (onglets, retours)
+export const bustDone = () => { DC.data = null; };
 let search = '', tq = 0, doneN = PAGE, sfilters = [];
 const SF = { titre: 'Titre', lieu: 'Lieu', desc: 'Description', tech: 'Technicien', rep: 'Signalé par', statut: 'Statut', date: 'Date' };
 const RKEY = 'lab:recent-search';
@@ -358,11 +360,13 @@ export async function renderList(el) {
       return;
     }
     if (onDonePage()) {
+      if (!words.length && DC.data && DC.n === doneN && Date.now() - DC.at < 90000) return paint([], DC.data, DC.data.length === doneN);
       const q = words.length
         ? withSearch(scope(sb.from('interventions').select(COLS).in('status', DONE)), words).order('resolved_at', { ascending: false, nullsFirst: false }).limit(200)
         : scope(sb.from('interventions').select(COLS).in('status', DONE)).order('resolved_at', { ascending: false, nullsFirst: false }).order('id').limit(doneN);
       const { data, error } = await q;
       if (error) return rows.innerHTML = `<p>${esc(error.message)}</p>`;
+      if (!words.length) Object.assign(DC, { n: doneN, at: Date.now(), data: data || [] });
       paint([], data || [], !words.length && (data || []).length === doneN);
       return;
     }

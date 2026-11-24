@@ -2,10 +2,12 @@ import { sb } from './sb.js';
 import { route } from './state.js';
 import { loadReminders, checkTransfers } from './alerts.js';
 import { loadLocks } from './lock.js';
+import { bustDone } from './list.js';
 
 // Temps réel : un canal par session ; la vue ouverte se rafraîchit via show (sauf formulaire ou saisie en cours).
 let live = null, wait = null, onChange = null;
 function refresh() {
+  bustDone();
   clearTimeout(wait);
   wait = setTimeout(() => {
     const [page, , sub] = route(), f = document.activeElement;
