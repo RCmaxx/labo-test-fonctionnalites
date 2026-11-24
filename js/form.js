@@ -2,14 +2,10 @@ import { initDrafts } from './drafts.js';
 import { initPlaceField, tagIn } from './place.js';
 import { initSlotPicker, dIn, TIMES } from './slot.js';
 import { sb } from './sb.js';
-import { S, esc, REMIND, MGR, TECH, MONTHS, p2, hostModal } from './state.js';
+import { S, esc, REMIND, MGR, TECH, MONTHS, p2, hostModal, WRENCH, BRIEFCASE } from './state.js';
 import { takeLock } from './lock.js';
 
 const PRIO_L = { basse: 'À faire', normale: 'Important', haute: 'Urgent', urgente: 'Urgente' };
-const WRENCH =
-  '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
-const BRIEFCASE =
-  '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>';
 const BACK =
   '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
 const CLOSE =

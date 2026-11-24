@@ -1,14 +1,25 @@
 import { sb } from './sb.js';
-import { S, esc, isMob, DONE, MGR, TECH, REMIND, nameOf, rerender, MONTHS, hostModal, p2 } from './state.js';
+import {
+  S,
+  esc,
+  isMob,
+  DONE,
+  MGR,
+  TECH,
+  REMIND,
+  nameOf,
+  rerender,
+  MONTHS,
+  hostModal,
+  p2,
+  WRENCH,
+  BRIEFCASE,
+} from './state.js';
 import { drawEdit } from './lock.js';
 import { initComposer } from './composer.js';
 import { cardOf } from './list.js';
 import { pcolor } from './pcolor.js';
 
-const WRENCH =
-  '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
-const BRIEFCASE =
-  '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>';
 const CAM =
   '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M9.2 4.5h5.6l1.5 2.2H19a2.5 2.5 0 0 1 2.5 2.5v8.3A2.5 2.5 0 0 1 19 20H5a2.5 2.5 0 0 1-2.5-2.5V9.2A2.5 2.5 0 0 1 5 6.7h2.7zM12 9.6a3.6 3.6 0 1 0 0 7.2a3.6 3.6 0 1 0 0-7.2z"/><circle cx="12" cy="13.2" r="2.1" fill="currentColor"/></svg>';
 const UNTAKE =
@@ -245,10 +256,10 @@ function closeChooser(id, doDelete, onDone) {
   const o = document.createElement('div');
   o.className = 'modal';
   o.innerHTML = `<div class="mbox cchoose"><p class="mq">Qui a pris en charge l'intervention ?</p>
-    <div class="ctags">${ms.map(m => `<button type="button" class="cwho" data-u="${m.user_id}">${TECH.includes(m.role) ? WRENCH : BRIEFCASE}<span>${esc(m.full_name)}</span></button>`).join('')}<button type="button" class="cwho" data-u="">Quelqu'un d'autre</button></div>
+    <div class="ctags">${ms.map(m => `<button type="button" class="cwho" data-u="${m.user_id}">${WRENCH}<span>${esc(m.full_name)}</span></button>`).join('')}<button type="button" class="cwho" data-u="">Quelqu'un d'autre</button></div>
     <input class="cother" type="text" placeholder="Nom de la personne" hidden>
     <button type="button" class="ghost danger cdel">Supprimer l'intervention</button>
-    <div class="mbtns"><button type="button" class="ghost" data-r="0">Annuler</button><button type="button" class="primary" data-r="1">Clôturer</button></div></div>`;
+    <p class="error"></p><div class="mbtns"><button type="button" class="ghost" data-r="0">Annuler</button><button type="button" class="primary" data-r="1">Clôturer</button></div></div>`;
   hostModal().append(o);
   const oth = o.querySelector('.cother');
   let sel = null;
@@ -278,16 +289,7 @@ function closeChooser(id, doDelete, onDone) {
         p_other: sel ? null : oth.value.trim(),
       });
       b.disabled = false;
-      if (error) {
-        let p = o.querySelector('.cchoose > .error');
-        if (!p) {
-          p = document.createElement('p');
-          p.className = 'error';
-          o.querySelector('.mbtns').before(p);
-        }
-        p.textContent = error.message;
-        return;
-      }
+      if (error) return (o.querySelector('.cchoose > .error').textContent = error.message);
       o.remove();
       onDone();
     }
@@ -469,9 +471,7 @@ export async function renderDetail(el, id) {
       ? `<span class="pill">${STATUS_L[i.status]}</span>`
       : '';
   const prio = PRIO_L[i.priority] ? `<span class="prio p-${i.priority}">${PRIO_L[i.priority]}</span>` : '';
-  const back = inline
-    ? `<a href="#" class="back xback" aria-label="Replier">${BACK}</a>`
-    : `<a href="#" class="back" aria-label="Retour">${BACK}</a>`;
+  const back = `<a href="#" class="back${inline ? ' xback' : ''}" aria-label="${inline ? 'Replier' : 'Retour'}">${BACK}</a>`;
   const card = asCard ? cardOf(i) : '';
   const cardHead = card ? `<div class="dcard">${back}<ul class="cards">${card}</ul></div>` : '';
   const editBtn = canEdit(i)
@@ -524,11 +524,17 @@ export async function renderDetail(el, id) {
   drawEdit();
 
   const fail = err => err && (el.querySelector('#acterr').textContent = err.message);
+  const refold = () => el.closest('.unfold')?.previousElementSibling?.querySelector('a.card')?.click();
+  const foldOrList = () => {
+    if (!inline) return (location.hash = '');
+    refold();
+    rerender();
+  };
   const xb = el.querySelector('.xback');
   if (xb)
     xb.onclick = e => {
       e.preventDefault();
-      el.closest('.unfold')?.previousElementSibling?.querySelector('a.card')?.click();
+      refold();
     };
 
   const row = el.querySelector('.dmeta3 .drow');
@@ -591,20 +597,11 @@ export async function renderDetail(el, id) {
     const r = photos.length ? await sb.storage.from('photos').remove(photos.map(p => p.path)) : {};
     const { error } = r.error ? r : await sb.from('interventions').delete().eq('id', id);
     if (error) return fail(error);
-    if (inline) {
-      el.closest('.unfold')?.previousElementSibling?.querySelector('a.card')?.click();
-      rerender();
-    } else location.hash = '';
+    foldOrList();
   }
   const del = el.querySelector('#del');
   if (del) del.onclick = doDelete;
 
-  const foldOrList = () => {
-    if (inline) {
-      el.closest('.unfold')?.previousElementSibling?.querySelector('a.card')?.click();
-      rerender();
-    } else location.hash = '';
-  };
   const act = async b => {
     if (b.dataset.act === 'cloturer') return closeChooser(id, doDelete, () => renderDetail(el, id));
     if (b.dataset.act === 'liberer' && !confirm("Se retirer de l'intervention ?")) return;
@@ -625,10 +622,6 @@ export async function renderDetail(el, id) {
   };
   el.querySelectorAll('[data-act]').forEach(b => {
     b._run = () => act(b);
-    if (b.dataset.act === 'liberer') {
-      b.onclick = () => act(b);
-      return;
-    }
     if (inline || !['resoudre', 'cloturer', 'prendre'].includes(b.dataset.act)) {
       b.onclick = () => act(b);
       return;

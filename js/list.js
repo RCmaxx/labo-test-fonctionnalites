@@ -1,7 +1,7 @@
 import { sb } from './sb.js';
 import { renderDetail } from './detail.js';
 import { renderCircles } from './circles.js';
-import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, STATUS, isMob, route, p2, svg } from './state.js';
+import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, STATUS, isMob, route, p2, svg, WRENCH } from './state.js';
 
 // Page des terminées : #terminees, et sur mobile la page d'accueil (premier onglet).
 const onDonePage = () => route()[0] === 'terminees' || (isMob() && !route()[0] && S.me.role !== 'client');
@@ -138,8 +138,6 @@ const snippet = (d, q) => {
   return (a ? '…' : '') + mark(s.slice(a, b), q) + (b < s.length ? '…' : '');
 };
 
-const WRENCH =
-  '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
 const HAND =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>';
 const CHEV =
