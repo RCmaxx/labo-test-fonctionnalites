@@ -1,6 +1,7 @@
 import { sb } from './sb.js';
 import { S, app, route, VERSION, esc, ROLES, PNAME } from './state.js';
 import { renderLogin, renderOrg, renderInvitation, renderMe, signOut } from './auth.js';
+import { renderSettings } from './settings.js';
 import { renderList } from './list.js';
 import { renderDetail } from './detail.js';
 import { renderForm } from './form.js';
@@ -144,8 +145,7 @@ function show() {
   if (['terminees', 'recherche', 'parametres'].includes(page) && S.me.role === 'client') { location.hash = ''; return; }
   if (page === 'parametres') {
     if (S.me.real !== 'admin') { location.hash = ''; return; }
-    el.innerHTML = '<div class="account"><h1>Gestion des profils</h1></div>';
-    return;
+    return renderSettings(el);
   }
   if (page === 'compte') return renderMe(el);
   if (page === 'nouvelle') return renderForm(el);
