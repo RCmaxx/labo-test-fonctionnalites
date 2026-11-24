@@ -733,3 +733,29 @@
   max-height: 6lh;
   overflow-y: auto;
 }
+
+/* Mobile : champs dans une carte blanche ; brouillon + Suivant sur une ligne, sans Annuler (la croix ferme), comme l'appli tech */
+@container app (max-width: 600px) {
+  .nform .s1 {
+    padding: var(--s3);
+    border-radius: var(--r-l);
+    background: var(--surface);
+  }
+  .nform .nactions {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--s2);
+  }
+  .nform .nactions .bdwrap {
+    order: 1;
+    flex: 1 1 0;
+  }
+  .nform .nactions .primary {
+    order: 2;
+    flex: 1 1 0;
+  }
+  .nform .nactions a.btn {
+    display: none;
+  }
+}
