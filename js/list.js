@@ -163,7 +163,6 @@ const withSearch = (q, words) => {
 const WR = svg(
   '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>'
 );
-const DONE_I = svg('<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>');
 const GICO = {
   mes: WR,
   dem: svg('<path d="M4 4h16v16H4z"/><path d="M22 6H2"/>'),
@@ -171,9 +170,7 @@ const GICO = {
     '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/>'
   ),
   prise_en_charge: WR,
-  auj: DONE_I,
-  sem: DONE_I,
-  avant: DONE_I,
+  auj: svg('<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>'),
 };
 const day0 = d => new Date(d).setHours(0, 0, 0, 0);
 const arrival = r => {
@@ -318,7 +315,7 @@ function paintTerminees(el, rows, done, more, reopen) {
         : rows.length
           ? `<ul class="cards">${rows.map(r => item(r)).join('')}</ul>`
           : '<p class="empty">Aucune.</p>';
-    return `<section class="group${CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2 role="button" tabindex="0" aria-expanded="${!CLOSED[k]}">${GICO[k] || ''}<span class="count">${rows.length}</span><span class="glab">${label}</span>${CHEV}</h2>${inner}</section>`;
+    return `<section class="group${CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2 role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"><span class="glab">${label}</span>${CHEV}</h2>${inner}</section>`;
   };
   const mob = isMob();
   const html = mob

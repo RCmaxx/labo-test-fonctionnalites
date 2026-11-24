@@ -275,7 +275,16 @@ function show() {
     return renderSettings(el);
   }
   if (page === 'compte') return renderMe(el);
-  if (page === 'nouvelle') return renderForm(el);
+  if (page === 'nouvelle') {
+    if (isMob()) return renderForm(el);
+    // Vue standard, comme l'appli tech : fenêtre par-dessus la liste.
+    return renderList(el).then(() => {
+      el.insertAdjacentHTML('beforeend', '<div class="nmodal"><div class="nbox"></div></div>');
+      const m = el.querySelector('.nmodal');
+      m.onclick = e => e.target === m && m.querySelector('.fx')?.click();
+      renderForm(m.firstChild);
+    });
+  }
   if (page === 'i') {
     if (S.me.role === 'client') {
       location.hash = '';

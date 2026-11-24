@@ -33,7 +33,7 @@ export const REMIND = {
 export const MGR = ['admin', 'directeur', 'responsable_tech'],
   TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v79';
+export const VERSION = 'v80';
 export const app = document.getElementById('app');
 document.documentElement.classList.toggle('sim', !!localStorage.labosim); // mobile simulé : même CSS que le mobile réel
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
