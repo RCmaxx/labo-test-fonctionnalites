@@ -25,7 +25,7 @@ export function paintCounts() {
   if (!last) return;
   const set = (id, v) => {
     const el = document.getElementById(id);
-    if (el) el.textContent = v || '';
+    if (el) el.textContent = v ?? ''; // 0 affiché, comme l'appli tech
   };
   set('tabn', last.total);
   set('tabm', last.mine);

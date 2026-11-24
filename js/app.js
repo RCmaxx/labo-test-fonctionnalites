@@ -41,6 +41,7 @@ const avatar = name => {
   return { bg: AV[i % 6], e: s[0].toUpperCase() };
 };
 
+let opening = true; // prochain affichage = ouverture de l'appli
 async function render() {
   const [page, id] = route();
   const {
@@ -68,12 +69,18 @@ async function render() {
     S.org = org;
     S.team = t.data || [];
     startLive(show);
+    opening = true;
   }
   const r = S.me.role,
     admin = S.me.real === 'admin',
     cli = r === 'client';
   // Comme l'appli tech : un technicien a toujours la vue mobile (cadre téléphone sur grand écran).
   document.documentElement.classList.toggle('sim', r === 'technicien' || !!localStorage.labosim);
+  // Comme l'appli tech : sur mobile, chaque ouverture (lancement, connexion, retour après 5 min) arrive sur « Interventions ».
+  if (opening) {
+    opening = false;
+    if (isMob() && !cli && !['nouvelles', 'i', 'invitation'].includes(page)) return location.replace('#nouvelles');
+  }
   const disp = admin ? PNAME[r] || S.me.full_name : S.me.full_name || S.me.email;
   const av = avatar(admin && r === 'client' ? 'Client' : disp);
   const pick = admin;
@@ -306,5 +313,20 @@ addEventListener('hashchange', e => {
 addEventListener('labo:render', () => {
   tabs.reset();
   render();
+});
+// Retour dans l'appli après 5 min (ou depuis le cache de Safari) : nouvelle ouverture.
+let hidden = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) hidden = Date.now();
+  else if (hidden && Date.now() - hidden > 300000 && S.me) {
+    opening = true;
+    render();
+  }
+});
+addEventListener('pageshow', e => {
+  if (e.persisted && S.me) {
+    opening = true;
+    render();
+  }
 });
 render();

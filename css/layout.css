@@ -362,15 +362,45 @@ main {
     max-width: none;
   }
   /* Bouton + au-dessus de la barre d'onglets, même écart de 16 px ; contenu dégagé des deux. */
+  .fab,
+  .fabm,
+  main {
+    --fab: var(--fab-mob);
+  }
   .fab {
     right: var(--s4);
     bottom: calc(var(--tab-gap) + var(--tab) + var(--s4));
+    font-size: 0;
+    box-shadow: none;
   }
-  /* Pastille bleue « mes interventions » au-dessus du + (comme l'appli tech) */
+  /* Croix du + dessinée (deux barres), comme l'appli tech */
+  .fab::before,
+  .fab::after {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    width: var(--fab-plus);
+    height: var(--fab-plus-w);
+    border-radius: var(--fab-plus-w);
+    background: var(--surface);
+  }
+  .fab::after {
+    width: var(--fab-plus-w);
+    height: var(--fab-plus);
+  }
+  /* Pastille « mes interventions » au-dessus du + (comme l'appli tech) */
   .fabm:not(:empty) {
     display: grid;
     right: var(--s4);
     bottom: calc(var(--tab-gap) + var(--tab) + var(--s4) + var(--fab) + var(--s3));
+    background: var(--chrome);
+    box-shadow: var(--shadow-fabm);
+    font-size: var(--fabm-fs);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
   }
   main {
     padding: 0 var(--s2) calc(var(--tab-gap) + var(--tab) + var(--fab) + var(--s4) * 2);
