@@ -336,7 +336,7 @@ export async function renderList(el) {
           .join('')}</div>
         <ul class="srecent" hidden></ul>
         <div id="rows"><p>Chargement…</p></div>`
-    : `${isMob() && route()[0] === 'nouvelles' && S.me.role !== 'client' ? SEARCH_BAR : ''}<div id="rows"><p>Chargement…</p></div>`;
+    : `${isMob() && route()[0] === '' && S.me.role !== 'client' ? SEARCH_BAR : ''}<div id="rows"><p>Chargement…</p></div>`;
   const qel = el.querySelector('#q'),
     rows = el.querySelector('#rows');
   const [reads, msgs] = await Promise.all([
@@ -368,12 +368,17 @@ export async function renderList(el) {
       return t >= w0 && t < d0;
     });
     const avant = list.filter(r => day0(finAt(r)) < w0);
-    const groups = [
-      ['auj', "Terminées aujourd'hui", auj],
-      ['sem', 'Terminées cette semaine', sem],
-      ['avant', 'Autres interventions terminées', avant],
-    ];
+    const groups = isMob()
+      ? [['all', 'Interventions terminées', list]]
+      : [
+          ['auj', "Terminées aujourd'hui", auj],
+          ['sem', 'Terminées cette semaine', sem],
+          ['avant', 'Autres interventions terminées', avant],
+        ];
+    const flat = isMob(); // mobile : une seule liste « N Interventions terminées », comme l'appli tech
     const body = ([k, label, rows]) => {
+      if (flat)
+        return `<section class="group" data-g="all"><h2><span class="count">${rows.length}</span><span class="glab">${label}</span></h2>${rows.length ? `<ul class="cards">${rows.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
       const inner =
         k === 'sem' && rows.length
           ? byDay(rows)

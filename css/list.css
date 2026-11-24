@@ -450,3 +450,13 @@ mark {
     display: none;
   }
 }
+
+/* Mobile, Terminées : entête simple « N Interventions terminées » */
+.group[data-g='all'] > h2 .count {
+  font-size: 28px;
+}
+.group[data-g='all'] > h2 .glab {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
