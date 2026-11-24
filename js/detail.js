@@ -1,7 +1,6 @@
 import { sb } from './sb.js';
-import { S, esc, isMob, DONE, MGR, TECH, REMIND, nameOf, rerender } from './state.js';
+import { S, esc, isMob, DONE, MGR, TECH, REMIND, nameOf, rerender, MONTHS, hostModal, p2 } from './state.js';
 import { drawEdit } from './lock.js';
-import { hostModal } from './slot.js';
 import { initComposer } from './composer.js';
 import { cardOf } from './list.js';
 import { pcolor } from './pcolor.js';
@@ -43,7 +42,6 @@ const EVENTS = {
 };
 const STATUS_L = { prise_en_charge: 'En cours', resolue: 'Terminée', validee: 'Clôturée', brouillon: 'Brouillon' };
 const PRIO_L = { haute: 'Urgent', urgente: 'Urgente' };
-const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
 // Actions possibles selon le rôle et le statut (mêmes règles que l'app main, lot 408).
 function actions(i) {
@@ -80,12 +78,11 @@ async function signedUrls(paths) {
   return Object.fromEntries((data || []).map(d => [d.path, d.signedUrl]));
 }
 
-const n2 = n => String(n).padStart(2, '0');
 const locTag = l => {
   const m = String(l || '')
     .trim()
     .match(/^(?:mobil[- ]?home|mh)\s*(\d+)$/i);
-  return m ? 'MH ' + n2(m[1]) : String(l || '').trim();
+  return m ? 'MH ' + p2(m[1]) : String(l || '').trim();
 };
 const compactName = s => (/^responsable(\s+tech(nique)?)?$/i.test(String(s || '').trim()) ? 'Resp.tech' : s || '');
 const roleKind = r => (TECH.includes(r) ? 'tech' : 'rec');
@@ -116,8 +113,8 @@ function fmtAgo(d) {
     const h = Math.floor(m / 60);
     return `Il y a ${h} heure${h > 1 ? 's' : ''}`;
   }
-  if (n === 1) return `Hier à ${n2(x.getHours())}:${n2(x.getMinutes())}`;
-  return `${x.getDate()} ${MONTHS[x.getMonth()]} · ${n2(x.getHours())}:${n2(x.getMinutes())}`;
+  if (n === 1) return `Hier à ${p2(x.getHours())}:${p2(x.getMinutes())}`;
+  return `${x.getDate()} ${MONTHS[x.getMonth()]} · ${p2(x.getHours())}:${p2(x.getMinutes())}`;
 }
 
 const pnm = (n, t, r) => {
@@ -211,7 +208,7 @@ function slotLine(i) {
   const n = Math.round((new Date(f).setHours(0, 0, 0, 0) - t0) / 864e5);
   const le = f.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
   const day = { '-1': 'Hier', 0: "Aujourd'hui", 1: 'Demain' }[n] || le;
-  const hm = d => `${n2(d.getHours())}:${n2(d.getMinutes())}`;
+  const hm = d => `${p2(d.getHours())}:${p2(d.getMinutes())}`;
   return `${day} ${hm(f)}–${hm(until)}`;
 }
 

@@ -1,10 +1,9 @@
-export const p2 = n => String(n).padStart(2, '0');
+import { p2, hostModal } from './state.js';
 export const dIn = v => {
   const x = v ? new Date(v) : new Date();
   return `${x.getFullYear()}-${p2(x.getMonth() + 1)}-${p2(x.getDate())}`;
 };
 export const TIMES = Array.from({ length: 96 }, (_, i) => `${p2(Math.floor(i / 4))}:${p2((i % 4) * 15)}`);
-export const hostModal = () => document.querySelector('.sim #app') || document.body;
 
 // Sélecteur de créneau (date, heure, passage) du formulaire : roues de défilement dans une feuille.
 /** Branche le sélecteur sur le formulaire `f` ; rend ce dont le reste du formulaire a besoin. */

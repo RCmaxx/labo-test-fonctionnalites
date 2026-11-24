@@ -33,7 +33,7 @@ export const REMIND = {
 export const MGR = ['admin', 'directeur', 'responsable_tech'],
   TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v74';
+export const VERSION = 'v75';
 export const app = document.getElementById('app');
 document.documentElement.classList.toggle('sim', !!localStorage.labosim); // mobile simulé : même CSS que le mobile réel
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -77,3 +77,6 @@ export const S = {
 export const nameOf = id => S.team.find(m => m.user_id === id)?.full_name || 'Quelqu’un';
 // Demande un nouvel affichage complet (écouté par app.js, évite une dépendance circulaire).
 export const rerender = () => dispatchEvent(new Event('labo:render'));
+export const MONTHS = 'janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.'.split(' ');
+export const p2 = n => String(n).padStart(2, '0');
+export const hostModal = () => document.querySelector('.sim #app') || document.body;

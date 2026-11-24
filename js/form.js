@@ -1,8 +1,8 @@
 import { initDrafts } from './drafts.js';
 import { initPlaceField, tagIn } from './place.js';
-import { initSlotPicker, p2, dIn, TIMES, hostModal } from './slot.js';
+import { initSlotPicker, dIn, TIMES } from './slot.js';
 import { sb } from './sb.js';
-import { S, esc, REMIND, MGR, TECH } from './state.js';
+import { S, esc, REMIND, MGR, TECH, MONTHS, p2, hostModal } from './state.js';
 import { takeLock } from './lock.js';
 
 const PRIO_L = { basse: 'À faire', normale: 'Important', haute: 'Urgent', urgente: 'Urgente' };
@@ -25,10 +25,9 @@ const DAYS = cur => {
   const out = [],
     t = new Date();
   t.setHours(0, 0, 0, 0);
-  const W = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'],
-    M = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  const W = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
   const lab = (x, n) =>
-    n === 0 ? "Aujourd'hui" : n === 1 ? 'Demain' : `${W[x.getDay()]} ${x.getDate()} ${M[x.getMonth()]}`;
+    n === 0 ? "Aujourd'hui" : n === 1 ? 'Demain' : `${W[x.getDay()]} ${x.getDate()} ${MONTHS[x.getMonth()]}`;
   if (cur && dIn(cur) < dIn()) {
     const x = new Date(cur);
     out.push([dIn(cur), lab(x, -1)]);

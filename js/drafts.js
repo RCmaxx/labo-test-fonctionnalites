@@ -1,6 +1,5 @@
 import { sb } from './sb.js';
-import { S, esc } from './state.js';
-import { hostModal } from './slot.js';
+import { S, esc, hostModal } from './state.js';
 
 const DCHEV =
   '<svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5L6 8L9.5 4.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';

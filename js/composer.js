@@ -1,7 +1,6 @@
 import { sb } from './sb.js';
-import { S } from './state.js';
+import { S, hostModal } from './state.js';
 import { uploadPhotos, photoTray } from './form.js';
-import { hostModal } from './slot.js';
 
 // Zone de saisie du tchat : commentaire, photos, envoi, et décalage du clavier mobile.
 /** Branche la saisie (`#cm`, `#comment`, `#ph`) de la fiche `el`. `rerender` redessine la fiche après un envoi. */

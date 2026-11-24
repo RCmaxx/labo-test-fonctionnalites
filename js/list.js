@@ -1,7 +1,7 @@
 import { sb } from './sb.js';
 import { renderDetail } from './detail.js';
 import { renderCircles } from './circles.js';
-import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, STATUS, isMob, route } from './state.js';
+import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, STATUS, isMob, route, p2 } from './state.js';
 
 // Page des terminées : #terminees, et sur mobile la page d'accueil (premier onglet).
 const onDonePage = () => route()[0] === 'terminees' || (isMob() && !route()[0] && S.me.role !== 'client');
@@ -23,20 +23,7 @@ const SF = {
   date: 'Date',
 };
 const RKEY = 'lab:recent-search';
-const MOIS = [
-  'janvier',
-  'février',
-  'mars',
-  'avril',
-  'mai',
-  'juin',
-  'juillet',
-  'août',
-  'septembre',
-  'octobre',
-  'novembre',
-  'décembre',
-];
+const MOIS = 'janvier février mars avril mai juin juillet août septembre octobre novembre décembre'.split(' ');
 const STATUT_TXT = {
   publiee: 'signale nouveau nouvelle a prendre',
   prise_en_charge: 'en cours pris',
@@ -72,16 +59,15 @@ const dateForms = iso => {
     d = x.getDate(),
     m = x.getMonth() + 1,
     y = x.getFullYear(),
-    M = MOIS[m - 1],
-    p = n => String(n).padStart(2, '0');
+    M = MOIS[m - 1];
   return [
     `${d} ${M} ${y}`,
-    `${p(d)} ${M} ${y}`,
+    `${p2(d)} ${M} ${y}`,
     `${d} ${M.slice(0, 3)} ${y}`,
-    `${p(d)}/${p(m)}/${y}`,
+    `${p2(d)}/${p(m)}/${y}`,
     `${d}/${m}/${y}`,
-    `${p(d)}-${p(m)}-${y}`,
-    `${y}-${p(m)}-${p(d)}`,
+    `${p2(d)}-${p(m)}-${y}`,
+    `${y}-${p(m)}-${p2(d)}`,
   ];
 };
 const dateHit = (r, q) => {
@@ -212,7 +198,7 @@ const slotLab = r => {
   const day =
     { '-1': 'Hier', 0: "Aujourd'hui", 1: 'Demain' }[n] ||
     f.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-  const hm = d => `${String(d.getHours()).padStart(2, '0')}h${String(d.getMinutes()).padStart(2, '0')}`;
+  const hm = d => `${p2(d.getHours())}h${p2(d.getMinutes())}`;
   return `${day} ${hm(f)}–${hm(until)}`;
 };
 const isPmine = r =>
@@ -269,27 +255,6 @@ function stackSticky(box, sel) {
     box._stk.observe(box);
   }
 }
-function stk2(box) {
-  const set = () => {
-    const a = document.getElementById('app');
-    const sim = a && getComputedStyle(a).overflowY !== 'visible';
-    let y = sim ? 0 : 0;
-    box
-      .querySelectorAll(':scope > .group[data-g=mes] > h2, :scope > .group[data-g=prise_en_charge] > h2')
-      .forEach(h => {
-        h.style.top = Math.floor(y) + 'px';
-        y += h.getBoundingClientRect().height;
-      });
-  };
-  set();
-  if (!box._stk2) {
-    box._stk2 = 1;
-    addEventListener('resize', () => {
-      if (box.classList.contains('stk2')) set();
-    });
-  }
-}
-
 // Barre « Rechercher » en tête de la page Nouvelles (mobile), comme l'appli tech.
 const SEARCH_BAR =
   '<a class="msearch" href="#recherche"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Rechercher</a>';
@@ -526,7 +491,8 @@ export async function renderList(el) {
       document.documentElement.style.setProperty('--gtop', Math.round(top) + 'px');
       rows.querySelectorAll('.gcol').forEach(c => stackSticky(c, '.group > h2'));
     }
-    if (rows.classList.contains('stk2')) stk2(rows);
+    if (rows.classList.contains('stk2'))
+      stackSticky(rows, ':scope > .group:is([data-g=mes], [data-g=prise_en_charge]) > h2');
     const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
     if (again) unfold(again, false);
     else openId = null;

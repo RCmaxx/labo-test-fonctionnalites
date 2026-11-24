@@ -1,7 +1,6 @@
 import { sb } from './sb.js';
-import { esc, nameOf, TECH, S } from './state.js';
+import { esc, nameOf, TECH, S, hostModal } from './state.js';
 
-const hostModal = () => document.querySelector('.sim #app') || document.body;
 const SEEN = 'labo-rappels-vus';
 const seen = () => {
   try {
