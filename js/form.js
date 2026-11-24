@@ -254,6 +254,8 @@ export async function renderForm(el, id) {
         <div class="s1"><div class="nf-row">
           <div class="nf"><input name="title" type="text" maxlength="70" required placeholder="${r === 'client' ? "Titre de l'intervention" : 'Titre'}" value="${esc(i.title)}"></div>
           <div class="nf ac"><input name="location" type="text" maxlength="80" placeholder="Lieu" value="${esc(i.location)}" aria-autocomplete="list" aria-expanded="false" autocorrect="off" spellcheck="false"><ul class="ac-list" role="listbox" hidden></ul></div>
+          <div class="pbw"><button type="button" class="pbtn" aria-expanded="false">Priorité</button></div>
+          <span class="ndate">${esc(new Date().toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).replace(' à', ''))}</span>
         </div>
         <fieldset class="seg"><legend>Priorité</legend>${Object.entries(PRIO_L)
           .map(
@@ -306,6 +308,20 @@ export async function renderForm(el, id) {
 
   const f = el.querySelector('#f'),
     err = el.querySelector('#ferr');
+  // Mobile : la priorité se choisit depuis un bouton (les pastilles s'ouvrent dessous), comme l'appli tech.
+  const pbtn = f.querySelector('.pbtn');
+  const syncPrio = () => {
+    const v = f.priority?.value;
+    pbtn.textContent = v ? PRIO_L[v] : 'Priorité';
+  };
+  pbtn.addEventListener('click', () => pbtn.setAttribute('aria-expanded', String(f.classList.toggle('pop'))));
+  f.addEventListener('change', e => {
+    if (e.target.name !== 'priority') return;
+    syncPrio();
+    f.classList.remove('pop');
+    pbtn.setAttribute('aria-expanded', 'false');
+  });
+  syncPrio();
   const loc = f.location,
     ul = f.querySelector('.ac-list');
   let places = placesRes.data || [];
