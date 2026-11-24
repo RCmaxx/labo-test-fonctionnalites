@@ -3,11 +3,23 @@
 
 .group { margin: 0 0 var(--s6); }
 /* Sous-titre comme l'appli : icône, grand compteur, libellé, alignés en bas, au retrait du texte des cartes. */
-.group__title { display: flex; align-items: flex-end; gap: 10px; margin: 0 0 var(--s2); padding: 0 10px; font-size: 17px; font-weight: var(--fw-title); line-height: 20px; color: var(--group-fg); }
-.group__title svg { flex: none; width: 20px; height: 20px; margin-bottom: 4px; color: var(--ink); }
-.group__title span:last-child { padding-bottom: 3px; }
+.group > h2 { display: flex; align-items: flex-end; gap: 10px; margin: 0 0 var(--s2); padding: 0 10px; font-size: 17px; font-weight: var(--fw-title); line-height: 20px; color: var(--group-fg); }
+.group > h2 svg { flex: none; width: 20px; height: 20px; margin-bottom: 4px; color: var(--ink); }
+.group > h2 span:last-child { padding-bottom: 3px; }
 .count { font-size: 34px; font-weight: 700; line-height: 29px; color: var(--ink); }
 .empty { color: var(--ink-3); margin: 0; padding: 0 10px; }
+.group > h2 .glab { padding-bottom: 3px; }
+.group > h2 .chev { flex: none; margin-bottom: 4px; transition: transform .15s; }
+.group.closed > h2 .chev { transform: rotate(-90deg); }
+.group.closed .cards, .group.closed .empty { display: none; }
+.group > h2[role=button] { cursor: pointer; }
+
+.gcols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--s4); align-items: start; }
+.gcol { min-width: 0; max-height: calc(100dvh - var(--gtop, 220px)); overflow-y: auto; overflow-x: hidden; scrollbar-width: none; overscroll-behavior: contain; }
+.gcol::-webkit-scrollbar { display: none; }
+.gcol .group > h2 { position: sticky; top: 0; z-index: 5; background: var(--bg); }
+#rows.stk2 > .group[data-g=mes] > h2,
+#rows.stk2 > .group[data-g=prise_en_charge] > h2 { position: sticky; z-index: 4; background: var(--bg); }
 
 .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); grid-auto-flow: row dense; }
 

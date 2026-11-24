@@ -26,7 +26,7 @@ async function render() {
   }
   app.innerHTML = `<nav class="topbar"><a href="#">Interventions</a><a href="#compte">Mon compte</a><button class="sim-toggle" id="sim">Mobile</button><small>${VERSION}</small></nav><aside class="alerts" id="alerts"></aside><main></main><a class="fab" href="#nouvelle" aria-label="Nouvelle intervention">+</a><nav class="tabbar"><a href="#" aria-label="Interventions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></a><a href="#nouvelles" aria-label="Nouvelles interventions"><span class="tabbar__n" id="tabn"></span></a></nav>`;
   drawAlerts();
-  app.querySelector('#sim').onclick = () => localStorage.labosim = document.documentElement.classList.toggle('sim') ? '1' : '';
+  app.querySelector('#sim').onclick = () => { localStorage.labosim = document.documentElement.classList.toggle('sim') ? '1' : ''; show(); };
   show();
 }
 
@@ -36,8 +36,13 @@ function show() {
   if (!el) return;
   const cur = page === 'compte' || page === 'nouvelles' ? '#' + page : '';
   app.querySelectorAll('.topbar a, .tabbar a').forEach(a => a.classList.toggle('on', a.hash === cur));
-  page === 'compte' ? renderMe(el) : page === 'nouvelle' ? renderForm(el)
-    : page === 'i' ? (sub === 'modifier' ? renderForm(el, id) : renderDetail(el, id)) : renderList(el);
+  if (page === 'compte') return renderMe(el);
+  if (page === 'nouvelle') return renderForm(el);
+  if (page === 'i') {
+    if (S.me.role === 'client') { location.hash = ''; return; }
+    return sub === 'modifier' ? renderForm(el, id) : renderDetail(el, id);
+  }
+  renderList(el);
 }
 
 addEventListener('hashchange', render);

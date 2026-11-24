@@ -1,20 +1,18 @@
 import { sb } from './sb.js';
 import { renderDetail } from './detail.js';
-import { S, esc, fmtCard, nameOf, DONE, PAGE, route } from './state.js';
+import { S, esc, fmtCard, nameOf, DONE, TECH, isMob, route } from './state.js';
 
-let search = '', doneN = PAGE, tq = 0; // recherche et nombre de terminées gardés entre deux affichages
-// Icônes de l'appli (clé du technicien, main de la présence client).
+let search = '', tq = 0;
 const WRENCH = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
 const HAND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>';
-// Lieu coloré par priorité ; « Mobil-home 5 » s'affiche « MH 05 » comme dans l'appli.
+const CHEV = '<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
 const place = r => {
   const m = String(r.location || '').trim().match(/^(?:mobil[- ]?home|mh)\s*(\d+)$/i);
   const label = m ? `<small>MH</small>${m[1].padStart(2, '0')}` : esc(r.location) || 'Sans lieu';
   return `<span class="tag tag--place tag--${r.priority || 'normale'}">${label}</span>`;
 };
-const COLS = 'id, title, location, description, status, priority, assignee_id, created_by, created_at, resolved_at, validated_at, client_presence';
+const COLS = 'id, title, location, description, status, priority, assignee_id, assignee_role, proposed_to, assigned_by, available_from, available_until, created_by, created_at, resolved_at, validated_at, client_presence';
 const scope = q => S.me.role === 'client' ? q.eq('created_by', S.me.id) : q;
-// Filtre PostgREST : chaque mot doit apparaître dans titre, lieu ou description (ilike, casse ignorée).
 const withSearch = (q, words) => {
   for (const raw of words) {
     const w = raw.replace(/[%_,.()"'\\]/g, '').slice(0, 80);
@@ -22,15 +20,48 @@ const withSearch = (q, words) => {
   }
   return q;
 };
-// Icônes des sous-titres, reprises de l'appli (js/views/list.js GICO) ; crayon pour les brouillons.
 const WR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/></svg>';
 const GICO = {
-  brouillon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
-  mes: WR, cours: WR,
+  mes: WR,
+  dem: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M22 6H2"/></svg>',
   publiee: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></svg>',
-  fini: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
+  prise_en_charge: WR,
+  auj: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
 };
-let openId = null; // carte dépliée, gardée quand la liste se redessine (temps réel)
+const day0 = d => new Date(d).setHours(0, 0, 0, 0);
+const arrival = r => {
+  const c = new Date(r.created_at).getTime();
+  if (!r.available_from) return c;
+  const f = new Date(r.available_from).getTime(), n = Date.now();
+  return Math.max(c, ...[day0(f), f - 36e5, f - 18e5].filter(t => t <= n));
+};
+const byArrival = (a, b) => arrival(b) - arrival(a);
+const byFin = (a, b) => new Date(b.resolved_at || b.validated_at || 0) - new Date(a.resolved_at || a.validated_at || 0);
+const isTodayDone = r => {
+  const d = r.resolved_at || r.validated_at; if (!d) return false;
+  return day0(d) === day0(Date.now());
+};
+const roleOf = id => S.team.find(m => m.user_id === id)?.role;
+const CLOSED = {};
+let openId = null;
+
+function stackSticky(box, sel) {
+  const set = () => { let y = 0; box.querySelectorAll(sel).forEach(h => { h.style.top = Math.floor(y) + 'px'; y += h.getBoundingClientRect().height; }); };
+  set();
+  if (!box._stk) { box._stk = new ResizeObserver(set); box._stk.observe(box); }
+}
+function stk2(box) {
+  const set = () => {
+    const a = document.getElementById('app');
+    const sim = a && getComputedStyle(a).overflowY !== 'visible';
+    let y = sim ? 0 : 0;
+    box.querySelectorAll(':scope > .group[data-g=mes] > h2, :scope > .group[data-g=prise_en_charge] > h2').forEach(h => {
+      h.style.top = Math.floor(y) + 'px'; y += h.getBoundingClientRect().height;
+    });
+  };
+  set();
+  if (!box._stk2) { box._stk2 = 1; addEventListener('resize', () => { if (box.classList.contains('stk2')) set(); }); }
+}
 
 export async function renderList(el) {
   el.innerHTML = `<p class="search"><label>Rechercher <input type="search" id="q" value="${esc(search)}"></label></p><div id="rows"><p>Chargement…</p></div>`;
@@ -44,30 +75,76 @@ export async function renderList(el) {
   (msgs.data || []).forEach(m => { if (!last[m.intervention_id] || m.created_at > last[m.intervention_id]) unread[m.intervention_id] = (unread[m.intervention_id] || 0) + 1; });
   const item = r => {
     const done = DONE.includes(r.status), n = unread[r.id];
-    return `<li><a class="card${done ? ' card--done' : ''}" href="#i/${r.id}">
+    const href = S.me.role === 'client' ? '#' : `#i/${r.id}`;
+    return `<li><a class="card${done ? ' card--done' : ''}" href="${href}"${S.me.role === 'client' ? ' aria-disabled="true"' : ''}>
       ${n ? `<span class="badge">${n}</span>` : ''}<b class="card__title">${esc(r.title)}</b>
       <span class="card__meta">${place(r)}${r.assignee_id ? `<span class="tag tag--tech">${WRENCH}${esc(nameOf(r.assignee_id))}</span>` : ''}<time>${fmtCard(done ? r.resolved_at || r.validated_at : r.created_at)}</time></span>
       ${r.client_presence ? `<span class="card__presence">${HAND}Présence client</span>` : ''}
     </a></li>`;
   };
-  const paint = (open, done, more) => {
-    const groups = [
-      ['brouillon', 'Brouillons', open.filter(r => r.status === 'brouillon' && (S.me.role !== 'technicien' || r.created_by === S.me.id))],
-      ['mes', 'Mes interventions', open.filter(r => r.status === 'prise_en_charge' && r.assignee_id === S.me.id)],
-      ['publiee', 'Nouvelles interventions', open.filter(r => r.status === 'publiee')],
-      ['cours', 'En cours', open.filter(r => r.status === 'prise_en_charge' && r.assignee_id !== S.me.id)],
-      ['fini', 'Terminées', done],
+  const sec = ([k, label, list], foldable) => `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
+
+  const paint = (open, done) => {
+    const me = S.me.id, r = S.me.role, mob = isMob(), page = route()[0];
+    const mine = x => x.assignee_id === me && (S.me.real !== 'admin' || !x.assignee_role || x.assignee_role === r);
+    const pmine = x => x.status === 'publiee' && !x.available_from && x.proposed_to && TECH.includes(r) && (x.proposed_to === me || (S.me.real === 'admin' && roleOf(x.proposed_to) === r));
+    const canDem = ['directeur', 'responsable_tech'].includes(r);
+    const asked = x => canDem && x.assigned_by === me && !mine(x) && !pmine(x);
+    let groups = [
+      ['mes', 'Mes interventions', open.filter(x => (x.status === 'prise_en_charge' && mine(x)) || pmine(x)).sort(byArrival)],
+      ['dem', "Mes demandes d'intervention", open.filter(asked)],
+      ['publiee', 'Nouvelles interventions', open.filter(x => x.status === 'publiee' && !pmine(x) && !asked(x)).sort(byArrival)],
+      ['prise_en_charge', TECH.includes(r) ? 'Autres interventions en cours' : 'En cours', open.filter(x => x.status === 'prise_en_charge' && !mine(x) && !asked(x)).sort(byArrival)],
     ];
+    if (!mob && r !== 'client') groups.push(['auj', "Terminées aujourd'hui", done.filter(isTodayDone).sort(byFin)]);
+    groups = groups.filter(([k, , list]) => (k !== 'mes' || list.length) && (k !== 'dem' || canDem));
+
     const tabn = document.getElementById('tabn');
-    if (tabn) tabn.textContent = groups[2][2].length;
-    rows.innerHTML = (route()[0] === 'nouvelles' ? [groups[2]] : groups).map(([k, t, list]) => `<section class="group"><h2 class="group__title">${GICO[k]}<span class="count">${list.length}</span><span>${t}</span></h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`).join('')
-      + (more ? '<p class="more"><button id="more">Plus de terminées</button></p>' : '');
+    if (tabn) tabn.textContent = open.filter(x => x.status === 'publiee' && !pmine(x) && !asked(x)).length || '';
+
+    if (r === 'client') {
+      rows.innerHTML = `<section class="group" data-g="publiee"><h2>${GICO.publiee}<span class="count">${open.length}</span><span class="glab">Mes interventions</span></h2>${open.length ? `<ul class="cards">${open.sort(byArrival).map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
+      return;
+    }
+    if (mob && page === 'nouvelles') groups = [['publiee', 'Interventions', open.sort(byArrival)]];
+    else if (mob) groups = groups.filter(g => ['mes', 'prise_en_charge'].includes(g[0]));
+
+    const std = !mob;
+    const shown = groups.filter(g => g[2].length || (std && g[0] === 'auj'));
+    const foldable = mob;
+    const COL = { dem: 0, publiee: 0, mes: 1, prise_en_charge: 1, auj: 2 };
+    if (std) {
+      rows.innerHTML = `<div class="gcols">${[0, 1, 2].map(c => {
+        const gs = shown.filter(g => COL[g[0]] === c);
+        return `<div class="gcol">${gs.length ? gs.map(g => sec(g, foldable)).join('') : ''}</div>`;
+      }).join('')}</div>`;
+    } else {
+      rows.innerHTML = shown.length ? shown.map(g => sec(g, foldable)).join('') : '<p class="empty">Aucune intervention pour le moment.</p>';
+    }
+    rows.classList.toggle('stk2', mob && page !== 'nouvelles');
+    const g0 = rows.querySelector('.gcol');
+    if (g0) {
+      const host = document.querySelector('.sim #app');
+      const top = g0.getBoundingClientRect().top - (host ? host.getBoundingClientRect().top - host.scrollTop : 0);
+      document.documentElement.style.setProperty('--gtop', Math.round(top) + 'px');
+      rows.querySelectorAll('.gcol').forEach(c => stackSticky(c, '.group > h2'));
+    }
+    if (rows.classList.contains('stk2')) stk2(rows);
     const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
     if (again) unfold(again, false); else openId = null;
-    const btn = rows.querySelector('#more');
-    if (btn) btn.onclick = () => { doneN += PAGE; renderList(el); };
+    rows.querySelectorAll('.group h2[role=button]').forEach(h => {
+      h.onclick = h.onkeydown = e => {
+        if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+        if (e.type === 'click' && !e.target.closest('.glab, .count, .chev')) return;
+        e.preventDefault();
+        const g = h.parentElement, k = g.dataset.g;
+        CLOSED[k] = !g.classList.contains('closed');
+        g.classList.toggle('closed', CLOSED[k]);
+        h.setAttribute('aria-expanded', String(!CLOSED[k]));
+      };
+    });
   };
-  // Dépliage sur place, comme l'appli : la fiche s'ouvre sous la carte, une seule à la fois ; re-clic = repli.
+
   const fold = u => {
     if (!u.classList.contains('is-open')) return u.remove();
     u.classList.remove('is-open');
@@ -83,26 +160,29 @@ export async function renderList(el) {
   };
   rows.onclick = e => {
     const a = e.target.closest('a.card');
-    if (!a || e.metaKey || e.ctrlKey) return;
+    if (!a || e.metaKey || e.ctrlKey || S.me.role === 'client') return;
+    if (a.getAttribute('href') === '#') return;
     e.preventDefault(); unfold(a);
   };
   const load = async () => {
     const words = search.trim().split(/\s+/).filter(Boolean);
+    const openQ = scope(sb.from('interventions').select(COLS).not('status', 'in', `(brouillon,${DONE.join(',')})`)).order('created_at', { ascending: false });
     if (words.length) {
-      const { data, error } = await withSearch(scope(sb.from('interventions').select(COLS)), words)
+      const { data, error } = await withSearch(scope(sb.from('interventions').select(COLS).neq('status', 'brouillon')), words)
         .order('created_at', { ascending: false }).limit(200);
       if (error) return rows.innerHTML = `<p>${esc(error.message)}</p>`;
       const all = data || [];
-      paint(all.filter(r => !DONE.includes(r.status)), all.filter(r => DONE.includes(r.status)), false);
+      paint(all.filter(r => !DONE.includes(r.status)), all.filter(r => DONE.includes(r.status)));
       return;
     }
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
     const [open, done] = await Promise.all([
-      scope(sb.from('interventions').select(COLS).not('status', 'in', `(${DONE})`)).order('created_at', { ascending: false }),
-      scope(sb.from('interventions').select(COLS).in('status', DONE)).order('resolved_at', { ascending: false, nullsFirst: false }).order('id').limit(doneN),
+      openQ,
+      isMob() || S.me.role === 'client' ? { data: [] } : scope(sb.from('interventions').select(COLS).in('status', DONE).gte('resolved_at', t0.toISOString())).order('resolved_at', { ascending: false }).limit(100),
     ]);
     const err = open.error || done.error;
     if (err) return rows.innerHTML = `<p>${esc(err.message)}</p>`;
-    paint(open.data, done.data, done.data.length === doneN);
+    paint(open.data || [], done.data || []);
   };
   qel.oninput = e => { search = e.target.value; clearTimeout(tq); tq = setTimeout(load, 250); };
   await load();
