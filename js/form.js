@@ -246,7 +246,7 @@ export async function renderForm(el, id) {
   const by = id && (await takeLock(id));
   if (by) return (el.innerHTML = `<p>${esc(by)}</p>`);
   const [cur, placesRes, techs] = await Promise.all([
-    id ? sb.from('interventions').select('*').eq('id', id).maybeSingle() : { data: { priority: 'normale' } },
+    id ? sb.from('interventions').select('*').eq('id', id).maybeSingle() : { data: {} },
     sb.from('places').select('label, num').order('num', { nullsFirst: false }).order('label').limit(2000),
     sb
       .from('members')
