@@ -96,6 +96,17 @@ const isTodayDone = r => {
   return day0(d) === day0(Date.now());
 };
 const roleOf = id => S.team.find(m => m.user_id === id)?.role;
+const slotLab = r => {
+  if (!r.available_from) return '';
+  const f = new Date(r.available_from), until = new Date(r.available_until || f.getTime() + 9e5);
+  const n = Math.round((day0(f) - day0(Date.now())) / 864e5);
+  const day = { '-1': 'Hier', 0: "Aujourd'hui", 1: 'Demain' }[n] || f.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const hm = d => `${String(d.getHours()).padStart(2, '0')}h${String(d.getMinutes()).padStart(2, '0')}`;
+  return `${day} ${hm(f)}–${hm(until)}`;
+};
+const isPmine = r => r.status === 'publiee' && !r.available_from && r.proposed_to && TECH.includes(S.me.role) && (r.proposed_to === S.me.id || (S.me.real === 'admin' && roleOf(r.proposed_to) === S.me.role));
+const canTake = r => TECH.includes(S.me.role) && r.status === 'publiee' && !r.assignee_id && (!r.proposed_to || r.proposed_to === S.me.id || (S.me.real === 'admin' && roleOf(r.proposed_to) === S.me.role));
+
 
 const finAt = r => new Date(r.resolved_at || r.validated_at || r.updated_at || r.created_at);
 const weekStart = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.getTime(); };
@@ -159,9 +170,11 @@ export async function renderList(el) {
       if (on('tech') && F.tech && hit(F.tech)) ex.push(`Technicien ${mark(F.tech, q)}`);
       if (on('statut') && hit(F.statut)) ex.push(`Statut ${esc(STATUS[r.status] || r.status)}`);
     }
-    return `<li><a class="card${done ? ' card--done' : ''}" href="${href}"${S.me.role === 'client' ? ' aria-disabled="true"' : ''}>
+    const slot = slotLab(r), mine = isPmine(r), take = canTake(r);
+    return `<li><a class="card${done ? ' card--done' : ''}" href="${href}"${S.me.role === 'client' ? ' aria-disabled="true"' : ''}${take ? ` data-take="${r.id}"` : ''}>
       ${n ? `<span class="badge">${n}</span>` : ''}<b class="card__title">${title}</b>
-      <span class="card__meta">${loc}${r.assignee_id ? `<span class="tag tag--tech">${WRENCH}${esc(nameOf(r.assignee_id))}</span>` : ''}<time>${fmtCard(done ? r.resolved_at || r.validated_at : r.created_at)}</time></span>
+      <span class="card__meta">${loc}${r.assignee_id ? `<span class="tag tag--tech">${WRENCH}${esc(nameOf(r.assignee_id))}</span>` : ''}${mine ? '<span class="tag tag--prop">Proposé à moi</span>' : ''}<time>${fmtCard(done ? r.resolved_at || r.validated_at : r.created_at)}</time></span>
+      ${slot ? `<span class="card__slot">${slot}</span>` : ''}
       ${r.client_presence ? `<span class="card__presence">${HAND}Présence client</span>` : ''}
       ${sn ? `<span class="card__snip">${sn}</span>` : ''}
       ${ex.length ? `<span class="card__extra">${ex.join(' · ')}</span>` : ''}
@@ -214,6 +227,7 @@ export async function renderList(el) {
     if (btn) btn.onclick = () => { doneN += PAGE; renderList(el); };
     const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
     if (again) unfold(again, false); else openId = null;
+    bindTake();
   };
 
   const paint = (open, done, more) => {
@@ -225,6 +239,7 @@ export async function renderList(el) {
       rows.innerHTML = search.trim() ? (all.length ? `<ul class="cards scards">${all.map(r => item(r, search, sfilters)).join('')}</ul>` : '') : '';
       const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
       if (again) unfold(again, false); else openId = null;
+      bindTake();
       return;
     }
     const me = S.me.id, r = S.me.role, mob = isMob(), page = route()[0];
@@ -274,6 +289,7 @@ export async function renderList(el) {
     if (rows.classList.contains('stk2')) stk2(rows);
     const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
     if (again) unfold(again, false); else openId = null;
+    bindTake();
     rows.querySelectorAll('.group h2[role=button]').forEach(h => {
       h.onclick = h.onkeydown = e => {
         if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
@@ -299,6 +315,26 @@ export async function renderList(el) {
     a.parentElement.insertAdjacentHTML('afterend', `<li class="unfold${anim ? '' : ' is-open is-now'}" data-id="${id}"><div><div class="unfold__body"></div></div></li>`);
     const u = a.parentElement.nextElementSibling;
     renderDetail(u.querySelector('.unfold__body'), id).then(() => anim && requestAnimationFrame(() => u.classList.add('is-open')));
+  };
+
+  const bindTake = () => {
+    rows.querySelectorAll('a.card[data-take]').forEach(a => {
+      if (a._take) return; a._take = 1;
+      let tm, held = false;
+      const stop = () => { clearTimeout(tm); a.classList.remove('holding'); };
+      a.addEventListener('pointerdown', e => {
+        if (e.button) return;
+        held = false; a.classList.add('holding');
+        tm = setTimeout(async () => {
+          held = true; a.classList.remove('holding');
+          const { error } = await sb.rpc('transition', { p_id: a.dataset.take, p_action: 'prendre', p_comment: '' });
+          if (error) { const p = document.createElement('p'); p.className = 'error'; p.textContent = error.message; rows.prepend(p); }
+          else renderList(el);
+        }, 1000);
+      });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => a.addEventListener(ev, stop));
+      a.addEventListener('click', e => { if (held) { e.preventDefault(); e.stopImmediatePropagation(); held = false; } }, true);
+    });
   };
   rows.onclick = e => {
     const a = e.target.closest('a.card');

@@ -53,6 +53,9 @@
 .tag--normale { --tag-bg: var(--prio-normale-bg); --tag-fg: var(--prio-normale-fg); }
 .tag--basse { --tag-bg: var(--prio-basse-bg); --tag-fg: var(--prio-basse-fg); }
 .tag--tech { --tag-bg: var(--tech-bg); --tag-fg: var(--tech-fg); }
+.tag--prop { --tag-bg: var(--prop-bg); --tag-fg: var(--prop-fg); }
+.card__slot { display: block; margin-top: 6px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.card.holding { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 /* Non lus : pastille grise posée sur le coin haut gauche de la carte, comme dans l'appli. */
 .badge { position: absolute; top: -6px; left: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--r-pill); background: var(--ink-2); color: var(--surface); font-size: 10px; font-weight: 700; display: grid; place-items: center; }

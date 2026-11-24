@@ -12,7 +12,7 @@
   --prio-basse-bg: #E1EEE5;   --prio-basse-fg: #1F5C3A;
 
   /* Étiquettes et états */
-  --tech-bg: #E2EAFA; --tech-fg: #2F5FC0;
+  --tech-bg: #E2EAFA; --prop-bg: #E8F0FE; --prop-fg: #1D4ED8; --tech-fg: #2F5FC0;
   --neutral-bg: #F3F4F6; --loc-mh: #EEEFF2; --neutral-sub: #6B6B6B; /* --neutral-sub : dates et lignes secondaires des cartes */
   --done-bg: #E2E5EA;
   --presence-fg: #B45309;
