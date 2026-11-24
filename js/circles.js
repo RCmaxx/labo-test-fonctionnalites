@@ -17,7 +17,7 @@ const circle = r =>
 export function renderCircles(box, rows, cardOf) {
   box.innerHTML = rows.length
     ? `<div class="circles">${rows.map(circle).join('')}</div>`
-    : '<p class="empty">Aucune intervention prise.</p>';
+    : '<p class="empty empty--page">Aucune intervention pour le moment.</p>';
   box.onclick = e => {
     const b = e.target.closest('.circle'),
       r = b && rows.find(x => x.id === b.dataset.id);

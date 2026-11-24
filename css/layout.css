@@ -403,6 +403,7 @@ main {
     font-variant-numeric: tabular-nums;
   }
   main {
+    display: flow-root; /* les marges du premier élément restent dans la page (comme l'appli tech) */
     padding: 0 var(--s2) calc(var(--tab-gap) + var(--tab) + var(--fab) + var(--s4) * 2);
   }
   .cards {

@@ -1,5 +1,5 @@
 import { sb } from './sb.js';
-import { S, app, route, isMob, VERSION, esc, ROLES, PNAME } from './state.js';
+import { S, app, route, isMob, setSim, VERSION, esc, ROLES, PNAME } from './state.js';
 import { renderLogin, renderOrg, renderInvitation, renderMe, signOut } from './auth.js';
 import { renderSettings } from './settings.js';
 import { renderList } from './list.js';
@@ -75,7 +75,7 @@ async function render() {
     admin = S.me.real === 'admin',
     cli = r === 'client';
   // Comme l'appli tech : un technicien a toujours la vue mobile (cadre téléphone sur grand écran).
-  document.documentElement.classList.toggle('sim', r === 'technicien' || !!localStorage.labosim);
+  setSim(r === 'technicien' || !!localStorage.labosim);
   // Comme l'appli tech : sur mobile, chaque ouverture (lancement, connexion, retour après 5 min) arrive sur « Interventions ».
   if (opening) {
     opening = false;
@@ -85,14 +85,15 @@ async function render() {
   const av = avatar(admin && r === 'client' ? 'Client' : disp);
   const pick = admin;
   const roles = Object.entries(ROLES).filter(([k]) => k !== 'client');
+  const mob = !!localStorage.labosim; // choix « mobile » enregistré (le cadre sim n'existe que sur grand écran)
   const sel = pick
     ? `<select id="asrole" aria-label="Voir en tant que">
-    ${roles.map(([k, v]) => `<option value="${k}" ${k === r && !document.documentElement.classList.contains('sim') ? 'selected' : ''}>${esc(PNAME[k] || v)} · ${esc(v)}</option>`).join('')}
-    <option value="responsable_tech|m" ${document.documentElement.classList.contains('sim') && r === 'responsable_tech' ? 'selected' : ''}>${esc(PNAME.responsable_tech)} · RT mobile</option>
-    <option value="directeur|m" ${document.documentElement.classList.contains('sim') && r === 'directeur' ? 'selected' : ''}>${esc(PNAME.directeur)} · Directeur mobile</option>
+    ${roles.map(([k, v]) => `<option value="${k}" ${k === r && !mob ? 'selected' : ''}>${esc(PNAME[k] || v)} · ${esc(v)}</option>`).join('')}
+    <option value="responsable_tech|m" ${mob && r === 'responsable_tech' ? 'selected' : ''}>${esc(PNAME.responsable_tech)} · RT mobile</option>
+    <option value="directeur|m" ${mob && r === 'directeur' ? 'selected' : ''}>${esc(PNAME.directeur)} · Directeur mobile</option>
     <option value="bis"${S.me.email === REAL.bis[0] ? ' selected' : ''}>${esc(REAL.bis[1])} · Tech bis</option>
-    <option value="cli"${S.me.email === REAL.cli[0] && !document.documentElement.classList.contains('sim') ? ' selected' : ''}>Client</option>
-    <option value="cli|m"${S.me.email === REAL.cli[0] && document.documentElement.classList.contains('sim') ? ' selected' : ''}>Client mobile</option>
+    <option value="cli"${S.me.email === REAL.cli[0] && !mob ? ' selected' : ''}>Client</option>
+    <option value="cli|m"${S.me.email === REAL.cli[0] && mob ? ' selected' : ''}>Client mobile</option>
   </select>`
     : '';
   const [pg] = route();
@@ -172,7 +173,7 @@ async function pickRole(sel) {
   sel.disabled = true;
   const [rk, mob] = sel.value.split('|');
   const setMob = on => {
-    document.documentElement.classList.toggle('sim', on);
+    setSim(on);
     localStorage.labosim = on ? '1' : '';
   };
   if (REAL[rk]) {
