@@ -8,6 +8,7 @@ import { renderForm } from './form.js';
 import { startLive, stopLive } from './live.js';
 import { drawAlerts } from './alerts.js';
 import { loadCounts, paintCounts } from './counts.js';
+import { initTabs } from './tabs.js';
 
 const SEARCH = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
 const LIST = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
@@ -146,10 +147,12 @@ function show() {
   loadCounts();
   const el = app.querySelector('main'), [page, id, sub] = route();
   if (!el) return;
+  const live = tabs.consumeSkip();   // onglet remis vivant par le balayage : rien à redessiner
   const cur = ['compte', 'nouvelles', 'mes', 'terminees', 'recherche', 'parametres'].includes(page) ? '#' + page : '';
   app.querySelectorAll('.tnav a, .tabbar a, .who a').forEach(a => a.classList.toggle('on', a.hash === cur));
   const pt = app.querySelector('.ptit');
   if (pt) pt.textContent = TITLES[page] || 'Interventions';
+  if (live) return;
   if (['terminees', 'recherche', 'parametres'].includes(page) && S.me.role === 'client') { location.hash = ''; return; }
   if (page === 'parametres') {
     if (S.me.real !== 'admin') { location.hash = ''; return; }
@@ -164,6 +167,13 @@ function show() {
   renderList(el);
 }
 
-addEventListener('hashchange', render);
-addEventListener('labo:render', render);
+const tabs = initTabs({ app });   // doit être enregistré AVANT l'écouteur ci-dessous
+const LISTS = ['', 'nouvelles', 'mes'];
+// Entre deux onglets de liste, seul le contenu change (pas de reconstruction de l'en-tête ni de la barre du bas).
+addEventListener('hashchange', e => {
+  const from = (e.oldURL.split('#')[1] || '').split('/')[0];
+  if (S.me && app.querySelector('main') && LISTS.includes(from) && LISTS.includes(route()[0])) return show();
+  render();
+});
+addEventListener('labo:render', () => { tabs.reset(); render(); });
 render();
