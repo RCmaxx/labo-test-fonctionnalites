@@ -112,3 +112,9 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
   .topbar.open .who .acct { display: none; }
 }
 .sim .topbar.open .who { position: absolute; right: var(--s3); bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s3)); }
+
+/* Balayage entre onglets (js/tabs.js) */
+body.dragtab, body.dragtab #app { overflow-x: hidden; }
+#app main { position: relative; }
+.tabnb { pointer-events: none; }
+body.warming .topbar .ptit, body.warming .tabbar { visibility: hidden; }
