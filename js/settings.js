@@ -1,6 +1,11 @@
 import { sb } from './sb.js';
-import { S, esc, ROLES, options, fmt, rerender } from './state.js';
+import { S, esc, ROLES, options, fmt, rerender, avatar } from './state.js';
 
+// Petit avatar emoji devant le nom, comme l'appli tech (l'administrateur a celui de « Admin »).
+const avt = m => {
+  const a = avatar(m.role === 'admin' ? 'Admin' : m.full_name || m.email);
+  return `<span class="avt" style="background:${a.bg}" aria-hidden="true">${a.e}</span>`;
+};
 const link = t => `${location.origin}${location.pathname}#invitation/${t}`;
 
 export async function renderSettings(el) {
@@ -33,7 +38,7 @@ export async function renderSettings(el) {
           <tbody>${team
             .map(
               m => `<tr>
-            <td>${esc(m.full_name) || '—'}</td>
+            <td>${avt(m)} ${esc(m.full_name) || '—'}</td>
             <td>${esc(m.email)}</td>
             <td>${m.user_id !== me ? `<select data-role="${m.user_id}">${options(ROLES, m.role)}</select>` : esc(ROLES[m.role] || m.role)}</td>
             <td>${m.user_id !== me ? `<button type="button" class="ghost danger" data-del="${m.user_id}">Retirer</button>` : ''}</td>
@@ -43,7 +48,7 @@ export async function renderSettings(el) {
         </table>
         <p class="error" id="terr"></p>
       </section>
-      <section class="panel">
+      <section class="panel panel--invite">
         <h2>Inviter un membre</h2>
         <form class="inline" id="inv">
           <label>E-mail <input name="email" type="email" required></label>

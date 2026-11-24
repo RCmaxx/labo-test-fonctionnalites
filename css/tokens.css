@@ -103,6 +103,9 @@
   --card-inset: 10px;
   /* Marge intérieure des pages de l'appli tech (bords, haut du message vide, sous la recherche) */
   --page-pad: 14px;
+  /* Page Profils mobile : haut de page et écart entre sections (appli tech) */
+  --set-top: 18px;
+  --set-gap: 28px;
 
   /* Espacements (pas de 4 px) */
   --s1: 4px;

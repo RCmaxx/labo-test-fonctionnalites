@@ -88,3 +88,68 @@
   color: var(--ink-2);
   font-weight: 500;
 }
+
+.avt {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 13px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Mobile, comme l'appli tech : page Profils en lecture seule (sans rôle, retrait ni invitation), sections posées
+   sur le fond, équipe en cartes blanches au retrait des cartes de la liste. */
+@container app (max-width: 600px) {
+  .setpage {
+    gap: var(--set-gap);
+    margin-inline: calc(-1 * var(--card-inset));
+    padding-top: var(--set-top);
+  }
+  .setpage > h1,
+  .setpage .panel--invite,
+  .setpage .error:empty,
+  .setpage .tlist thead,
+  .setpage .tlist td:nth-child(n + 3) {
+    display: none;
+  }
+  .setpage .panel {
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .setpage h2 {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+  .setpage .stack {
+    gap: var(--page-pad);
+  }
+  .setpage .stack > .primary {
+    justify-self: end;
+    margin-top: var(--s3);
+  }
+  .setpage .tlist {
+    width: calc(100% - 2 * var(--card-inset));
+    margin: 0 var(--card-inset);
+    border-collapse: separate;
+    border-spacing: 0 var(--card-gap);
+  }
+  .setpage .tlist td {
+    padding: var(--page-pad) 0 var(--page-pad) var(--s1);
+    border: 0;
+    background: var(--surface);
+  }
+  .setpage .tlist td:first-child {
+    padding: 17px var(--s1) var(--page-pad) var(--s3);
+  }
+  .setpage .tlist tr:first-child td:first-child {
+    border-top-left-radius: var(--r);
+  }
+  .setpage .tlist tr:last-child td:first-child {
+    border-bottom-left-radius: var(--r);
+  }
+}
