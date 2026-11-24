@@ -10,7 +10,7 @@ body {
   overflow-x: clip; /* la barre du haut déborde en pleine largeur */
 }
 body {
-  font: var(--fw) var(--fs)/1.4 var(--font);
+  font: var(--fw) var(--fs) / 1.4 var(--font);
   color: var(--ink);
   background: var(--bg);
 }

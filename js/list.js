@@ -2,7 +2,8 @@ import { sb } from './sb.js';
 import { renderDetail } from './detail.js';
 import { renderCircles } from './circles.js';
 import { PIN } from './place.js';
-import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, STATUS, isMob, route, p2, svg, WRENCH } from './state.js';
+import { S, esc, fmtCard, nameOf, roleOf, DONE, PAGE, TECH, STATUS, isMob, route, p2, svg, WRENCH } from './state.js';
+import { bindPress } from './press.js';
 
 // Page des terminées : #terminees, et sur mobile la page d'accueil (premier onglet).
 const onDonePage = () => route()[0] === 'terminees' || (isMob() && !route()[0] && S.me.role !== 'client');
@@ -187,7 +188,6 @@ const isTodayDone = r => {
   if (!d) return false;
   return day0(d) === day0(Date.now());
 };
-const roleOf = id => S.team.find(m => m.user_id === id)?.role;
 const slotLab = r => {
   if (!r.available_from) return '';
   const f = new Date(r.available_from),
@@ -205,11 +205,6 @@ const isPmine = r =>
   r.proposed_to &&
   TECH.includes(S.me.role) &&
   (r.proposed_to === S.me.id || (S.me.real === 'admin' && roleOf(r.proposed_to) === S.me.role));
-const canTake = r =>
-  TECH.includes(S.me.role) &&
-  r.status === 'publiee' &&
-  !r.assignee_id &&
-  (!r.proposed_to || r.proposed_to === S.me.id || (S.me.real === 'admin' && roleOf(r.proposed_to) === S.me.role));
 
 const finAt = r => new Date(r.resolved_at || r.validated_at || r.updated_at || r.created_at);
 const weekStart = () => {
@@ -257,6 +252,7 @@ function stackSticky(box, sel) {
 const SEARCH_BAR =
   '<a class="msearch" href="#recherche"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Rechercher</a>';
 
+const BYID = new Map(); // interventions affichées, pour le menu d'appui long
 const item = (r, q = '', sf = []) => {
   const done = DONE.includes(r.status),
     n = UNREAD[r.id];
@@ -275,9 +271,9 @@ const item = (r, q = '', sf = []) => {
     if (on('statut') && hit(F.statut)) ex.push(`Statut ${esc(STATUS[r.status] || r.status)}`);
   }
   const slot = slotLab(r),
-    mine = isPmine(r),
-    take = canTake(r);
-  return `<li><a class="card${done ? ' card--done' : ''}" href="${href}"${S.me.role === 'client' ? ' aria-disabled="true"' : ''}${take ? ` data-take="${r.id}"` : ''}>
+    mine = isPmine(r);
+  BYID.set(r.id, r);
+  return `<li><a class="card${done ? ' card--done' : ''}" href="${href}" data-id="${r.id}" draggable="false"${S.me.role === 'client' ? ' aria-disabled="true"' : ''}>
     ${n ? `<span class="badge${n.new ? ' badge--new' : ''}">${n.n}</span>` : ''}<b class="card__title">${title}</b>
     <span class="card__meta">${loc}${r.assignee_id ? `<span class="tag tag--tech">${WRENCH}${esc(nameOf(r.assignee_id))}</span>` : ''}${mine ? '<span class="tag tag--prop">Proposé à moi</span>' : ''}<time>${fmtCard(done ? r.resolved_at || r.validated_at : r.created_at)}</time></span>
     ${slot ? `<span class="card__slot">${slot}</span>` : ''}
@@ -495,7 +491,12 @@ export async function renderList(el) {
     const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
     if (again) unfold(again, false);
     else openId = null;
-    bindTake();
+    if (isMob())
+      bindPress(
+        rows,
+        id => BYID.get(id),
+        () => renderList(el)
+      );
   };
   const fold = u => {
     if (!u.classList.contains('is-open')) return u.remove();
@@ -520,50 +521,10 @@ export async function renderList(el) {
     );
   };
 
-  const bindTake = () => {
-    rows.querySelectorAll('a.card[data-take]').forEach(a => {
-      if (a._take) return;
-      a._take = 1;
-      let tm,
-        held = false;
-      const stop = () => {
-        clearTimeout(tm);
-        a.classList.remove('holding');
-      };
-      a.addEventListener('pointerdown', e => {
-        if (e.button) return;
-        held = false;
-        a.classList.add('holding');
-        tm = setTimeout(async () => {
-          held = true;
-          a.classList.remove('holding');
-          const { error } = await sb.rpc('transition', { p_id: a.dataset.take, p_action: 'prendre', p_comment: '' });
-          if (error) {
-            const p = document.createElement('p');
-            p.className = 'error';
-            p.textContent = error.message;
-            rows.prepend(p);
-          } else renderList(el);
-        }, 1000);
-      });
-      ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => a.addEventListener(ev, stop));
-      a.addEventListener(
-        'click',
-        e => {
-          if (held) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            held = false;
-          }
-        },
-        true
-      );
-    });
-  };
   rows.onclick = e => {
     const a = e.target.closest('a.card');
     if (!a || e.metaKey || e.ctrlKey || S.me.role === 'client') return;
-    if (a.getAttribute('href') === '#') return;
+    if (a.getAttribute('href') === '#' || isMob()) return; // mobile : la fiche s'ouvre comme une page (lien), comme l'appli tech
     e.preventDefault();
     unfold(a);
   };

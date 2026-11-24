@@ -14,7 +14,7 @@ const due = r => {
   return t <= Date.now() && Date.now() - t < 432e5 && !seen().includes(r.id);
 };
 
-function toast(msg, err = false) {
+export function toast(msg, err = false) {
   document.querySelector('.toast')?.remove();
   const t = document.createElement('div');
   t.className = 'toast' + (err ? ' err' : '');
@@ -24,7 +24,7 @@ function toast(msg, err = false) {
   toast._t = setTimeout(() => t.remove(), 3500);
 }
 
-function confirmBox(msg, okLab = 'Oui', cancelLab = 'Non') {
+export function confirmBox(msg, okLab = 'Oui', cancelLab = 'Non') {
   return new Promise(res => {
     const o = document.createElement('div');
     o.className = 'modal';

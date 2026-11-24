@@ -259,12 +259,13 @@ main {
 /* Mobile simulé : l'appli dans un cadre de téléphone de 390 px. */
 .sim {
   --sim-w: 390px;
+  --app-h: var(--sim-h);
 }
 .sim #app {
   position: relative;
   max-width: var(--sim-w);
-  min-height: min(844px, 100dvh - 48px);
-  max-height: min(844px, 100dvh - 48px);
+  min-height: var(--sim-h);
+  max-height: var(--sim-h);
   margin: var(--s6) auto;
   background: var(--bg);
   box-shadow: 0 0 0 1px var(--line-strong);

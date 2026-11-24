@@ -33,7 +33,7 @@ export const REMIND = {
 export const MGR = ['admin', 'directeur', 'responsable_tech'],
   TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v83';
+export const VERSION = 'v84';
 export const app = document.getElementById('app');
 // Mobile simulé (cadre de téléphone) : seulement sur grand écran ; sur un vrai téléphone la largeur suffit, comme l'appli tech.
 export const setSim = on => document.documentElement.classList.toggle('sim', on && innerWidth > 600);
@@ -76,6 +76,15 @@ export const S = {
   org: null, // { name }
   team: [], // membres de l'entreprise : { user_id, full_name, role }
 };
+export const roleOf = id => S.team.find(m => m.user_id === id)?.role;
+// Intervention prise par moi (un admin ne voit comme siennes que celles prises sous le rôle qu'il affiche).
+export const isMine = r =>
+  r.assignee_id === S.me.id && (S.me.real !== 'admin' || !r.assignee_role || r.assignee_role === S.me.role);
+export const canTake = r =>
+  TECH.includes(S.me.role) &&
+  r.status === 'publiee' &&
+  !r.assignee_id &&
+  (!r.proposed_to || r.proposed_to === S.me.id || (S.me.real === 'admin' && roleOf(r.proposed_to) === S.me.role));
 export const nameOf = id => S.team.find(m => m.user_id === id)?.full_name || 'Quelqu’un';
 // Demande un nouvel affichage complet (écouté par app.js, évite une dépendance circulaire).
 export const rerender = () => dispatchEvent(new Event('labo:render'));

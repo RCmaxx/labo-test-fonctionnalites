@@ -234,9 +234,81 @@
   font-weight: 500;
   color: var(--ink-2);
 }
-.card.holding {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
+/* Appui long sur une carte (js/press.js) : voile, carte soulevée, actions en pastilles — comme l'appli tech */
+.pmenu-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: transparent;
+  transition: background-color 0.2s;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.pmenu-veil.is-in {
+  background: var(--veil);
+}
+.pmenu-card {
+  position: fixed;
+  margin: 0;
+  filter: var(--lift);
+  animation: pmenu-pop 0.38s ease-out;
+}
+@keyframes pmenu-pop {
+  45% {
+    transform: scale(1.035);
+  }
+  75% {
+    transform: scale(0.99);
+  }
+}
+.pmenu {
+  position: fixed;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.pmenu button {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  font-size: 15px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-float);
+  opacity: 0;
+  transform: translateY(-10px) scale(0.85);
+  transition:
+    opacity 0.18s ease-out,
+    transform 0.34s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.pmenu--up button {
+  transform: translateY(10px) scale(0.85);
+}
+.pmenu.is-in button {
+  opacity: 1;
+  transform: none;
+}
+.pmenu.is-in button:nth-child(2) {
+  transition-delay: 0.04s;
+}
+.pmenu.is-in button:nth-child(3) {
+  transition-delay: 0.08s;
+}
+.pmenu.is-in button.is-hot {
+  transform: scale(1.06);
+}
+.pmenu button.ghost.is-hot {
+  --btn-bg: var(--hot-ghost);
+}
+.pmenu button.primary.is-hot {
+  --btn-bg: var(--hot-primary);
+}
+.pmenu button:disabled {
+  opacity: 1;
+  color: var(--ink-off);
 }
 
 /* Messages : pastille grise (rouge si non lus) posée sur le coin haut gauche de la carte, comme dans l'appli. */

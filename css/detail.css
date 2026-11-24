@@ -712,12 +712,51 @@ a[data-edit][aria-disabled='true'] {
   object-fit: contain;
 }
 
+/* Mobile, comme l'appli tech : la fiche tient dans l'écran entre le header et la barre du bas ;
+   seul le fil de discussion défile, la barre de commentaire reste en bas sur toute la largeur. */
 @container app (max-width: 600px) {
-  .xgear {
-    display: none;
+  #app[data-page='i'] .topbar {
+    margin-bottom: 0;
   }
-  .xg .dact {
-    display: block;
+  #app[data-page='i'] main {
+    height: calc(var(--app-h) - var(--topbar-h) - var(--fiche-bottom));
+    padding-bottom: 0;
+  }
+  #app[data-page='i'] .detail {
+    height: 100%;
+  }
+  #app[data-page='i'] .dfix,
+  #app[data-page='i'] .cin {
+    flex: none;
+  }
+  #app[data-page='i'] .chat2,
+  #app[data-page='i'] .chrono {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  #app[data-page='i'] .chrono {
+    margin-inline: calc(-1 * var(--s2)) calc(-1 * (var(--pad) + var(--s2)));
+    padding: var(--s1) var(--s4) var(--s4) var(--s3);
+    gap: 6px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  #app[data-page='i'] .csend svg {
+    width: var(--back-icon);
+    height: var(--back-icon);
+  }
+  #app[data-page='i'] .cin {
+    position: static;
+    margin-inline: calc(-1 * (var(--pad) + var(--s2)));
+    padding: 10px var(--s4);
+  }
+}
+
+/* Mobile, comme l'appli tech : pas de boutons d'action dans la fiche (ils sont dans l'appui long sur la carte) */
+@container app (max-width: 600px) {
+  .xgear,
+  .dact {
+    display: none;
   }
 }
 
@@ -788,7 +827,7 @@ a[data-edit][aria-disabled='true'] {
     padding: 4px 12px;
     border-radius: var(--r-pill);
     background: var(--surface);
-    color: var(--ink-title);
+    color: var(--ink-day);
     font-size: 12px;
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(20, 33, 43, 0.12);
@@ -894,9 +933,21 @@ a[data-edit][aria-disabled='true'] {
   }
 }
 
+/* Mobile : flèche retour au bord de l'écran, carte au même retrait que dans l'appli tech */
 @container app (max-width: 600px) {
   .detail--card .dcard {
-    margin: 0 calc(-1 * var(--s3)) 0 calc(-1 * var(--s4));
+    margin-inline: calc(-1 * (var(--pad) + var(--s2)));
+    padding: var(--dcard-top) var(--dcard-r) 0 var(--s1);
+    column-gap: var(--s3);
+  }
+  .detail--card .dcard > .back {
+    display: grid;
+    place-items: center;
+    color: var(--ink-2);
+  }
+  .detail--card .dcard > .back svg {
+    width: var(--back-icon);
+    height: var(--back-icon);
   }
 }
 

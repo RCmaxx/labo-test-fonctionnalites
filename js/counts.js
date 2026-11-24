@@ -1,7 +1,7 @@
 // Compteurs du feed (total, miens, pastilles Urgentes / Importantes / À faire).
 // Calculés ici, à part de la liste : ils sont identiques sur toutes les pages (header et barre du bas).
 import { sb } from './sb.js';
-import { S } from './state.js';
+import { S, isMine } from './state.js';
 
 const LEVELS = [
   ['haute', 'Urgentes'],
@@ -16,10 +16,7 @@ const pills = rows =>
   }).join('');
 
 let last = null; // derniers compteurs connus, repeints à chaque affichage de la barre
-const mine = r =>
-  r.status === 'prise_en_charge' &&
-  r.assignee_id === S.me.id &&
-  (S.me.real !== 'admin' || !r.assignee_role || r.assignee_role === S.me.role);
+const mine = r => r.status === 'prise_en_charge' && isMine(r);
 
 export function paintCounts() {
   if (!last) return;

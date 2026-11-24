@@ -7,6 +7,7 @@ const lockOf = id => {
   const l = LOCKS.get(id);
   return l && l.until > Date.now() && l.by !== S.me?.id ? l : null;
 };
+export const lockedByOther = id => !!lockOf(id);
 let held = null,
   renew = null;
 export async function loadLocks() {

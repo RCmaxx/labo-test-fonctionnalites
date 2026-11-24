@@ -72,6 +72,7 @@
   /* Ombres */
   --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.7),
     inset 0 -12px 20px -12px rgba(20, 30, 45, 0.05), 0 0 0 1px #d9dadc, 0 3px 12px rgba(20, 30, 45, 0.18);
+  --lift: drop-shadow(0 8px 22px rgba(0, 0, 0, 0.26)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.14));
   --shadow-light: 0 1px 2px rgba(16, 24, 40, 0.06);
   --shadow-float: 0 8px 22px rgba(0, 0, 0, 0.26), 0 2px 6px rgba(0, 0, 0, 0.14);
   --shadow-fabm: 0 4px 14px rgba(0, 0, 0, 0.18);
@@ -90,6 +91,15 @@
   --loc-min: 72px;
   --loc-h: 36px;
   --fx: 44px;
+  /* Fiche mobile : hauteur du header et place laissée sous la fiche pour la barre du bas (appli tech) */
+  --topbar-h: 57px;
+  --fiche-bottom: 57px;
+  --dcard-top: 15px; /* haut de la carte dans la fiche */
+  --dcard-r: 26px; /* marge droite de la carte dans la fiche */
+  --back-icon: 20px;
+  /* Hauteur de l'appli : l'écran, ou le cadre de téléphone du simulateur */
+  --app-h: 100dvh;
+  --sim-h: min(844px, 100dvh - 48px);
   --fx-icon: 14px;
   /* Retrait des cartes par rapport au bord de la page (appli tech : 10 px) */
   --card-inset: 10px;
@@ -109,6 +119,7 @@
   --ink-sys: #555555;
   --ink-time: #666666;
   --ink-date: #8a8a86;
+  --ink-day: #3a4048; /* pastille de date du fil */
   --ink-search: #8a8a8a;
   --ink-desc: #444444;
   --ink-icon: #333333;
@@ -125,6 +136,10 @@
   --ph-bg: #e6e6e6;
   --ph-count-bg: rgba(255, 255, 255, 0.92);
   --overlay: rgba(0, 0, 0, 0.25);
+  --veil: rgba(0, 0, 0, 0.4); /* voile de l'appui long */
+  --ink-off: #a3a39f; /* action indisponible */
+  --hot-ghost: #ededed; /* pastille survolée du doigt */
+  --hot-primary: #000;
   --overlay-photo: rgba(0, 0, 0, 0.92);
   --shadow-menu: 0 8px 22px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.1);
   --shadow-sheet: 0 -6px 20px rgba(0, 0, 0, 0.08);
