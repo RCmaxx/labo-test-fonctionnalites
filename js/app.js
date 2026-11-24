@@ -7,13 +7,15 @@ import { renderDetail } from './detail.js';
 import { renderForm } from './form.js';
 import { startLive, stopLive } from './live.js';
 import { drawAlerts } from './alerts.js';
+import { loadCounts, paintCounts } from './counts.js';
 
 const SEARCH = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
 const LIST = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
 const GEAR = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
+const USERS = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M21 20c0-2.6-1.6-4.8-4-5.6"/></svg>';
 const ADM = 'lab-admin-sess';
 const REAL = { bis: ['tech.bis@test.local', 'Antoine'], cli: ['client@test.local', 'Client'] };
-const TITLES = { nouvelles: 'Interventions', encours: 'En cours', terminees: 'Terminées', recherche: 'Recherche', parametres: 'Profils', equipe: 'Profils', compte: 'Mon compte', nouvelle: 'Nouvelle intervention', i: 'Intervention' };
+const TITLES = { nouvelles: 'Interventions', mes: 'Mes interventions', encours: 'En cours', terminees: 'Terminées', recherche: 'Recherche', parametres: 'Profils', equipe: 'Profils', compte: 'Mon compte', nouvelle: 'Nouvelle intervention', i: 'Intervention' };
 const AV = ['var(--av-1)', 'var(--av-2)', 'var(--av-3)', 'var(--av-4)', 'var(--av-5)', 'var(--av-6)'];
 const avatar = name => {
   const s = String(name || '?').trim() || '?';
@@ -57,6 +59,7 @@ async function render() {
   const ptit = TITLES[pg] || 'Interventions';
   app.innerHTML = `<nav class="topbar">
     <span class="ptit">${esc(ptit)}</span>
+    <span class="pcnt"></span>
     <span class="brand">${esc(S.org?.name || '')}</span>
     <nav class="tnav">
       <a href="#">Interventions</a>
@@ -80,15 +83,19 @@ async function render() {
   <main></main>
   <a class="fab" href="#nouvelle" aria-label="Nouvelle intervention">+</a>
   <nav class="tabbar">
-    <a href="#" aria-label="Interventions">${LIST}</a>
-    ${cli ? '' : '<a href="#nouvelles" aria-label="Nouvelles interventions"><span class="tabbar__n" id="tabn"></span></a>'}
-    ${admin ? `<a href="#parametres" aria-label="Profils">${GEAR}</a>` : ''}
+    <a href="#" aria-label="Terminées">${LIST}</a>
+    ${cli ? '' : '<a href="#nouvelles" aria-label="Nouvelles interventions"><span class="tabbar__n" id="tabn"></span></a><a href="#mes" aria-label="Mes interventions"><span class="tabbar__m" id="tabm"></span></a>'}
+    ${admin ? `<a href="#parametres" aria-label="Profils">${USERS}</a>` : ''}
+    <button type="button" class="tabbar__gear" id="gear" aria-label="Compte et profil" aria-expanded="false">${GEAR}</button>
   </nav>`;
   drawAlerts();
+  paintCounts();
+  loadCounts();
   app.querySelector('#sim').onclick = () => { localStorage.labosim = document.documentElement.classList.toggle('sim') ? '1' : ''; render(); };
   app.querySelector('#logout').onclick = () => signOut();
   const acct = app.querySelector('#acct');
   acct.onclick = e => { e.stopPropagation(); const on = app.querySelector('.topbar').classList.toggle('open'); acct.setAttribute('aria-expanded', String(on)); };
+  app.querySelector('#gear').onclick = e => { e.stopPropagation(); const on = app.querySelector('.topbar').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', String(on)); };
   const asr = app.querySelector('#asrole');
   if (asr) asr.onchange = () => pickRole(asr);
   show();
@@ -136,9 +143,10 @@ async function pickRole(sel) {
 }
 
 function show() {
+  loadCounts();
   const el = app.querySelector('main'), [page, id, sub] = route();
   if (!el) return;
-  const cur = ['compte', 'nouvelles', 'terminees', 'recherche', 'parametres'].includes(page) ? '#' + page : '';
+  const cur = ['compte', 'nouvelles', 'mes', 'terminees', 'recherche', 'parametres'].includes(page) ? '#' + page : '';
   app.querySelectorAll('.tnav a, .tabbar a, .who a').forEach(a => a.classList.toggle('on', a.hash === cur));
   const pt = app.querySelector('.ptit');
   if (pt) pt.textContent = TITLES[page] || 'Interventions';

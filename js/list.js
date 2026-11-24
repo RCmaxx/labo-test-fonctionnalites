@@ -256,8 +256,6 @@ export async function renderList(el) {
     if (!mob && r !== 'client') groups.push(['auj', "Terminées aujourd'hui", done.filter(isTodayDone).sort(byFin)]);
     groups = groups.filter(([k, , list]) => (k !== 'mes' || list.length) && (k !== 'dem' || canDem));
 
-    const tabn = document.getElementById('tabn');
-    if (tabn) tabn.textContent = open.filter(x => x.status === 'publiee' && !pmine(x) && !asked(x)).length || '';
 
     if (r === 'client') {
       rows.innerHTML = `<section class="group" data-g="publiee"><h2>${GICO.publiee}<span class="count">${open.length}</span><span class="glab">Mes interventions</span></h2>${open.length ? `<ul class="cards">${open.sort(byArrival).map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;

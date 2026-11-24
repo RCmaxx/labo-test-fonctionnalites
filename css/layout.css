@@ -48,10 +48,14 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 /* Barre d'onglets du bas (mobile seulement), comme l'appli : pilule blanche flottante, deux onglets égaux. */
 :root { --tab: 52px; --tab-gap: 10px; }
 .tabbar { display: none; position: fixed; left: 12px; right: 12px; bottom: var(--tab-gap); z-index: 10; height: var(--tab); box-sizing: border-box; padding: 4px; border-radius: 30px; background: var(--chrome); box-shadow: var(--shadow-chrome); }
-.tabbar a { flex: 1; display: grid; place-items: center; border-radius: 22px; color: var(--chrome-dim); text-decoration: none; }
+.tabbar { justify-content: space-between; align-items: center; }
+.tabbar a, .tabbar__gear { flex: 0 0 auto; min-width: 44px; height: 44px; padding: 0 8px; display: grid; place-items: center; border-radius: 22px; color: var(--chrome-dim); text-decoration: none; }
+.tabbar__gear { border: 0; background: transparent; }
 .tabbar a.on { background: var(--chrome-on); color: var(--chrome-fg); }
-.tabbar__n { min-width: 18px; height: 28px; padding: 0 7px; border-radius: 14px; display: grid; place-items: center; background: var(--pill-total-bg); color: var(--pill-total-fg); font-size: 14px; font-weight: 800; }
+.tabbar__n { min-width: 30px; height: 30px; padding: 0 9px; border-radius: 15px; display: grid; place-items: center; background: var(--pill-total-bg); color: var(--pill-total-fg); font-size: 14px; font-weight: 800; }
 .tabbar__n:empty { display: none; }
+.tabbar__m { min-width: 30px; height: 30px; padding: 0 9px; border-radius: 15px; display: grid; place-items: center; background: var(--pill-mine-bg); color: var(--pill-mine-fg); font-size: 15px; font-weight: 700; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
+.tabbar__m:empty::before { content: '0'; }
 
 /* Mobile simulé : l'appli dans un cadre de téléphone de 390 px. */
 .sim { --sim-w: 390px; }
@@ -88,3 +92,23 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 .sim .toast, .sim .notif { position: absolute; bottom: calc(var(--tab-gap) + var(--tab) + 16px); }
 .mbox .mq { margin: 0 0 var(--s4); }
 .mbox .mbtns { display: flex; gap: var(--s2); justify-content: flex-end; flex-wrap: wrap; }
+
+/* Compteur du feed dans la barre du haut (mobile) : pastilles de priorité puis total. Le contenu vient de counts.js. */
+.pcnt { display: none; }
+.pbs { display: inline-flex; align-items: center; gap: 5px; }
+.pb { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: var(--r-pill); font-size: 12px; font-weight: 600; line-height: 1; }
+.pb--haute { background: var(--prio-haute-bg); color: var(--prio-haute-fg); }
+.pb--normale { background: var(--prio-normale-bg); color: var(--prio-normale-fg); }
+.pb--basse { background: var(--prio-basse-bg); color: var(--prio-basse-fg); }
+.pb--zero { opacity: .4; }
+.pcn { font-size: 18px; font-weight: 800; color: var(--chrome-fg); }
+@container app (max-width: 600px) {
+  .ptit { flex: 1 1 auto; min-width: 0; font-size: 24px; font-weight: 800; }
+  .pcnt { display: inline-flex; align-items: center; gap: 7px; flex: none; }
+  .topbar .who .acct { display: none; }
+  .topbar { position: static; }
+  /* Menu du compte : ouvert par le rouage de la barre du bas, posé juste au-dessus. */
+  .topbar.open .who { position: fixed; top: auto; right: var(--s3); bottom: calc(var(--tab-gap) + var(--tab) + var(--s3)); }
+  .topbar.open .who .acct { display: none; }
+}
+.sim .topbar.open .who { position: absolute; right: var(--s3); bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s3)); }
