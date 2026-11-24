@@ -471,7 +471,7 @@ export async function renderDetail(el, id) {
       : '';
 
   el.innerHTML = `
-    <article class="detail">
+    <article class="detail${cardHead ? ' detail--card' : ''}">
       <div class="dfix">
         ${cardHead || `<div class="dtrow">${back}<h1 class="dtitle">${esc(i.title).replace(/ (?=[^ ]*$)/, '&nbsp;')}</h1></div>`}
         <section class="dtop${cardHead ? ' dtop--card' : ''}">

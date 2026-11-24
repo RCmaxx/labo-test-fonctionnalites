@@ -223,6 +223,7 @@ function show() {
   const el = app.querySelector('main'),
     [page, id, sub] = route();
   if (!el) return;
+  app.dataset.page = page || '';
   const live = tabs.consumeSkip(); // onglet remis vivant par le balayage : rien à redessiner
   const cur = ['compte', 'nouvelles', 'mes', 'terminees', 'recherche', 'parametres'].includes(page) ? '#' + page : '';
   app.querySelectorAll('.tnav a, .tabbar a, .who a').forEach(a => a.classList.toggle('on', a.hash === cur));

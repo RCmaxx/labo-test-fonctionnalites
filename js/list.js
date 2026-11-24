@@ -245,12 +245,13 @@ const byDay = rows => {
   return [...by.values()]
     .map(([d, rs]) => {
       const l = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-      return `<h3 class="gday">${l[0].toUpperCase() + l.slice(1)}</h3><ul class="cards">${rs.map(itemRef).join('')}</ul>`;
+      return `<h3 class="gday">${l[0].toUpperCase() + l.slice(1)}</h3><ul class="cards">${rs.map(r => item(r)).join('')}</ul>`;
     })
     .join('');
 };
-let itemRef = () => '';
-export const cardOf = r => itemRef(r); // même carte que dans les listes (détail mobile)
+let UNREAD = {}; // non lus par intervention (rempli par renderList)
+
+export const cardOf = r => item(r); // même carte que dans les listes (détail mobile)
 const CLOSED = {};
 let openId = null;
 
@@ -293,6 +294,36 @@ function stk2(box) {
 const SEARCH_BAR =
   '<a class="msearch" href="#recherche"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Rechercher</a>';
 
+const item = (r, q = '', sf = []) => {
+  const done = DONE.includes(r.status),
+    n = UNREAD[r.id];
+  const href = S.me.role === 'client' ? '#' : `#i/${r.id}`;
+  const title = q ? mark(r.title, q) : esc(r.title);
+  const loc = place(r);
+  const sn = q && (!sf.length || sf.includes('desc')) ? snippet(r.description, q) : '';
+  const ex = [];
+  if (q) {
+    const F = fields(r),
+      ts = terms(q),
+      hit = v => ts.some(t => sfold(v).includes(t));
+    const on = k => !sf.length || sf.includes(k);
+    if (on('rep') && F.rep && hit(F.rep)) ex.push(`Signalé par ${mark(F.rep, q)}`);
+    if (on('tech') && F.tech && hit(F.tech)) ex.push(`Technicien ${mark(F.tech, q)}`);
+    if (on('statut') && hit(F.statut)) ex.push(`Statut ${esc(STATUS[r.status] || r.status)}`);
+  }
+  const slot = slotLab(r),
+    mine = isPmine(r),
+    take = canTake(r);
+  return `<li><a class="card${done ? ' card--done' : ''}" href="${href}"${S.me.role === 'client' ? ' aria-disabled="true"' : ''}${take ? ` data-take="${r.id}"` : ''}>
+    ${n ? `<span class="badge">${n}</span>` : ''}<b class="card__title">${title}</b>
+    <span class="card__meta">${loc}${r.assignee_id ? `<span class="tag tag--tech">${WRENCH}${esc(nameOf(r.assignee_id))}</span>` : ''}${mine ? '<span class="tag tag--prop">Proposé à moi</span>' : ''}<time>${fmtCard(done ? r.resolved_at || r.validated_at : r.created_at)}</time></span>
+    ${slot ? `<span class="card__slot">${slot}</span>` : ''}
+    ${r.client_presence ? `<span class="card__presence">${HAND}Présence client</span>` : ''}
+    ${sn ? `<span class="card__snip">${sn}</span>` : ''}
+    ${ex.length ? `<span class="card__extra">${ex.join(' · ')}</span>` : ''}
+  </a></li>`;
+};
+
 export async function renderList(el) {
   const searching = route()[0] === 'recherche' && S.me.role !== 'client';
   el.innerHTML = searching
@@ -319,43 +350,13 @@ export async function renderList(el) {
       .limit(5000),
   ]);
   const last = Object.fromEntries((reads.data || []).map(r => [r.intervention_id, r.last_read_at]));
-  const unread = {};
+  const unread = (UNREAD = {});
   (msgs.data || []).forEach(m => {
     if (!last[m.intervention_id] || m.created_at > last[m.intervention_id])
       unread[m.intervention_id] = (unread[m.intervention_id] || 0) + 1;
   });
-  const item = (r, q = '', sf = []) => {
-    const done = DONE.includes(r.status),
-      n = unread[r.id];
-    const href = S.me.role === 'client' ? '#' : `#i/${r.id}`;
-    const title = q ? mark(r.title, q) : esc(r.title);
-    const loc = place(r);
-    const sn = q && (!sf.length || sf.includes('desc')) ? snippet(r.description, q) : '';
-    const ex = [];
-    if (q) {
-      const F = fields(r),
-        ts = terms(q),
-        hit = v => ts.some(t => sfold(v).includes(t));
-      const on = k => !sf.length || sf.includes(k);
-      if (on('rep') && F.rep && hit(F.rep)) ex.push(`Signalé par ${mark(F.rep, q)}`);
-      if (on('tech') && F.tech && hit(F.tech)) ex.push(`Technicien ${mark(F.tech, q)}`);
-      if (on('statut') && hit(F.statut)) ex.push(`Statut ${esc(STATUS[r.status] || r.status)}`);
-    }
-    const slot = slotLab(r),
-      mine = isPmine(r),
-      take = canTake(r);
-    return `<li><a class="card${done ? ' card--done' : ''}" href="${href}"${S.me.role === 'client' ? ' aria-disabled="true"' : ''}${take ? ` data-take="${r.id}"` : ''}>
-      ${n ? `<span class="badge">${n}</span>` : ''}<b class="card__title">${title}</b>
-      <span class="card__meta">${loc}${r.assignee_id ? `<span class="tag tag--tech">${WRENCH}${esc(nameOf(r.assignee_id))}</span>` : ''}${mine ? '<span class="tag tag--prop">Proposé à moi</span>' : ''}<time>${fmtCard(done ? r.resolved_at || r.validated_at : r.created_at)}</time></span>
-      ${slot ? `<span class="card__slot">${slot}</span>` : ''}
-      ${r.client_presence ? `<span class="card__presence">${HAND}Présence client</span>` : ''}
-      ${sn ? `<span class="card__snip">${sn}</span>` : ''}
-      ${ex.length ? `<span class="card__extra">${ex.join(' · ')}</span>` : ''}
-    </a></li>`;
-  };
-  itemRef = item;
   const sec = ([k, label, list], foldable) =>
-    `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
+    `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
 
   const paintTerminees = (done, more) => {
     const d0 = day0(Date.now()),
@@ -377,7 +378,7 @@ export async function renderList(el) {
         k === 'sem' && rows.length
           ? byDay(rows)
           : rows.length
-            ? `<ul class="cards">${rows.map(item).join('')}</ul>`
+            ? `<ul class="cards">${rows.map(r => item(r)).join('')}</ul>`
             : '<p class="empty">Aucune.</p>';
       return `<section class="group${CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2 role="button" tabindex="0" aria-expanded="${!CLOSED[k]}">${GICO[k] || ''}<span class="count">${rows.length}</span><span class="glab">${label}</span>${CHEV}</h2>${inner}</section>`;
     };
@@ -477,7 +478,14 @@ export async function renderList(el) {
     groups = groups.filter(([k, , list]) => (k !== 'mes' || list.length) && (k !== 'dem' || canDem));
 
     if (r === 'client') {
-      rows.innerHTML = `<section class="group" data-g="publiee"><h2>${GICO.publiee}<span class="count">${open.length}</span><span class="glab">Mes interventions</span></h2>${open.length ? `<ul class="cards">${open.sort(byArrival).map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
+      rows.innerHTML = `<section class="group" data-g="publiee"><h2>${GICO.publiee}<span class="count">${open.length}</span><span class="glab">Mes interventions</span></h2>${
+        open.length
+          ? `<ul class="cards">${open
+              .sort(byArrival)
+              .map(r => item(r))
+              .join('')}</ul>`
+          : '<p class="empty">Aucune.</p>'
+      }</section>`;
       return;
     }
     if (mob && page === 'mes')

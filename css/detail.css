@@ -748,3 +748,34 @@ a[data-edit][aria-disabled='true'] {
 .dtop--card .ddesc {
   margin: 2px 0 0 30px;
 }
+
+/* Mobile : fiche ouverte depuis la liste = carte en haut, fil de discussion posé sur le fond de page (comme l'appli tech) */
+@container app (max-width: 600px) {
+  .detail--card {
+    background: transparent;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .detail--card .dfix,
+  .detail--card .chat2,
+  .detail--card .cin {
+    background: transparent;
+    border-top: 0;
+  }
+  .detail--card .chat2 {
+    padding: 0;
+  }
+  .detail--card .cin {
+    position: sticky;
+    bottom: calc(var(--tab-gap) + var(--tab) + var(--s3));
+    padding: var(--s2) 0;
+  }
+}
+.sim .detail--card .cin {
+  bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s3));
+}
+/* Le + et la pastille ne sont pas affichés sur la fiche */
+#app[data-page='i'] .fab,
+#app[data-page='i'] .fabm {
+  display: none;
+}
