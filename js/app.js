@@ -232,19 +232,23 @@ function moveIndicator() {
     ind.style.left = p.left + 'px';
     ind.style.width = p.width + 'px';
   };
+  const now = { left: on.offsetLeft, width: on.offsetWidth };
   if (indPos && !ind.dataset.ready) {
-    set(indPos);
+    set(indPos); // nouvelle barre : on repart de l'ancienne position pour glisser
     ind.getBoundingClientRect();
   }
-  ind.dataset.ready = '1';
-  requestAnimationFrame(() => {
-    const now = { left: on.offsetLeft, width: on.offsetWidth };
-    ind.style.transition = indPos
+  ind.style.transition =
+    indPos && ind.dataset.ready
       ? 'left 0.28s cubic-bezier(0.3, 0.8, 0.3, 1), width 0.28s cubic-bezier(0.3, 0.8, 0.3, 1)'
-      : 'none'; // premier affichage : pas de glissement depuis un point arbitraire
-    set(now);
-    indPos = now;
-  });
+      : 'none';
+  ind.dataset.ready = '1';
+  if (indPos && ind.style.transition === 'none') {
+    requestAnimationFrame(() => {
+      ind.style.transition = 'left 0.28s cubic-bezier(0.3, 0.8, 0.3, 1), width 0.28s cubic-bezier(0.3, 0.8, 0.3, 1)';
+      set(now);
+    });
+  } else set(now);
+  indPos = now;
 }
 // Les pastilles de la barre du bas changent de largeur quand les compteurs arrivent : on recale l'indicateur.
 document.addEventListener('labo:counts', moveIndicator);
