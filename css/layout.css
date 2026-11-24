@@ -306,6 +306,10 @@ main {
   }
   .ptit {
     display: block;
+    line-height: 30px;
+  }
+  .topbar {
+    padding: 13px 0 14px;
   }
   .brand,
   .tnav,
@@ -360,7 +364,7 @@ main {
     bottom: calc(var(--tab-gap) + var(--tab) + var(--s4) + var(--fab) + var(--s3));
   }
   main {
-    padding-bottom: calc(var(--tab-gap) + var(--tab) + var(--fab) + var(--s4) * 2);
+    padding: 0 var(--s2) calc(var(--tab-gap) + var(--tab) + var(--fab) + var(--s4) * 2);
   }
   .cards {
     grid-template-columns: 1fr;

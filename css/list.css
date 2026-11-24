@@ -155,8 +155,8 @@
   align-items: center;
   gap: var(--s1);
   margin-top: 6px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--neutral-sub);
 }
 .card__presence svg {
