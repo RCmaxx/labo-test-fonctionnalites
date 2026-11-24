@@ -13,6 +13,8 @@
 .topbar a.on { background: var(--soft); color: var(--ink); font-weight: 500; }
 .topbar small { color: var(--ink-3); font-size: var(--fs-s); }
 .sim-toggle { margin-left: auto; padding: 5px 10px; font-size: 12px; }
+.ico-search { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; color: var(--ink-2); }
+.ico-search.on { background: var(--soft); color: var(--ink); }
 
 .alerts:empty { display: none; }
 .alerts { display: grid; gap: var(--s2); margin-bottom: var(--s4); }

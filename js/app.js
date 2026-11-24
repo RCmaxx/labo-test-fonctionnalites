@@ -24,9 +24,9 @@ async function render() {
     S.team = t.data || [];
     startLive(show);
   }
-  app.innerHTML = `<nav class="topbar"><a href="#">Interventions</a><a href="#terminees">Terminées</a><a href="#compte">Mon compte</a><button class="sim-toggle" id="sim">Mobile</button><small>${VERSION}</small></nav><aside class="alerts" id="alerts"></aside><main></main><a class="fab" href="#nouvelle" aria-label="Nouvelle intervention">+</a><nav class="tabbar"><a href="#" aria-label="Interventions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></a><a href="#nouvelles" aria-label="Nouvelles interventions"><span class="tabbar__n" id="tabn"></span></a></nav>`;
+  app.innerHTML = `<nav class="topbar"><a href="#">Interventions</a><a href="#terminees">Terminées</a><a href="#recherche" class="ico-search" aria-label="Rechercher"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></a><a href="#compte">Mon compte</a><button class="sim-toggle" id="sim">Mobile</button><small>${VERSION}</small></nav><aside class="alerts" id="alerts"></aside><main></main><a class="fab" href="#nouvelle" aria-label="Nouvelle intervention">+</a><nav class="tabbar"><a href="#" aria-label="Interventions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></a><a href="#nouvelles" aria-label="Nouvelles interventions"><span class="tabbar__n" id="tabn"></span></a></nav>`;
   drawAlerts();
-  if (S.me.role === 'client') app.querySelectorAll('a[href="#terminees"]').forEach(a => a.remove());
+  if (S.me.role === 'client') app.querySelectorAll('a[href="#terminees"], a[href="#recherche"]').forEach(a => a.remove());
   app.querySelector('#sim').onclick = () => { localStorage.labosim = document.documentElement.classList.toggle('sim') ? '1' : ''; show(); };
   show();
 }
@@ -35,9 +35,9 @@ async function render() {
 function show() {
   const el = app.querySelector('main'), [page, id, sub] = route();
   if (!el) return;
-  const cur = page === 'compte' || page === 'nouvelles' || page === 'terminees' ? '#' + page : '';
+  const cur = ['compte','nouvelles','terminees','recherche'].includes(page) ? '#' + page : '';
   app.querySelectorAll('.topbar a, .tabbar a').forEach(a => a.classList.toggle('on', a.hash === cur));
-  if (page === 'terminees' && S.me.role === 'client') { location.hash = ''; return; }
+  if ((page === 'terminees' || page === 'recherche') && S.me.role === 'client') { location.hash = ''; return; }
   if (page === 'compte') return renderMe(el);
   if (page === 'nouvelle') return renderForm(el);
   if (page === 'i') {

@@ -68,3 +68,15 @@
 .lpage-title { margin: 0 0 var(--s4); font-size: var(--fs-h1); font-weight: var(--fw-title); }
 .gday { margin: var(--s4) 0 var(--s2); padding: 0 10px; font-size: 15px; font-weight: 600; color: var(--group-fg); }
 .gcols.gdone { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.shead { display: flex; align-items: baseline; gap: var(--s3); margin: 0 0 var(--s3); max-width: 640px; }
+.shead input[type=search] { flex: 1; min-width: 0; }
+.scount { margin: 0; font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.sfilters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 var(--s3); }
+.sf { padding: 6px 12px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface); color: var(--ink-2); font-size: 13px; cursor: pointer; }
+.sf.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.srecent { list-style: none; margin: 0 0 var(--s4); padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.srecent button { font-size: 13px; }
+mark { background: var(--mark-bg); color: inherit; padding: 0 .1em; border-radius: 2px; }
+.card__snip, .card__extra { display: block; margin-top: 6px; font-size: 13px; color: var(--ink-2); }
+.scards { grid-template-columns: 1fr; max-width: 640px; }
