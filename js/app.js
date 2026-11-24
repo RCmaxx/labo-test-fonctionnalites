@@ -1,5 +1,5 @@
 import { sb } from './sb.js';
-import { S, app, route, VERSION, esc, ROLES, PNAME } from './state.js';
+import { S, app, route, isMob, VERSION, esc, ROLES, PNAME } from './state.js';
 import { renderLogin, renderOrg, renderInvitation, renderMe, signOut } from './auth.js';
 import { renderSettings } from './settings.js';
 import { renderList } from './list.js';
@@ -20,6 +20,8 @@ const USERS =
   '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M21 20c0-2.6-1.6-4.8-4-5.6"/></svg>';
 const ADM = 'lab-admin-sess';
 const REAL = { bis: ['tech.bis@test.local', 'Antoine'], cli: ['client@test.local', 'Client'] };
+// Mobile tech : la racine (#) est la page Terminées.
+const titleOf = pg => TITLES[pg || (isMob() && S.me?.role !== 'client' ? 'terminees' : '')] || 'Interventions';
 const TITLES = {
   nouvelles: 'Interventions',
   mes: 'Mes interventions',
@@ -85,7 +87,7 @@ async function render() {
   </select>`
     : '';
   const [pg] = route();
-  const ptit = TITLES[pg] || 'Interventions';
+  const ptit = titleOf(pg);
   app.innerHTML = `<nav class="topbar">
     <span class="ptit">${esc(ptit)}</span>
     <span class="pcnt"></span>
@@ -225,7 +227,7 @@ function show() {
   const cur = ['compte', 'nouvelles', 'mes', 'terminees', 'recherche', 'parametres'].includes(page) ? '#' + page : '';
   app.querySelectorAll('.tnav a, .tabbar a, .who a').forEach(a => a.classList.toggle('on', a.hash === cur));
   const pt = app.querySelector('.ptit');
-  if (pt) pt.textContent = TITLES[page] || 'Interventions';
+  if (pt) pt.textContent = titleOf(page);
   if (live) return;
   if (['terminees', 'recherche', 'parametres'].includes(page) && S.me.role === 'client') {
     location.hash = '';
