@@ -90,7 +90,7 @@ function quitBox(draft) {
   });
 }
 
-function photoTray(input, tray, onChange, max = 10) {
+export function photoTray(input, tray, onChange, max = 10) {
   const files = [];
   const draw = () => {
     tray.querySelectorAll('img').forEach(i => URL.revokeObjectURL(i.src));
@@ -99,7 +99,7 @@ function photoTray(input, tray, onChange, max = 10) {
   };
   input.addEventListener('change', () => {
     const room = Math.max(0, max - files.length);
-    if (input.files.length > room) tray.closest('form').querySelector('#ferr').textContent = '10 photos maximum par intervention.';
+    if (input.files.length > room) { const fe = tray.closest('form')?.querySelector('#ferr') || document.querySelector('#acterr'); if (fe) fe.textContent = '10 photos maximum par intervention.'; }
     files.push(...[...input.files].slice(0, room));
     input.value = '';
     draw();

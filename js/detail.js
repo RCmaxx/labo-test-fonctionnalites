@@ -1,6 +1,6 @@
 import { sb } from './sb.js';
-import { S, esc, DONE, MGR, TECH, nameOf, rerender } from './state.js';
-import { uploadPhotos } from './form.js';
+import { S, esc, DONE, MGR, TECH, REMIND, nameOf, rerender } from './state.js';
+import { uploadPhotos, photoTray } from './form.js';
 import { drawEdit } from './lock.js';
 
 const WRENCH = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
@@ -10,6 +10,10 @@ const UNTAKE = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stro
 const BACK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
 const GEAR = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.66 5.19L9.80 2.45L14.20 2.45L14.34 5.19A7.2 7.2 0 0 1 16.72 6.57L19.17 5.32L21.37 9.13L19.07 10.63A7.2 7.2 0 0 1 19.07 13.37L21.37 14.87L19.17 18.68L16.72 17.43A7.2 7.2 0 0 1 14.34 18.81L14.20 21.55L9.80 21.55L9.66 18.81A7.2 7.2 0 0 1 7.28 17.43L4.83 18.68L2.63 14.87L4.93 13.37A7.2 7.2 0 0 1 4.93 10.63L2.63 9.13L4.83 5.32L7.28 6.57A7.2 7.2 0 0 1 9.66 5.19Z"/><circle cx="12" cy="12" r="2.8"/></svg>';
 const SEND = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+
+const CLOCK = '<svg class="clk" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+const HOLD = '<svg class="hold-ring" aria-hidden="true"><rect x="1" y="1" rx="8" ry="8" pathLength="100"/></svg>';
+const DONE_ICO = '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>';
 
 const EVENTS = {
   creee: 'Intervention créée', demande_transfert: 'Demande de transfert', modifiee: 'Modifié',
@@ -122,6 +126,25 @@ function tagsOf(i) {
 
 function hostModal() { return document.querySelector('.sim #app') || document.body; }
 
+function slotLine(i) {
+  if (!i.available_from) return '';
+  const f = new Date(i.available_from), until = new Date(i.available_until || f.getTime() + 9e5);
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  const n = Math.round((new Date(f).setHours(0, 0, 0, 0) - t0) / 864e5);
+  const le = f.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+  const day = { '-1': 'Hier', 0: "Aujourd'hui", 1: 'Demain' }[n] || le;
+  const hm = d => `${n2(d.getHours())}:${n2(d.getMinutes())}`;
+  return `${day} ${hm(f)}–${hm(until)}`;
+}
+
+function doneScreen(msg, after) {
+  const o = document.createElement('div');
+  o.className = 'donescr';
+  o.innerHTML = DONE_ICO + `<p>${msg}</p>`;
+  hostModal().append(o);
+  setTimeout(() => { o.remove(); after(); }, 800);
+}
+
 function zoomImg(src, list) {
   const urls = list && list.length ? list : [src];
   let i = Math.max(0, urls.indexOf(src));
@@ -188,7 +211,7 @@ function gearMenu(g, acts) {
   const close = () => { g._shut = Date.now(); m.remove(); document.removeEventListener('pointerdown', out, true); removeEventListener('scroll', close, true); };
   const out = e => { if (!m.contains(e.target)) close(); };
   setTimeout(() => { document.addEventListener('pointerdown', out, true); addEventListener('scroll', close, true); }, 0);
-  m.onclick = e => { const b = e.target.closest('button'); if (!b) return; close(); const a = acts[+b.dataset.i]; a.click(); };
+  m.onclick = e => { const b = e.target.closest('button'); if (!b) return; close(); const a = acts[+b.dataset.i]; a._run ? a._run() : a.click(); };
 }
 
 document.addEventListener('click', e => { if (e.target.closest?.('a[data-edit][aria-disabled="true"]')) { e.preventDefault(); e.stopPropagation(); } }, true);
@@ -253,7 +276,8 @@ export async function renderDetail(el, id) {
       <div class="dfix">
         <div class="dtrow">${back}<h1 class="dtitle">${esc(i.title).replace(/ (?=[^ ]*$)/, '&nbsp;')}</h1></div>
         <section class="dtop">
-          <div class="dmeta3"><div class="drow"><span class="dloc">${i.location ? `<span class="ltag">${esc(locTag(i.location))}</span>` : ''}${i.assignee_id || i.proposed_to ? tagsOf(i) : ''}${i.status === 'publiee' ? '<span class="pill st-publiee">Nouveau</span>' : ''}<span class="ddate">${fmtAgo(i.created_at)}</span></span><span class="dright">${(prio || pill) ? `<span class="drt">${prio}${pill}</span>` : ''}</span></div></div>
+          <div class="dmeta3"><div class="drow"><span class="dloc">${i.location ? `<span class="ltag">${esc(locTag(i.location))}</span>` : ''}${i.assignee_id || i.proposed_to ? tagsOf(i) : ''}${i.status === 'publiee' ? '<span class="pill st-publiee">Nouveau</span>' : ''}<span class="ddate">${fmtAgo(i.created_at)}</span></span><span class="dright">${(prio || pill) ? `<span class="drt">${prio}${pill}</span>` : ''}</span></div>
+            ${i.available_from || i.remind_minutes || i.client_presence ? `<p class="dslot">${i.available_from ? CLOCK + `<span>${esc(slotLine(i))}</span>` : (i.client_presence ? '<span>Présence client requise</span>' : '')}${i.remind_minutes ? `<span class="dremind">${esc(REMIND[i.remind_minutes] || `${i.remind_minutes} min avant`)}</span>` : ''}</p>` : ''}</div>
           ${!chat && dsc ? `<p class="ddesc">${esc(dsc)}</p>` : ''}
           ${photosHtml}
         </section>
@@ -261,7 +285,7 @@ export async function renderDetail(el, id) {
       ${dactHtml}
       <p class="error" id="acterr"></p>
       ${chat ? `<div class="chat2"><div class="chrono">${chatHtml}</div>
-        ${canComment ? `<div class="cin"><span class="phadd cph" aria-label="Ajouter une photo"><input id="ph" type="file" accept="image/*" multiple>${CAM}<i id="phn"></i></span><textarea id="cm" rows="1" placeholder="Ajouter un commentaire" maxlength="2000"></textarea><button type="button" class="csend" id="comment" aria-label="Envoyer">${SEND}</button></div>` : ''}
+        ${canComment ? `<div class="cin"><span class="phadd cph" aria-label="Ajouter une photo"><input id="ph" type="file" accept="image/*" multiple>${CAM}</span><textarea id="cm" rows="1" placeholder="Ajouter un commentaire" maxlength="2000"></textarea><button type="button" class="csend" id="comment" aria-label="Envoyer">${SEND}</button></div>` : ''}
       </div>` : ''}
     </article>`;
   drawEdit();
@@ -307,29 +331,88 @@ export async function renderDetail(el, id) {
   const del = el.querySelector('#del');
   if (del) del.onclick = doDelete;
 
-  el.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
+  const foldOrList = () => {
+    if (inline) { el.closest('.unfold')?.previousElementSibling?.querySelector('a.card')?.click(); rerender(); }
+    else location.hash = '';
+  };
+  const act = async b => {
     if (b.dataset.act === 'cloturer') return closeChooser(id, doDelete, () => renderDetail(el, id));
+    if (b.dataset.act === 'liberer' && !confirm("Se retirer de l'intervention ?")) return;
     b.disabled = true;
     const { error } = b.dataset.act === 'demander'
       ? await sb.rpc('request_transfer', { p_id: id })
-      : await sb.rpc('transition', { p_id: id, p_action: b.dataset.act, p_comment: '' });
+      : await sb.rpc('transition', { p_id: id, p_action: b.dataset.act, p_comment: el.querySelector('#cm')?.value || '' });
     b.disabled = false;
-    fail(error) || renderDetail(el, id);
+    if (error) return fail(error);
+    if (b.dataset.act === 'resoudre') return doneScreen('Intervention terminée', foldOrList);
+    if (b.dataset.act === 'liberer') return doneScreen('Vous ne prenez plus cette intervention', foldOrList);
+    renderDetail(el, id);
+  };
+  el.querySelectorAll('[data-act]').forEach(b => {
+    b._run = () => act(b);
+    if (b.dataset.act === 'liberer') { b.onclick = () => act(b); return; }
+    if (inline || !['resoudre', 'cloturer', 'prendre'].includes(b.dataset.act)) { b.onclick = () => act(b); return; }
+    b.insertAdjacentHTML('beforeend', HOLD);
+    let tm = null;
+    const stop = () => { clearTimeout(tm); tm = null; b.classList.remove('holding'); };
+    b.onpointerdown = e => { if (b.disabled) return; e.preventDefault(); b.classList.add('holding'); tm = setTimeout(() => { stop(); act(b); }, 1000); };
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, stop));
+    b.oncontextmenu = e => e.preventDefault();
+    b.onclick = e => e.preventDefault();
   });
 
   if (!chat) return;
   sb.from('intervention_reads').upsert({ user_id: S.me.id, intervention_id: id, last_read_at: new Date().toISOString() }).then(() => {});
-  const cm = el.querySelector('#cm'), cb = el.querySelector('#comment'), phs = el.querySelector('#ph'), phn = el.querySelector('#phn');
+  const cm = el.querySelector('#cm'), cb = el.querySelector('#comment'), phInp = el.querySelector('#ph');
   if (cm) cm.oninput = () => { cm.style.height = 'auto'; cm.style.height = Math.min(120, cm.scrollHeight) + 'px'; };
-  if (phs && phn) phs.onchange = () => { phn.textContent = phs.files.length || ''; };
+  document.querySelectorAll('.phsheet').forEach(x => x.remove());
+  if (phInp) {
+    const myPh = photos.filter(p => p.uploaded_by === S.me.id).length;
+    const sh = document.createElement('div');
+    sh.className = 'phsheet'; sh.hidden = true;
+    sh.innerHTML = '<div class="pstrip"><div class="ptray"></div><button type="button" class="padd" data-add aria-label="Ajouter des photos"><span>+</span></button></div><div class="actions"><button type="button" class="ghost" data-x>Annuler</button><button type="button" class="primary" data-ok>Envoyer</button></div>';
+    hostModal().append(sh);
+    const tray = sh.querySelector('.ptray');
+    const files = photoTray(phInp, tray, f => { sh.hidden = !f.length; }, 10 - myPh);
+    sh.querySelector('[data-add]').onclick = () => phInp.click();
+    sh.querySelector('[data-x]').onclick = () => { files.splice(0); tray.innerHTML = ''; sh.hidden = true; };
+    sh.querySelector('[data-ok]').onclick = async () => {
+      const ok = sh.querySelector('[data-ok]'); ok.disabled = true;
+      const err = await uploadPhotos(id, [...files]);
+      ok.disabled = false;
+      if (err) return fail(err);
+      sh.remove();
+      renderDetail(el, id);
+    };
+    addEventListener('hashchange', () => sh.remove(), { once: true });
+  }
   if (cb) cb.onclick = async () => {
-    const body = cm.value.trim(), files = [...(phs?.files || [])], out = el.querySelector('#acterr');
-    if (!body && !files.length) return out.textContent = 'Le message est vide.';
-    if (files.length > 10 - photos.filter(p => p.uploaded_by === S.me.id).length) return out.textContent = '10 photos maximum par intervention.';
+    const body = cm.value.trim(), out = el.querySelector('#acterr');
+    if (!body) return out.textContent = 'Le message est vide.';
     cb.disabled = true;
-    let err = body && (await sb.rpc('add_comment', { p_id: id, p_body: body })).error;
-    if (!err && files.length) err = await uploadPhotos(id, files);
+    const { error } = await sb.rpc('add_comment', { p_id: id, p_body: body });
     cb.disabled = false;
-    err ? out.textContent = err.message : renderDetail(el, id);
+    error ? out.textContent = error.message : renderDetail(el, id);
   };
 }
+
+const VV = window.visualViewport;
+function kbSync() {
+  const k = VV ? Math.max(0, Math.round(document.documentElement.clientHeight - VV.height - (VV.offsetTop || 0))) : 0;
+  document.documentElement.style.setProperty('--kb', k + 'px');
+}
+function cinShow() {
+  const m = document.activeElement; if (m?.id !== 'cm') return;
+  kbSync();
+  requestAnimationFrame(() => {
+    const c = m.closest('.cin') || m, r = c.getBoundingClientRect();
+    let bot = VV ? VV.offsetTop + VV.height : innerHeight;
+    const nav = document.querySelector('.tabbar');
+    if (nav && nav.offsetParent) bot = Math.min(bot, nav.getBoundingClientRect().top);
+    const d = r.bottom - bot + 8;
+    if (d > 0) (document.scrollingElement || document.documentElement).scrollBy(0, d);
+  });
+}
+VV?.addEventListener('resize', () => { if (document.activeElement?.id === 'cm') { kbSync(); cinShow(); } else kbSync(); });
+document.addEventListener('focusin', e => { if (e.target.id === 'cm') { cinShow(); setTimeout(cinShow, 300); } });
+document.addEventListener('focusout', e => { if (e.target.id === 'cm') setTimeout(kbSync, 60); });
