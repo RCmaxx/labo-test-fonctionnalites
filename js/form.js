@@ -1,34 +1,10 @@
+import { initPlaceField, tagIn } from './place.js';
 import { initSlotPicker, p2, dIn, TIMES, hostModal } from './slot.js';
 import { sb } from './sb.js';
 import { S, esc, REMIND, MGR, TECH } from './state.js';
 import { takeLock } from './lock.js';
 
 const PRIO_L = { basse: 'À faire', normale: 'Important', haute: 'Urgent', urgente: 'Urgente' };
-const COMMON = [
-  'Réception',
-  'Camp saisonnier',
-  'Sanitaire 1',
-  'Sanitaire 2',
-  'Scène',
-  'Restaurant',
-  'Bar',
-  'Piscine',
-  'Aire de jeux',
-  'Parking',
-  'Local technique',
-  'Laverie',
-  'Épicerie',
-  'Snack',
-  'Spa',
-  'Salle de sport',
-  'Terrain multisport',
-  'Mini-golf',
-  'Accueil',
-  'Entrée / barrière',
-  'Lingerie',
-  'Cuisine du restaurant',
-  'Salle commune',
-];
 const WRENCH =
   '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
 const BRIEFCASE =
@@ -39,13 +15,10 @@ const CLOSE =
   '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>';
 const CLOCK =
   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
-const PIN =
-  '<svg class="pin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-4.8 7-11a7 7 0 1 0-14 0c0 6.2 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
 const DCHEV =
   '<svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5L6 8L9.5 4.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const TRASH =
   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
-const padMH = s => String(s).replace(/^((?:mh|mobil[- ]?home)\s*)(\d)\s*$/i, (_, a, d) => a + '0' + d);
 const tIn = v => {
   if (!v) return '';
   const x = new Date(v);
@@ -69,16 +42,6 @@ const DAYS = cur => {
     out.push([dIn(x), lab(x, i)]);
   }
   return out;
-};
-const mhN = v =>
-  (String(v)
-    .trim()
-    .match(/^(?:mh|mobil[- ]?home)?\s*(\d+)$/i) || [])[1];
-const tagIn = v => {
-  const n = mhN(v);
-  return n
-    ? `<span class="mhpre">MH</span><span class="mhnum">${esc(String(n).padStart(2, '0'))}</span>`
-    : `${PIN}<span class="ltx">${esc(v)}</span>`;
 };
 const canDraft = r => MGR.includes(r) || r === 'technicien' || r === 'client';
 
@@ -316,130 +279,7 @@ export async function renderForm(el, id) {
     pbtn.setAttribute('aria-expanded', 'false');
   });
   syncPrio();
-  const loc = f.location,
-    ul = f.querySelector('.ac-list');
-  let places = placesRes.data || [];
-
-  f.querySelectorAll('[name=priority]').forEach(p => p.addEventListener('change', () => (f.dataset.prio = p.value)));
-  f.querySelectorAll('[name=assign]').forEach(c =>
-    c.addEventListener('change', () => {
-      if (c.checked)
-        f.querySelectorAll('[name=assign]').forEach(o => {
-          if (o !== c) o.checked = false;
-        });
-    })
-  );
-
-  const ltag = document.createElement('span');
-  ltag.className = 'loc-tag';
-  loc.after(ltag);
-  const syncTag = () => {
-    const v = loc.value.trim(),
-      on = !!v && document.activeElement !== loc;
-    ltag.innerHTML = `${tagIn(v)}<button type="button" class="lx" aria-label="Retirer le lieu">×</button>`;
-    ltag.classList.toggle('stacked', !!mhN(v));
-    ltag.classList.toggle('ptag', !mhN(v));
-    ltag.hidden = !on;
-    loc.classList.toggle('tagged', on);
-    if (on) loc.style.setProperty('--tagw', ltag.offsetWidth + 20 + 'px');
-    else loc.style.removeProperty('--tagw');
-  };
-  ltag.addEventListener('click', e => {
-    if (!e.target.closest('.lx')) return;
-    e.preventDefault();
-    loc.value = '';
-    ltag.hidden = true;
-    loc.classList.remove('tagged');
-    loc.focus();
-    loc.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-  const fromTitle = () => {
-    const t = f.title.value.toLowerCase();
-    if (!t) return [];
-    const nums = [...t.matchAll(/(?:mh|mobil[- ]?home)?\s*(\d+)/g)].map(m => m[1]);
-    const byNum = places.filter(p => p.num != null && nums.includes(String(p.num))).map(p => p.label);
-    const names = [...new Set([...COMMON, ...places.filter(p => p.num == null).map(p => p.label)])];
-    const byName = names.filter(
-      l =>
-        l &&
-        (t.includes(l.toLowerCase()) ||
-          l
-            .toLowerCase()
-            .split(/[\s'-]+/)
-            .some(
-              w =>
-                w.length >= 4 &&
-                !/^\d+$/.test(w) &&
-                t.split(/[\s'-]+/).some(x => x.length >= 4 && (x.startsWith(w) || w.startsWith(x)))
-            ))
-    );
-    return [...new Set([...byNum, ...byName])];
-  };
-  const closeAc = () => {
-    ul.hidden = true;
-    loc.setAttribute('aria-expanded', 'false');
-  };
-  const showHits = hits => {
-    ul.innerHTML = hits
-      .map(l => `<li role="option" class="${mhN(l) ? 'lmh' : 'lpt'}" data-v="${esc(l)}">${tagIn(l)}</li>`)
-      .join('');
-    ul.hidden = !hits.length;
-    loc.setAttribute('aria-expanded', hits.length ? 'true' : 'false');
-  };
-  loc.addEventListener('focus', () => {
-    if (!loc.value.trim()) {
-      const hits = fromTitle().slice(0, 4);
-      if (hits.length) showHits(hits);
-    }
-    syncTag();
-  });
-  loc.addEventListener('blur', () =>
-    setTimeout(() => {
-      closeAc();
-      syncTag();
-    }, 150)
-  );
-  loc.oninput = () => {
-    const v = loc.value.trim().toLowerCase();
-    if (!v) return closeAc();
-    const m = v.match(/^(?:mh|mobil[- ]?home)?\s*(\d+)$/);
-    let hits;
-    if (m) {
-      const digits = m[1];
-      const rank = p => {
-        const n = String(p.num ?? '');
-        return n === digits ? 0 : n.endsWith(digits) ? 1 : n.startsWith(digits) ? 2 : 3;
-      };
-      hits = places
-        .filter(p => p.num != null && String(p.num).endsWith(digits))
-        .sort((x, y) => rank(x) - rank(y) || x.num - y.num)
-        .map(p => padMH(p.label));
-      hits = hits.slice(0, digits.length < 2 ? 3 : 4);
-    } else {
-      hits = [...new Set([...COMMON, ...places.filter(p => p.num == null).map(p => p.label)])]
-        .filter(
-          l =>
-            l
-              .toLowerCase()
-              .split(/[\s'/-]+/)
-              .some(w => w.startsWith(v)) || l.toLowerCase().startsWith(v)
-        )
-        .sort((x, y) => x.toLowerCase().indexOf(v) - y.toLowerCase().indexOf(v))
-        .slice(0, v.length < 3 ? 3 : 5);
-    }
-    showHits(hits);
-  };
-  ul.addEventListener('mousedown', e => e.preventDefault());
-  ul.addEventListener('click', e => {
-    const li = e.target.closest('li');
-    if (!li) return;
-    loc.value = li.dataset.v;
-    closeAc();
-    loc.blur();
-    syncTag();
-  });
-  syncTag();
-
+  const { syncTag } = initPlaceField(f, placesRes);
   const slot = initSlotPicker(f, { id, i, r, slotOn, err });
   const { hp, sheet, paintSlot, place, setPassage } = slot;
   const tray = f.querySelector('.ptray');
