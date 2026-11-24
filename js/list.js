@@ -1,7 +1,10 @@
 import { sb } from './sb.js';
 import { renderDetail } from './detail.js';
+import { renderCircles } from './circles.js';
 import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, STATUS, isMob, route } from './state.js';
 
+// Page des terminées : #terminees, et sur mobile la page d'accueil (premier onglet).
+const onDonePage = () => route()[0] === 'terminees' || (isMob() && !route()[0] && S.me.role !== 'client');
 let search = '', tq = 0, doneN = PAGE, sfilters = [];
 const SF = { titre: 'Titre', lieu: 'Lieu', desc: 'Description', tech: 'Technicien', rep: 'Signalé par', statut: 'Statut', date: 'Date' };
 const RKEY = 'lab:recent-search';
@@ -231,7 +234,7 @@ export async function renderList(el) {
   };
 
   const paint = (open, done, more) => {
-    if (route()[0] === 'terminees') return paintTerminees(done, more);
+    if (onDonePage()) return paintTerminees(done, more);
     if (searching) {
       const all = [...open, ...done].filter(r => matches(r, search, sfilters));
       const sc = el.querySelector('#scount');
@@ -261,6 +264,7 @@ export async function renderList(el) {
       rows.innerHTML = `<section class="group" data-g="publiee"><h2>${GICO.publiee}<span class="count">${open.length}</span><span class="glab">Mes interventions</span></h2>${open.length ? `<ul class="cards">${open.sort(byArrival).map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
       return;
     }
+    if (mob && page === 'mes') return renderCircles(rows, open.filter(x => x.status === 'prise_en_charge' && mine(x)).sort(byArrival), x => item(x));
     if (mob && page === 'nouvelles') groups = [['publiee', 'Interventions', open.sort(byArrival)]];
     else if (mob) groups = groups.filter(g => ['mes', 'prise_en_charge'].includes(g[0]));
 
@@ -353,7 +357,7 @@ export async function renderList(el) {
       paint(o.data || [], d.data || []);
       return;
     }
-    if (route()[0] === 'terminees') {
+    if (onDonePage()) {
       const q = words.length
         ? withSearch(scope(sb.from('interventions').select(COLS).in('status', DONE)), words).order('resolved_at', { ascending: false, nullsFirst: false }).limit(200)
         : scope(sb.from('interventions').select(COLS).in('status', DONE)).order('resolved_at', { ascending: false, nullsFirst: false }).order('id').limit(doneN);

@@ -84,3 +84,20 @@
 mark { background: var(--mark-bg); color: inherit; padding: 0 .1em; border-radius: 2px; }
 .card__snip, .card__extra { display: block; margin-top: 6px; font-size: 13px; color: var(--ink-2); }
 .scards { grid-template-columns: 1fr; max-width: 640px; }
+
+/* Page « Mes interventions » (mobile) : cercles de priorité, 5 par ligne ; fenêtre de carte au toucher. */
+.circles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px 6px; padding: 16px 2px 24px; justify-items: center; }
+.circle {
+  --c-bg: var(--prio-normale-bg); --c-fg: var(--prio-normale-fg);
+  width: 100%; max-width: 54px; aspect-ratio: 1; min-height: 0; padding: 0; border: 0; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  background: var(--c-bg); color: var(--c-fg); cursor: pointer; box-shadow: var(--shadow-card);
+}
+.circle--haute { --c-bg: var(--prio-haute-bg); --c-fg: var(--prio-haute-fg); }
+.circle--basse { --c-bg: var(--prio-basse-bg); --c-fg: var(--prio-basse-fg); }
+.circle small { font-size: 8.5px; font-weight: 700; letter-spacing: .08em; opacity: .85; }
+.circle b { font-size: 18px; font-weight: 800; line-height: 1; }
+.circle span { padding: 0 4px; font-size: 9.5px; font-weight: 700; line-height: 1.15; text-align: center; word-break: break-word; }
+.cardpop { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: var(--overlay); }
+.sim .cardpop { position: absolute; }
+.cardpop__body { width: min(92%, 360px); }
