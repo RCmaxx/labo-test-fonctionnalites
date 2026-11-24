@@ -110,6 +110,7 @@ async function render() {
   </nav>
   <aside class="alerts" id="alerts"></aside>
   <main></main>
+  ${cli ? '' : '<a class="fabm" href="#mes" id="fabm" aria-label="Mes interventions"></a>'}
   <a class="fab" href="#nouvelle" aria-label="Nouvelle intervention">+</a>
   <nav class="tabbar">
     <a href="#" aria-label="Terminées">${LIST}</a>

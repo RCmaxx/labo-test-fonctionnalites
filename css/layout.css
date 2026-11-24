@@ -138,6 +138,20 @@ main {
 }
 
 /* Bouton + : rond noir fixe, centré entre le bord droit et les cartes quand la marge le permet. */
+.fabm {
+  display: none;
+  position: fixed;
+  width: var(--fab);
+  height: var(--fab);
+  border-radius: 50%;
+  place-items: center;
+  background: var(--ink);
+  color: var(--pill-mine-fg);
+  box-shadow: var(--shadow-float);
+  font-size: 22px;
+  font-weight: 800;
+  text-decoration: none;
+}
 .fab {
   position: fixed;
   right: var(--s6);
@@ -251,6 +265,10 @@ main {
   overflow-x: hidden;
   overflow-y: auto;
 }
+.sim .fabm {
+  right: calc(50vw - var(--sim-w) / 2 + var(--s4));
+  bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s4) + var(--fab) + var(--s3));
+}
 .sim .fab {
   right: calc(50vw - var(--sim-w) / 2 + var(--s4));
   bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s4));
@@ -334,6 +352,12 @@ main {
   .fab {
     right: var(--s4);
     bottom: calc(var(--tab-gap) + var(--tab) + var(--s4));
+  }
+  /* Pastille bleue « mes interventions » au-dessus du + (comme l'appli tech) */
+  .fabm:not(:empty) {
+    display: grid;
+    right: var(--s4);
+    bottom: calc(var(--tab-gap) + var(--tab) + var(--s4) + var(--fab) + var(--s3));
   }
   main {
     padding-bottom: calc(var(--tab-gap) + var(--tab) + var(--fab) + var(--s4) * 2);

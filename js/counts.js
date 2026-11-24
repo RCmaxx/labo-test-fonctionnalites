@@ -29,6 +29,7 @@ export function paintCounts() {
   };
   set('tabn', last.total);
   set('tabm', last.mine);
+  set('fabm', last.mine);
   const head = document.querySelector('.topbar .pcnt');
   if (head) head.innerHTML = `<span class="pbs">${last.pills}</span><span class="pcn">${last.total}</span>`;
 }
