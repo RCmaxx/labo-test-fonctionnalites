@@ -353,28 +353,8 @@ document.addEventListener(
   true
 );
 
-export async function renderDetail(el, id) {
-  el.innerHTML = '<p>Chargement…</p>';
-  const inline = !!el.closest('.unfold');
-  const [{ data: i, error }, ev, ph] = await Promise.all([
-    sb.from('interventions').select('*').eq('id', id).maybeSingle(),
-    sb
-      .from('intervention_events')
-      .select('id, type, body, actor_id, actor_name, actor_role, created_at')
-      .eq('intervention_id', id)
-      .order('created_at')
-      .order('id'),
-    sb.from('intervention_photos').select('path, uploaded_by').eq('intervention_id', id).order('created_at'),
-  ]);
-  if (error || !i) return (el.innerHTML = `<p>${esc(error?.message || 'Intervention introuvable.')}</p>`);
-  const photos = ph.data || [],
-    urls = await signedUrls(photos.map(p => p.path));
-  const events = ev.data || [],
-    chat = S.me.role !== 'client';
-  const closed = DONE.includes(i.status);
-  const canComment = chat && !closed && (i.status !== 'brouillon' || i.created_by === S.me.id);
-  const acts = actions(i),
-    mgr = MGR.includes(S.me.role);
+/** Prépare le fil de discussion : description, photos de création (mobile), regroupements et HTML du tchat. */
+function buildChat({ i, events, urls, chat, inline }) {
   const evs = events.filter(
     e =>
       !['validee', 'refusee'].includes(e.type) &&
@@ -458,6 +438,32 @@ export async function renderDetail(el, id) {
     })
     .join('');
 
+  return { asCard, chatHtml, cph, dsc };
+}
+
+export async function renderDetail(el, id) {
+  el.innerHTML = '<p>Chargement…</p>';
+  const inline = !!el.closest('.unfold');
+  const [{ data: i, error }, ev, ph] = await Promise.all([
+    sb.from('interventions').select('*').eq('id', id).maybeSingle(),
+    sb
+      .from('intervention_events')
+      .select('id, type, body, actor_id, actor_name, actor_role, created_at')
+      .eq('intervention_id', id)
+      .order('created_at')
+      .order('id'),
+    sb.from('intervention_photos').select('path, uploaded_by').eq('intervention_id', id).order('created_at'),
+  ]);
+  if (error || !i) return (el.innerHTML = `<p>${esc(error?.message || 'Intervention introuvable.')}</p>`);
+  const photos = ph.data || [],
+    urls = await signedUrls(photos.map(p => p.path));
+  const events = ev.data || [],
+    chat = S.me.role !== 'client';
+  const closed = DONE.includes(i.status);
+  const canComment = chat && !closed && (i.status !== 'brouillon' || i.created_by === S.me.id);
+  const acts = actions(i),
+    mgr = MGR.includes(S.me.role);
+  const { asCard, chatHtml, cph, dsc } = buildChat({ i, events, urls, chat, inline });
   const phList = !chat ? photos.filter(p => urls[p.path]) : [];
   const photosHtml = phList.length
     ? `<div class="phc-w"><div class="phc">${phList.map(p => `<div class="phs"><a href="${urls[p.path]}" target="_blank" rel="noopener"><img src="${urls[p.path]}" alt="Photo"></a></div>`).join('')}</div>${phList.length > 3 ? `<button type="button" class="phc-a phc-p" aria-label="Photo précédente" hidden>‹</button><button type="button" class="phc-a phc-n" aria-label="Photo suivante">›</button>` : ''}${phList.length > 1 ? `<span class="phc-i">Photo ${Math.min(3, phList.length)}/${phList.length}</span>` : ''}</div>`
