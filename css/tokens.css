@@ -13,7 +13,7 @@
 
   /* Étiquettes et états */
   --tech-bg: #E2EAFA; --tech-fg: #2F5FC0;
-  --neutral-bg: #F3F4F6; --neutral-sub: #6B6B6B; /* --neutral-sub : dates et lignes secondaires des cartes */
+  --neutral-bg: #F3F4F6; --loc-mh: #EEEFF2; --neutral-sub: #6B6B6B; /* --neutral-sub : dates et lignes secondaires des cartes */
   --done-bg: #E2E5EA;
   --presence-fg: #B45309;
 
@@ -35,10 +35,12 @@
   --phpill-bd: #E3E4E7; --phpill-fg: #3A3A3A; --ph-bg: #E6E6E6; --ph-count-bg: rgba(255, 255, 255, .92);
   --overlay: rgba(0, 0, 0, .25); --overlay-photo: rgba(0, 0, 0, .92);
   --shadow-menu: 0 8px 22px rgba(0, 0, 0, .18), 0 1px 3px rgba(0, 0, 0, .10);
+  --switch-off: #E5E5EA; --switch-shadow: 0 1px 3px rgba(0, 0, 0, .25); --clk-muted: #C4C4C4;
+  --photo: 52px; --form-max: 608px;
 
   /* Typographie */
   --font: 'Inter', -apple-system, system-ui, sans-serif;
   --chat-ff: 'Inter', -apple-system, system-ui, sans-serif;
-  --fs: 14px; --fs-s: 11px; --fs-h1: 22px; --fs-h2: 15px; --fs-title: 21px; --fs-m: 16px;
+  --fs: 14px; --fs-s: 11px; --fs-h1: 22px; --fs-h2: 15px; --fs-title: 21px; --fs-m: 16px; --fs-field: 15px;
   --fw: 400; --fw-meta: 550; --fw-title: 600;
 }

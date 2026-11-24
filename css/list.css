@@ -37,9 +37,9 @@
 /* Lieu : un cran plus grand, « MH » en petit devant le numéro. */
 .tag--place { height: 22px; border-radius: var(--r-s); font-size: 12px; font-weight: 700; }
 .tag--place small { font-size: 8px; }
-.tag--haute, .tag--urgente, .choice--haute, .choice--urgente { --tag-bg: var(--prio-haute-bg); --tag-fg: var(--prio-haute-fg); }
-.tag--normale, .choice--normale { --tag-bg: var(--prio-normale-bg); --tag-fg: var(--prio-normale-fg); }
-.tag--basse, .choice--basse { --tag-bg: var(--prio-basse-bg); --tag-fg: var(--prio-basse-fg); }
+.tag--haute, .tag--urgente { --tag-bg: var(--prio-haute-bg); --tag-fg: var(--prio-haute-fg); }
+.tag--normale { --tag-bg: var(--prio-normale-bg); --tag-fg: var(--prio-normale-fg); }
+.tag--basse { --tag-bg: var(--prio-basse-bg); --tag-fg: var(--prio-basse-fg); }
 .tag--tech { --tag-bg: var(--tech-bg); --tag-fg: var(--tech-fg); }
 
 /* Non lus : pastille grise posée sur le coin haut gauche de la carte, comme dans l'appli. */
