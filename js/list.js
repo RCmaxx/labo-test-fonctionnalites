@@ -280,7 +280,7 @@ const item = (r, q = '', sf = []) => {
     mine = isPmine(r),
     take = canTake(r);
   return `<li><a class="card${done ? ' card--done' : ''}" href="${href}"${S.me.role === 'client' ? ' aria-disabled="true"' : ''}${take ? ` data-take="${r.id}"` : ''}>
-    ${n ? `<span class="badge">${n}</span>` : ''}<b class="card__title">${title}</b>
+    ${n ? `<span class="badge${n.new ? ' badge--new' : ''}">${n.n}</span>` : ''}<b class="card__title">${title}</b>
     <span class="card__meta">${loc}${r.assignee_id ? `<span class="tag tag--tech">${WRENCH}${esc(nameOf(r.assignee_id))}</span>` : ''}${mine ? '<span class="tag tag--prop">Proposé à moi</span>' : ''}<time>${fmtCard(done ? r.resolved_at || r.validated_at : r.created_at)}</time></span>
     ${slot ? `<span class="card__slot">${slot}</span>` : ''}
     ${r.client_presence ? `<span class="card__presence">${HAND}Présence client</span>` : ''}
@@ -382,9 +382,11 @@ export async function renderList(el) {
   ]);
   const last = Object.fromEntries((reads.data || []).map(r => [r.intervention_id, r.last_read_at]));
   const unread = (UNREAD = {});
-  (msgs.data || []).forEach(m => {
-    if (!last[m.intervention_id] || m.created_at > last[m.intervention_id])
-      unread[m.intervention_id] = (unread[m.intervention_id] || 0) + 1;
+  // Comme l'appli tech : nombre de messages des autres ; pastille rouge s'il en reste de non lus.
+  (msgs.data || []).forEach(({ intervention_id: k, created_at }) => {
+    const u = (unread[k] ||= { n: 0, new: false });
+    u.n++;
+    if (!last[k] || created_at > last[k]) u.new = true;
   });
   const sec = ([k, label, list], foldable) =>
     `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;

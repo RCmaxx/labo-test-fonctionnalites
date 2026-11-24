@@ -38,6 +38,9 @@
   --prop-bg: #e8f0fe;
   --prop-fg: #1d4ed8;
   --tech-fg: #0a3590;
+  --tech-soft-bg: #e2eafa; /* étiquette technicien des cartes en cours (appli tech) */
+  --tech-soft-fg: #2f5fc0;
+  --badge-new: #e5383b;
   --neutral-bg: #f3f4f6;
   --loc-mh: #eeeff2;
   --neutral-sub: #6b6b6b; /* --neutral-sub : dates et lignes secondaires des cartes */

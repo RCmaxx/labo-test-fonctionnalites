@@ -276,7 +276,7 @@ main {
   overflow-x: hidden;
   overflow-y: auto;
 }
-.sim .fabm {
+.sim .fabm:not(:empty) {
   right: calc(50vw - var(--sim-w) / 2 + var(--s4));
   bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s4) + var(--fab) + var(--s3));
 }

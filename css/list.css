@@ -209,6 +209,10 @@
   --tag-fg: var(--prio-basse-fg);
 }
 .tag--tech {
+  --tag-bg: var(--tech-soft-bg);
+  --tag-fg: var(--tech-soft-fg);
+}
+.card--done .tag--tech {
   --tag-bg: var(--tech-bg);
   --tag-fg: var(--tech-fg);
 }
@@ -228,7 +232,7 @@
   outline-offset: 2px;
 }
 
-/* Non lus : pastille grise posée sur le coin haut gauche de la carte, comme dans l'appli. */
+/* Messages : pastille grise (rouge si non lus) posée sur le coin haut gauche de la carte, comme dans l'appli. */
 .badge {
   position: absolute;
   top: -6px;
@@ -243,6 +247,9 @@
   font-weight: 700;
   display: grid;
   place-items: center;
+}
+.badge--new {
+  background: var(--badge-new);
 }
 .more {
   margin: 0;

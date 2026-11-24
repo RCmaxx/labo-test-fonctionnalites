@@ -72,6 +72,8 @@ async function render() {
   const r = S.me.role,
     admin = S.me.real === 'admin',
     cli = r === 'client';
+  // Comme l'appli tech : un technicien a toujours la vue mobile (cadre téléphone sur grand écran).
+  document.documentElement.classList.toggle('sim', r === 'technicien' || !!localStorage.labosim);
   const disp = admin ? PNAME[r] || S.me.full_name : S.me.full_name || S.me.email;
   const av = avatar(admin && r === 'client' ? 'Client' : disp);
   const pick = admin;
