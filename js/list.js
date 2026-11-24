@@ -1,8 +1,8 @@
 import { sb } from './sb.js';
 import { renderDetail } from './detail.js';
-import { S, esc, fmtCard, nameOf, DONE, TECH, isMob, route } from './state.js';
+import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, isMob, route } from './state.js';
 
-let search = '', tq = 0;
+let search = '', tq = 0, doneN = PAGE;
 const WRENCH = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
 const HAND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>';
 const CHEV = '<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
@@ -27,6 +27,8 @@ const GICO = {
   publiee: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></svg>',
   prise_en_charge: WR,
   auj: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
+  sem: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
+  avant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
 };
 const day0 = d => new Date(d).setHours(0, 0, 0, 0);
 const arrival = r => {
@@ -42,6 +44,18 @@ const isTodayDone = r => {
   return day0(d) === day0(Date.now());
 };
 const roleOf = id => S.team.find(m => m.user_id === id)?.role;
+
+const finAt = r => new Date(r.resolved_at || r.validated_at || r.updated_at || r.created_at);
+const weekStart = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.getTime(); };
+const byDay = rows => {
+  const by = new Map();
+  rows.forEach(r => { const d = finAt(r), k = d.toDateString(); if (!by.has(k)) by.set(k, [d, []]); by.get(k)[1].push(r); });
+  return [...by.values()].map(([d, rs]) => {
+    const l = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    return `<h3 class="gday">${l[0].toUpperCase() + l.slice(1)}</h3><ul class="cards">${rs.map(itemRef).join('')}</ul>`;
+  }).join('');
+};
+let itemRef = () => '';
 const CLOSED = {};
 let openId = null;
 
@@ -82,9 +96,57 @@ export async function renderList(el) {
       ${r.client_presence ? `<span class="card__presence">${HAND}Présence client</span>` : ''}
     </a></li>`;
   };
+  itemRef = item;
   const sec = ([k, label, list], foldable) => `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
 
-  const paint = (open, done) => {
+
+  const paintTerminees = (done, more) => {
+    const d0 = day0(Date.now()), w0 = weekStart();
+    const list = [...done].sort((a, b) => finAt(b) - finAt(a));
+    const auj = list.filter(r => day0(finAt(r)) === d0);
+    const sem = list.filter(r => { const t = day0(finAt(r)); return t >= w0 && t < d0; });
+    const avant = list.filter(r => day0(finAt(r)) < w0);
+    const groups = [
+      ['auj', "Terminées aujourd'hui", auj],
+      ['sem', 'Terminées cette semaine', sem],
+      ['avant', 'Autres interventions terminées', avant],
+    ];
+    const foldable = true;
+    const body = ([k, label, rows]) => {
+      const inner = k === 'sem' && rows.length ? byDay(rows) : (rows.length ? `<ul class="cards">${rows.map(item).join('')}</ul>` : '<p class="empty">Aucune.</p>');
+      return `<section class="group${CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2 role="button" tabindex="0" aria-expanded="${!CLOSED[k]}">${GICO[k] || ''}<span class="count">${rows.length}</span><span class="glab">${label}</span>${CHEV}</h2>${inner}</section>`;
+    };
+    const mob = isMob();
+    const html = mob
+      ? groups.map(body).join('')
+      : `<div class="gcols gdone">${groups.map(g => `<div class="gcol">${body(g)}</div>`).join('')}</div>`;
+    rows.innerHTML = `<h1 class="lpage-title">Interventions terminées</h1>` + html + (more ? '<p class="more"><button type="button" id="more">Voir plus</button></p>' : '');
+    const g0 = rows.querySelector('.gcol');
+    if (g0) {
+      const host = document.querySelector('.sim #app');
+      const top = g0.getBoundingClientRect().top - (host ? host.getBoundingClientRect().top - host.scrollTop : 0);
+      document.documentElement.style.setProperty('--gtop', Math.round(top) + 'px');
+      rows.querySelectorAll('.gcol').forEach(c => stackSticky(c, '.group > h2'));
+    }
+    rows.querySelectorAll('.group h2[role=button]').forEach(h => {
+      h.onclick = h.onkeydown = e => {
+        if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+        if (e.type === 'click' && !e.target.closest('.glab, .count, .chev')) return;
+        e.preventDefault();
+        const g = h.parentElement, k = g.dataset.g;
+        CLOSED[k] = !g.classList.contains('closed');
+        g.classList.toggle('closed', CLOSED[k]);
+        h.setAttribute('aria-expanded', String(!CLOSED[k]));
+      };
+    });
+    const btn = rows.querySelector('#more');
+    if (btn) btn.onclick = () => { doneN += PAGE; renderList(el); };
+    const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
+    if (again) unfold(again, false); else openId = null;
+  };
+
+  const paint = (open, done, more) => {
+    if (route()[0] === 'terminees') return paintTerminees(done, more);
     const me = S.me.id, r = S.me.role, mob = isMob(), page = route()[0];
     const mine = x => x.assignee_id === me && (S.me.real !== 'admin' || !x.assignee_role || x.assignee_role === r);
     const pmine = x => x.status === 'publiee' && !x.available_from && x.proposed_to && TECH.includes(r) && (x.proposed_to === me || (S.me.real === 'admin' && roleOf(x.proposed_to) === r));
@@ -167,6 +229,15 @@ export async function renderList(el) {
   const load = async () => {
     const words = search.trim().split(/\s+/).filter(Boolean);
     const openQ = scope(sb.from('interventions').select(COLS).not('status', 'in', `(brouillon,${DONE.join(',')})`)).order('created_at', { ascending: false });
+    if (route()[0] === 'terminees') {
+      const q = words.length
+        ? withSearch(scope(sb.from('interventions').select(COLS).in('status', DONE)), words).order('resolved_at', { ascending: false, nullsFirst: false }).limit(200)
+        : scope(sb.from('interventions').select(COLS).in('status', DONE)).order('resolved_at', { ascending: false, nullsFirst: false }).order('id').limit(doneN);
+      const { data, error } = await q;
+      if (error) return rows.innerHTML = `<p>${esc(error.message)}</p>`;
+      paint([], data || [], !words.length && (data || []).length === doneN);
+      return;
+    }
     if (words.length) {
       const { data, error } = await withSearch(scope(sb.from('interventions').select(COLS).neq('status', 'brouillon')), words)
         .order('created_at', { ascending: false }).limit(200);

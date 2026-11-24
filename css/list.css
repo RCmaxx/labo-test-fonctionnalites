@@ -64,3 +64,7 @@
 .unfold.is-now { transition: none; }
 .unfold > div { min-height: 0; overflow: hidden; }
 .unfold__body { padding: var(--s2) var(--s1) var(--s4); }
+
+.lpage-title { margin: 0 0 var(--s4); font-size: var(--fs-h1); font-weight: var(--fw-title); }
+.gday { margin: var(--s4) 0 var(--s2); padding: 0 10px; font-size: 15px; font-weight: 600; color: var(--group-fg); }
+.gcols.gdone { grid-template-columns: repeat(3, minmax(0, 1fr)); }
