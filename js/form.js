@@ -16,6 +16,15 @@ const padMH = s => String(s).replace(/^((?:mh|mobil[- ]?home)\s*)(\d)\s*$/i, (_,
 const p2 = n => String(n).padStart(2, '0');
 const dIn = v => { const x = v ? new Date(v) : new Date(); return `${x.getFullYear()}-${p2(x.getMonth() + 1)}-${p2(x.getDate())}`; };
 const tIn = v => { if (!v) return ''; const x = new Date(v); return `${p2(x.getHours())}:${p2(x.getMinutes())}`; };
+const TIMES = Array.from({ length: 96 }, (_, i) => `${p2(Math.floor(i / 4))}:${p2((i % 4) * 15)}`);
+const DAYS = cur => {
+  const out = [], t = new Date(); t.setHours(0, 0, 0, 0);
+  const W = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'], M = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  const lab = (x, n) => n === 0 ? "Aujourd'hui" : n === 1 ? 'Demain' : `${W[x.getDay()]} ${x.getDate()} ${M[x.getMonth()]}`;
+  if (cur && dIn(cur) < dIn()) { const x = new Date(cur); out.push([dIn(cur), lab(x, -1)]); }
+  for (let i = 0; i < 60; i++) { const x = new Date(t); x.setDate(t.getDate() + i); out.push([dIn(x), lab(x, i)]); }
+  return out;
+};
 const mhN = v => (String(v).trim().match(/^(?:mh|mobil[- ]?home)?\s*(\d+)$/i) || [])[1];
 const tagIn = v => { const n = mhN(v); return n ? `<span class="mhpre">MH</span><span class="mhnum">${esc(String(n).padStart(2, '0'))}</span>` : `${PIN}<span class="ltx">${esc(v)}</span>`; };
 const canDraft = r => MGR.includes(r) || r === 'technicien' || r === 'client';
@@ -92,13 +101,20 @@ function quitBox(draft) {
 
 export function photoTray(input, tray, onChange, max = 10) {
   const files = [];
+  const cap = typeof max === 'function' ? max : () => max;
   const draw = () => {
-    tray.querySelectorAll('img').forEach(i => URL.revokeObjectURL(i.src));
-    tray.innerHTML = files.map((f, i) => `<span class="pt"><img src="${URL.createObjectURL(f)}" alt=""><button type="button" class="pt-x" data-i="${i}" aria-label="Retirer la photo">×</button></span>`).join('');
-    onChange(files);
+    tray.querySelectorAll('[data-new] img').forEach(i => { if (i.src.startsWith('blob:')) URL.revokeObjectURL(i.src); });
+    tray.querySelectorAll('[data-new]').forEach(n => n.remove());
+    files.forEach((f, i) => {
+      const s = document.createElement('span');
+      s.className = 'pt'; s.dataset.new = '1';
+      s.innerHTML = `<img src="${URL.createObjectURL(f)}" alt=""><button type="button" class="pt-x" data-i="${i}" aria-label="Retirer la photo">×</button>`;
+      tray.append(s);
+    });
+    onChange?.(files);
   };
   input.addEventListener('change', () => {
-    const room = Math.max(0, max - files.length);
+    const room = Math.max(0, cap() - files.length);
     if (input.files.length > room) { const fe = tray.closest('form')?.querySelector('#ferr') || document.querySelector('#acterr'); if (fe) fe.textContent = '10 photos maximum par intervention.'; }
     files.push(...[...input.files].slice(0, room));
     input.value = '';
@@ -106,6 +122,7 @@ export function photoTray(input, tray, onChange, max = 10) {
   });
   tray.addEventListener('click', e => {
     const x = e.target.closest('.pt-x');
+    if (x && !x.closest('[data-new]')) return;
     if (x) { if (confirm('Supprimer ?')) { files.splice(+x.dataset.i, 1); draw(); } return; }
     const img = e.target.closest('.pt img');
     if (img) zoomImg(img.src);
@@ -149,10 +166,11 @@ export async function renderForm(el, id) {
           <button type="button" class="hpsw2" role="switch" aria-checked="${slotOn}" aria-label="Présence client requise"></button>
           <span class="hpcr"><button type="button" class="hpclk" aria-label="Choisir le créneau" ${slotOn ? '' : 'disabled'}>${CLOCK}</button><span class="hpv"></span></span>
         </fieldset>
-        <div class="nf slot" ${slotOn ? '' : 'hidden'}>
-          <label>Jour <input type="date" name="slot_d" value="${from ? dIn(from) : dIn()}"></label>
-          <label>De <input type="time" name="slot_a" step="900" value="${tIn(from)}"></label>
-          <label>À <input type="time" name="slot_b" step="900" value="${tIn(until)}"></label>
+        <div class="nf slot" hidden>
+          <input type="hidden" name="slot_d" value="${from ? dIn(from) : ''}">
+          <input type="hidden" name="slot_a" value="${tIn(from)}">
+          <input type="hidden" name="slot_b" value="${tIn(until)}">
+          <div class="wsheet" hidden><div class="wbox"><button type="button" class="wx" aria-label="Fermer">×</button><div class="wheels"><div class="wcol w-d"><span class="wh">Jour</span><div class="wheel" data-k="slot_d">${DAYS(i.available_from).map(([v, l]) => `<div class="wi" data-v="${v}">${l}</div>`).join('')}</div></div><div class="wcol"><span class="wh">De</span><div class="wheel" data-k="slot_a">${TIMES.map(t => `<div class="wi" data-v="${t}">${t}</div>`).join('')}</div></div><div class="wcol"><span class="wh">À</span><div class="wheel" data-k="slot_b">${TIMES.map(t => `<div class="wi" data-v="${t}">${t}</div>`).join('')}</div></div><div class="wband" aria-hidden="true"></div></div><button type="button" class="primary wok">Valider</button><button type="button" class="ghost wrm">Retirer le créneau</button></div></div>
         </div>
         <div class="nf"><textarea name="description" rows="6" placeholder="${r === 'client' ? 'Décrivez votre demande en quelques lignes' : 'Description'}">${esc(i.description)}</textarea></div>
         <div class="nph">Photos
@@ -235,30 +253,149 @@ export async function renderForm(el, id) {
   });
   syncTag();
 
-  const hp = f.querySelector('#hp'), slot = f.querySelector('.slot'), clk = f.querySelector('.hpclk'), hpv = f.querySelector('.hpv');
+  const hp = f.querySelector('#hp'), clk = f.querySelector('.hpclk'), hpv = f.querySelector('.hpv');
+  const sheet = f.querySelector('.wsheet');
+  document.querySelectorAll('.wsheet').forEach(x => x !== sheet && x.remove());
+  hostModal().append(sheet);
+  addEventListener('hashchange', () => sheet.remove(), { once: true });
+  const wheels = [...sheet.querySelectorAll('.wheel')];
+  const IH = () => sheet.querySelector('.wi')?.offsetHeight || 36;
+  const vis = w => [...w.children].filter(x => !x.hidden);
+  let placing = false, npBusy = false, lastA = null, slotDone = !!i.available_from, saved = null;
+  const T0 = () => id && i.created_at ? new Date(i.created_at) : new Date();
+  const isPast = (d, t) => !!(d && t) && new Date(`${d}T${t}`) < T0();
+  const noPast = src => { if (npBusy) return; npBusy = true; try {
+    const d = f.slot_d.value;
+    wheels.filter(w => w.dataset.k !== 'slot_d').forEach(w => [...w.children].forEach(x => x.classList.toggle('past', !!x.dataset.v && isPast(d, x.dataset.v))));
+    const wa = wheels.find(w => w.dataset.k === 'slot_a'), wd = wheels.find(w => w.dataset.k === 'slot_d');
+    if (wa && isPast(d, f.slot_a.value)) {
+      const k = [...wa.children].findIndex(x => !x.classList.contains('past'));
+      if (k >= 0) { wa.scrollTo({ top: k * IH(), behavior: 'smooth' }); [...wa.children].forEach((x, j) => x.classList.toggle('sel', j === k)); f.slot_a.value = wa.children[k].dataset.v; }
+      else if (wd) { const j = [...wd.children].findIndex(x => x.dataset.v > d); if (j >= 0) { wd.scrollTo({ top: j * IH(), behavior: 'smooth' }); [...wd.children].forEach((x, q) => x.classList.toggle('sel', q === j)); f.slot_d.value = wd.children[j].dataset.v; } }
+    }
+    const wb = wheels.find(w => w.dataset.k === 'slot_b'), a0 = f.slot_a.value;
+    if (wb) {
+      [...wb.children].forEach(x => { x.hidden = !!x.dataset.v && !!a0 && x.dataset.v <= a0; });
+      const nx = () => TIMES.find(t => t > a0) || '';
+      if (f.slot_b.value && a0 && f.slot_b.value <= a0) f.slot_b.value = nx();
+      if (src?.dataset?.k === 'slot_a' && !placing && lastA !== null && a0 !== lastA) f.slot_b.value = nx();
+      if (!f.slot_b.value && a0) f.slot_b.value = nx();
+      if (src?.dataset?.k === 'slot_a') lastA = a0;
+      const k = Math.max(0, vis(wb).findIndex(x => x.dataset.v === f.slot_b.value));
+      vis(wb).forEach((x, j) => x.classList.toggle('sel', j === k));
+      if (Math.abs(wb.scrollTop - k * IH()) > 2) wb.scrollTop = k * IH();
+    }
+  } finally { npBusy = false; } };
+  const pick = w => {
+    const items = vis(w), idx = Math.max(0, Math.min(items.length - 1, Math.round(w.scrollTop / IH())));
+    const prev = f[w.dataset.k].value, next = items[idx]?.dataset.v || '';
+    items.forEach((x, k) => x.classList.toggle('sel', k === idx));
+    f[w.dataset.k].value = next;
+    if (w.dataset.k === 'slot_d' && !placing && prev && next && prev !== next) {
+      f.slot_a.value = '08:00';
+      const wa = wheels.find(x => x.dataset.k === 'slot_a'), k = wa ? [...wa.children].findIndex(x => x.dataset.v === '08:00') : -1;
+      if (wa && k >= 0) { wa.scrollTo({ top: k * IH() }); [...wa.children].forEach((x, j) => x.classList.toggle('sel', j === k)); }
+      f.slot_b.value = TIMES.find(tm => tm > '08:00') || '';
+    }
+    noPast(w);
+  };
+  const place = () => { placing = true; try {
+    wheels.forEach(w => {
+      if (w.dataset.k === 'slot_a' && !f.slot_a.value) {
+        const n = new Date(), q = `${p2(n.getHours())}:${p2((Math.ceil(n.getMinutes() / 15) * 15) % 60)}`;
+        f.slot_a.value = TIMES.find(t => t >= q) || '09:00';
+      }
+      const idx = Math.max(0, vis(w).findIndex(x => x.dataset.v === f[w.dataset.k].value));
+      w.scrollTop = idx * IH(); pick(w);
+    });
+  } finally { placing = false; } };
+  wheels.forEach(w => {
+    let tm;
+    w.addEventListener('scroll', () => { clearTimeout(tm); tm = setTimeout(() => { if (w.offsetParent) pick(w); }, 60); }, { passive: true });
+    w.onclick = e => { const it = e.target.closest('.wi'); if (it) w.scrollTo({ top: vis(w).indexOf(it) * IH(), behavior: 'smooth' }); };
+  });
   const setPassage = on => {
     hp.classList.toggle('on', on);
     f.querySelector('[name=passage][value=slot]').checked = on;
     f.querySelector('[name=passage][value=now]').checked = !on;
     hp.querySelector('.hpsw2').setAttribute('aria-checked', on);
-    slot.hidden = !on;
     clk.disabled = !on;
     if (on && !f.slot_d.value) f.slot_d.value = dIn();
     paintSlot();
   };
   const paintSlot = () => {
-    if (!hp.classList.contains('on') || !f.slot_d.value || !f.slot_a.value) { hpv.textContent = ''; return; }
+    if (!hp.classList.contains('on') || !slotDone || !f.slot_d.value || !f.slot_a.value) { hpv.textContent = ''; return; }
+    const lab = sheet.querySelector('.wheel[data-k=slot_d] .wi.sel')?.textContent;
     const d = new Date(f.slot_d.value + 'T00:00'), t = new Date(); t.setHours(0, 0, 0, 0);
     const n = Math.round((d - t) / 864e5);
-    const day = n === 0 ? "Aujourd'hui" : n === 1 ? 'Demain' : d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+    const day = lab || (n === 0 ? "Aujourd'hui" : n === 1 ? 'Demain' : d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }));
     hpv.textContent = `${day} ${f.slot_a.value}${f.slot_b.value ? '–' + f.slot_b.value : ''}`;
   };
-  hp.querySelector('.hpsw2').onclick = () => setPassage(!hp.classList.contains('on'));
-  clk.onclick = () => { if (clk.disabled) return; slot.hidden = false; f.slot_d.focus(); };
-  ['slot_d', 'slot_a', 'slot_b'].forEach(n => f[n].addEventListener('change', paintSlot));
-  paintSlot();
+  const KS = ['slot_d', 'slot_a', 'slot_b'];
+  const pos = () => {
+    const bx = sheet.querySelector('.wbox');
+    sheet.classList.add('pop');
+    if (!bx) return;
+    const r = hp.getBoundingClientRect(), sr = sheet.getBoundingClientRect(), w = bx.offsetWidth, h = bx.offsetHeight;
+    let l = r.right + 8 - sr.left, t = r.bottom - h - sr.top;
+    if (l + w > sr.width - 8) { l = r.right - w - sr.left; t = r.bottom + 8 - sr.top; }
+    bx.style.left = Math.max(8, Math.min(l, sr.width - w - 8)) + 'px';
+    bx.style.top = Math.max(8, Math.min(t, sr.height - h - 8)) + 'px';
+  };
+  const openSheet = () => { saved = KS.map(k => f[k].value); sheet.hidden = false; pos(); requestAnimationFrame(place); };
+  const closeSheet = () => {
+    sheet.hidden = true;
+    if (saved) KS.forEach((k, i) => { f[k].value = saved[i]; });
+    if (!slotDone) setPassage(false);
+    paintSlot();
+  };
+  sheet.querySelector('.wx').onclick = closeSheet;
+  sheet.onclick = e => { if (e.target === sheet) closeSheet(); };
+  sheet.querySelector('.wok').onclick = () => {
+    if (f.slot_b.value && f.slot_b.value <= f.slot_a.value) return err.textContent = "L'heure de fin doit suivre l'heure de début.";
+    if (isPast(f.slot_d.value, f.slot_a.value)) return err.textContent = 'Ce créneau est déjà passé.';
+    err.textContent = ''; slotDone = true; saved = null; sheet.hidden = true; paintSlot();
+  };
+  sheet.querySelector('.wrm').onclick = () => { KS.forEach(k => { f[k].value = ''; }); slotDone = false; saved = null; sheet.hidden = true; setPassage(false); };
+  hp.querySelector('.hpsw2').onclick = () => {
+    const on = !hp.classList.contains('on');
+    setPassage(on);
+    if (on) openSheet();
+  };
+  clk.onclick = () => { if (!clk.disabled) openSheet(); };
+  if (slotOn && i.available_from) {
+    requestAnimationFrame(() => { sheet.hidden = false; place(); sheet.hidden = true; paintSlot(); });
+  } else paintSlot();
 
-  const picked = photoTray(f.photos, f.querySelector('.ptray'), files => { f.querySelector('.padd').hidden = files.length >= 10; });
+  const tray = f.querySelector('.ptray');
+  let exN = 0;
+  const picked = photoTray(f.photos, tray, files => { f.querySelector('.padd').hidden = files.length + exN >= 10; }, () => 10 - exN);
+  if (id) (async () => {
+    const { data } = await sb.from('intervention_photos').select('id, path').eq('intervention_id', id).order('created_at');
+    const rows = data || [];
+    if (!rows.length || !tray.isConnected) return;
+    const { data: urls } = await sb.storage.from('photos').createSignedUrls(rows.map(p => p.path), 3600);
+    const map = Object.fromEntries((urls || []).map(d => [d.path, d.signedUrl]));
+    for (const row of rows) {
+      const s = document.createElement('span');
+      s.className = 'pt'; s.dataset.ex = row.id;
+      s.innerHTML = `<img src="${esc(map[row.path] || '')}" alt=""><button type="button" class="pt-x" data-ex="${row.id}" aria-label="Retirer la photo">×</button>`;
+      tray.append(s);
+    }
+    exN = tray.querySelectorAll('[data-ex]').length;
+    f.querySelector('.padd').hidden = picked.length + exN >= 10;
+    tray.addEventListener('click', async e => {
+      const x = e.target.closest('.pt-x[data-ex]'); if (!x) return;
+      if (!confirm('Supprimer ?')) return;
+      const row = rows.find(r => r.id === x.dataset.ex);
+      const { error } = await sb.from('intervention_photos').delete().eq('id', row.id);
+      if (error) return err.textContent = error.message;
+      await sb.storage.from('photos').remove([row.path]);
+      x.closest('.pt').remove();
+      exN = tray.querySelectorAll('[data-ex]').length;
+      f.querySelector('.padd').hidden = picked.length + exN >= 10;
+    });
+  })();
 
   const wrap = f.querySelector('.bdwrap'), chev = wrap?.querySelector('.bdchev'), save = wrap?.querySelector('.bdsave'), db = wrap?.querySelector('[value=brouillon]');
   if (wrap && chev) {
@@ -304,16 +441,55 @@ export async function renderForm(el, id) {
     })();
   }
 
+  const DK = id ? null : 'lab:dr:new';
+  const clearDraft = () => { if (DK) localStorage.removeItem(DK); };
+  const snapDraft = () => {
+    if (!DK) return;
+    const o = {
+      title: f.title.value, location: f.location.value, description: f.description.value,
+      priority: f.querySelector('[name=priority]:checked')?.value,
+      passage: hp.classList.contains('on') ? 'slot' : 'now',
+      slot_d: f.slot_d.value, slot_a: f.slot_a.value, slot_b: f.slot_b.value, slotDone,
+      assign: f.querySelector('[name=assign]:checked')?.value || '',
+    };
+    if (!o.title && !o.location && !o.description && o.passage !== 'slot' && !o.assign) localStorage.removeItem(DK);
+    else localStorage.setItem(DK, JSON.stringify(o));
+  };
+  if (DK) {
+    try {
+      const o = JSON.parse(localStorage.getItem(DK) || 'null');
+      if (o) {
+        if (o.title) f.title.value = o.title;
+        if (o.location) { f.location.value = o.location; syncTag(); }
+        if (o.description) f.description.value = o.description;
+        const pr = o.priority && f.querySelector(`[name=priority][value="${o.priority}"]`);
+        if (pr) { pr.checked = true; f.dataset.prio = o.priority; }
+        if (o.assign) { const c = f.querySelector(`[name=assign][value="${CSS.escape(o.assign)}"]`); if (c) c.checked = true; }
+        if (o.slot_d) f.slot_d.value = o.slot_d;
+        if (o.slot_a) f.slot_a.value = o.slot_a;
+        if (o.slot_b) f.slot_b.value = o.slot_b;
+        if (o.passage === 'slot') {
+          slotDone = !!(o.slotDone && o.slot_d && o.slot_a);
+          setPassage(true);
+          requestAnimationFrame(() => { sheet.hidden = false; place(); sheet.hidden = true; paintSlot(); });
+        }
+      }
+    } catch {}
+    f.addEventListener('input', snapDraft);
+    f.addEventListener('change', snapDraft);
+  }
+
   const dirty = () => !!(f.title.value.trim() || f.location.value.trim() || f.description.value.trim() || picked.length);
   let s0 = null;
   const snap = () => JSON.stringify([...new FormData(f)].filter(([k]) => k !== 'photos'));
   if (id) setTimeout(() => { s0 = snap(); }, 400);
   const canLeave = async () => {
     if (id) return s0 === null || snap() === s0 || confirm('Attention, votre modification ne sera pas enregistrée.');
-    if (!dirty()) return true;
+    if (!dirty()) { clearDraft(); return true; }
     const a = await quitBox(draftOk);
     if (a === 'draft' && db) { f.requestSubmit(db); return false; }
-    return a === 'quit';
+    if (a === 'quit') { clearDraft(); return true; }
+    return false;
   };
   el.querySelectorAll('a.back, .nactions a.btn').forEach(a => a.addEventListener('click', async e => { if (!await canLeave()) e.preventDefault(); }));
   const fx = el.querySelector('.fx');
@@ -369,6 +545,6 @@ export async function renderForm(el, id) {
       if (m) { const u = await sb.from('interventions').update({ remind_minutes: m }).eq('id', iid); if (u.error) error = u.error; }
     }
     if (btn) btn.disabled = false;
-    error ? err.textContent = error.message : location.hash = `i/${iid}`;
+    if (error) err.textContent = error.message; else { clearDraft(); location.hash = `i/${iid}`; }
   };
 }

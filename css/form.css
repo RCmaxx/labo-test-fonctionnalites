@@ -75,9 +75,25 @@
 .hpclk { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink); cursor: pointer; }
 .hpclk:disabled { color: var(--clk-muted); cursor: default; }
 .hpv:empty { display: none; }
-.nform .slot { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: end; }
-.nform .slot[hidden] { display: none; }
-.nform .slot label { flex: 1 1 120px; margin: 0; }
+.nform .slot { display: none; }
+.wsheet { position: fixed; inset: 0; z-index: 70; background: var(--overlay); display: flex; align-items: flex-end; justify-content: center; }
+.sim .wsheet { position: absolute; }
+.wsheet[hidden] { display: none; }
+.wbox { position: relative; background: var(--surface); width: 100%; max-width: 420px; border-radius: 16px 16px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-menu); }
+.wsheet.pop .wbox { position: absolute; width: 280px; max-width: calc(100% - 16px); border-radius: 16px; padding: 40px 12px 12px; gap: 8px; }
+.wbox .wx { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: transparent; font-size: 22px; line-height: 1; color: var(--ink-2); padding: 0; cursor: pointer; }
+.wheels { position: relative; display: flex; gap: 8px; margin: 0; }
+.wcol { flex: 1; min-width: 0; }
+.w-d { flex: 1.4; }
+.wh { display: block; text-align: center; font-size: var(--fs-s); font-weight: 500; color: var(--ink-2); }
+.wheel { height: 180px; overflow-y: auto; scroll-snap-type: y mandatory; padding: 72px 0; box-sizing: border-box; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.wheel::-webkit-scrollbar { display: none; }
+.wi { height: 36px; line-height: 36px; text-align: center; scroll-snap-align: center; font-size: var(--fs-m); font-weight: 400; color: var(--ink-wheel); white-space: nowrap; cursor: pointer; }
+.wi.sel { color: var(--ink); font-weight: 500; }
+.wi.past { color: var(--ink-past); }
+.wi[hidden] { display: none; }
+.wband { position: absolute; left: 0; right: 0; bottom: 72px; height: 36px; background: var(--wheel-band); border-radius: 8px; pointer-events: none; }
+.wok { width: 100%; justify-content: center; }
 
 /* Photos : bandeau de vignettes + bouton +. */
 .nph { font-size: 13px; font-weight: 500; color: var(--ink-2); }
