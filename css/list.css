@@ -460,3 +460,10 @@ mark {
   font-weight: 500;
   color: var(--ink);
 }
+
+/* Mes interventions : cercles alignés sur la marge des cartes de l'appli tech */
+@container app (max-width: 600px) {
+  .circles {
+    margin-left: calc(-1 * var(--s2));
+  }
+}

@@ -115,6 +115,7 @@ async function render() {
   ${cli ? '' : '<a class="fabm" href="#mes" id="fabm" aria-label="Mes interventions"></a>'}
   <a class="fab" href="#nouvelle" aria-label="Nouvelle intervention">+</a>
   <nav class="tabbar">
+    <i class="tabbar__ind" aria-hidden="true"></i>
     <a href="#" aria-label="Terminées">${LIST}</a>
     ${cli ? '' : '<a href="#nouvelles" aria-label="Nouvelles interventions"><span class="tabbar__n" id="tabn"></span></a><a href="#mes" aria-label="Mes interventions"><span class="tabbar__m" id="tabm"></span></a>'}
     ${admin ? `<a href="#parametres" aria-label="Profils">${USERS}</a>` : ''}
@@ -218,6 +219,36 @@ async function pickRole(sel) {
   render();
 }
 
+// Indicateur qui glisse vers l'onglet actif de la barre du bas (la position précédente est gardée d'un rendu à l'autre).
+let indPos = null;
+function moveIndicator() {
+  const bar = app.querySelector('.tabbar'),
+    ind = bar?.querySelector('.tabbar__ind'),
+    on = bar?.querySelector('a.on');
+  if (!ind) return;
+  ind.hidden = !on;
+  if (!on) return;
+  const set = p => {
+    ind.style.left = p.left + 'px';
+    ind.style.width = p.width + 'px';
+  };
+  if (indPos && !ind.dataset.ready) {
+    set(indPos);
+    ind.getBoundingClientRect();
+  }
+  ind.dataset.ready = '1';
+  requestAnimationFrame(() => {
+    const now = { left: on.offsetLeft, width: on.offsetWidth };
+    ind.style.transition = indPos
+      ? 'left 0.28s cubic-bezier(0.3, 0.8, 0.3, 1), width 0.28s cubic-bezier(0.3, 0.8, 0.3, 1)'
+      : 'none'; // premier affichage : pas de glissement depuis un point arbitraire
+    set(now);
+    indPos = now;
+  });
+}
+// Les pastilles de la barre du bas changent de largeur quand les compteurs arrivent : on recale l'indicateur.
+document.addEventListener('labo:counts', moveIndicator);
+
 function show() {
   loadCounts();
   const el = app.querySelector('main'),
@@ -227,6 +258,7 @@ function show() {
   const live = tabs.consumeSkip(); // onglet remis vivant par le balayage : rien à redessiner
   const cur = ['compte', 'nouvelles', 'mes', 'terminees', 'recherche', 'parametres'].includes(page) ? '#' + page : '';
   app.querySelectorAll('.tnav a, .tabbar a, .who a').forEach(a => a.classList.toggle('on', a.hash === cur));
+  moveIndicator();
   const pt = app.querySelector('.ptit');
   if (pt) pt.textContent = titleOf(page);
   if (live) return;

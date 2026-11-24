@@ -214,8 +214,19 @@ main {
   background: transparent;
 }
 .tabbar a.on {
-  background: var(--chrome-on);
   color: var(--chrome-fg);
+}
+.tabbar a {
+  position: relative;
+  z-index: 1;
+}
+.tabbar__ind {
+  position: absolute;
+  top: 4px;
+  height: 44px;
+  border-radius: 22px;
+  background: var(--chrome-on);
+  pointer-events: none;
 }
 .tabbar__n {
   min-width: 30px;
