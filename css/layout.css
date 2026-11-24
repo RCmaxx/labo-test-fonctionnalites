@@ -12,7 +12,7 @@
   gap: var(--s3);
   margin: calc(-1 * var(--pad)) 0 var(--s6);
   padding: 9px 0 10px;
-  border-image: linear-gradient(to top, var(--line) 1px, var(--surface) 0) fill 0; // 0 100vmax;
+  border-image: linear-gradient(to top, var(--line) 1px, var(--surface) 0) fill 0;
 }
 .topbar a {
   padding: var(--s2) var(--s3);
@@ -274,7 +274,7 @@ main {
   .topbar {
     margin-bottom: var(--s4);
     position: relative;
-    border-image: linear-gradient(var(--chrome), var(--chrome)) fill 0; // 0 100vmax;
+    border-image: linear-gradient(var(--chrome), var(--chrome)) fill 0;
   }
   .ptit {
     color: var(--chrome-fg);
