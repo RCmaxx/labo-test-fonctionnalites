@@ -150,14 +150,16 @@ export async function renderForm(el, id) {
   el.innerHTML = `
     <div class="fpage">
       <div class="fhead">${id ? `<a href="${backHref}" class="back" aria-label="Retour">${BACK}</a>` : ''}<h1>${id ? "Modifier l'intervention" : 'Nouvelle intervention'}</h1>${id ? '' : `<button type="button" class="fx" aria-label="Fermer">${CLOSE}</button>`}</div>
-      <form id="f" class="nform" autocomplete="off" data-prio="${i.priority || 'normale'}">
-        <div class="nf-row">
+      <form id="f" class="nform${id ? '' : ' stp1'}" autocomplete="off" data-prio="${i.priority || 'normale'}">
+        <div class="fsum" hidden role="button" tabindex="0"></div>
+        <div class="s1"><div class="nf-row">
           <div class="nf"><input name="title" type="text" maxlength="70" required placeholder="${r === 'client' ? "Titre de l'intervention" : 'Titre'}" value="${esc(i.title)}"></div>
           <div class="nf ac"><input name="location" type="text" maxlength="80" placeholder="Lieu" value="${esc(i.location)}" aria-autocomplete="list" aria-expanded="false" autocorrect="off" spellcheck="false"><ul class="ac-list" role="listbox" hidden></ul></div>
         </div>
         <fieldset class="seg"><legend>Priorité</legend>${Object.entries(PRIO_L).map(([k, v]) =>
-          `<label class="p-${k}"><input type="radio" name="priority" value="${k}" ${k === i.priority ? 'checked' : ''}><span>${v}</span></label>`).join('')}</fieldset>
-        ${canAssign ? `<fieldset class="assign"><legend>Assigner à un technicien</legend>${(techs.data || []).map(t =>
+          `<label class="p-${k}"><input type="radio" name="priority" value="${k}" ${k === i.priority ? 'checked' : ''}><span>${v}</span></label>`).join('')}</fieldset></div>
+        <div class="s2"><div class="fsum2" hidden role="button" tabindex="0"></div><div class="nf"><textarea name="description" rows="6" placeholder="${r === 'client' ? 'Décrivez votre demande en quelques lignes' : 'Description'}">${esc(i.description)}</textarea></div></div>
+        <div class="s3">${canAssign ? `<fieldset class="assign"><legend>Assigner à un technicien</legend>${(techs.data || []).map(t =>
           `<label><input type="checkbox" name="assign" value="${t.user_id}" ${i.proposed_to === t.user_id ? 'checked' : ''}><span class="cwho">${t.role === 'technicien' ? WRENCH : BRIEFCASE}<span>${esc(t.full_name)}</span></span></label>`).join('')}</fieldset>` : ''}
         <fieldset id="hp"${slotOn ? ' class="on"' : ''}><legend class="sr">Passage</legend>
           <input type="radio" name="passage" value="now" ${slotOn ? '' : 'checked'}>
@@ -172,12 +174,11 @@ export async function renderForm(el, id) {
           <input type="hidden" name="slot_b" value="${tIn(until)}">
           <div class="wsheet" hidden><div class="wbox"><button type="button" class="wx" aria-label="Fermer">×</button><div class="wheels"><div class="wcol w-d"><span class="wh">Jour</span><div class="wheel" data-k="slot_d">${DAYS(i.available_from).map(([v, l]) => `<div class="wi" data-v="${v}">${l}</div>`).join('')}</div></div><div class="wcol"><span class="wh">De</span><div class="wheel" data-k="slot_a">${TIMES.map(t => `<div class="wi" data-v="${t}">${t}</div>`).join('')}</div></div><div class="wcol"><span class="wh">À</span><div class="wheel" data-k="slot_b">${TIMES.map(t => `<div class="wi" data-v="${t}">${t}</div>`).join('')}</div></div><div class="wband" aria-hidden="true"></div></div><button type="button" class="primary wok">Valider</button><button type="button" class="ghost wrm">Retirer le créneau</button></div></div>
         </div>
-        <div class="nf"><textarea name="description" rows="6" placeholder="${r === 'client' ? 'Décrivez votre demande en quelques lignes' : 'Description'}">${esc(i.description)}</textarea></div>
         <div class="nph">Photos
           <div class="pstrip"><div class="ptray"></div><label class="padd" aria-label="Ajouter des photos"><input name="photos" type="file" accept="image/*" multiple><span>+</span></label></div>
-        </div>
+        </div></div>
         <div class="nactions">
-          <button type="submit" class="primary" value="${id ? 'save' : 'publier'}">${id ? 'Enregistrer' : 'Créer et publier'}</button>
+          <button type="submit" class="primary" value="${id ? 'save' : 'publier'}">${id ? 'Enregistrer' : 'Suivant'}</button>
           ${draftOk ? `<span class="bdwrap"><button type="submit" class="ghost" value="brouillon" hidden tabindex="-1"></button><button type="button" class="ghost bdchev" aria-haspopup="menu" aria-expanded="false" aria-label="Brouillons"></button><button type="button" class="ghost bdsave">Brouillon +</button></span>` : ''}
           ${id && i.status === 'brouillon' ? '<button type="button" class="ghost danger bddel-form">Supprimer</button>' : ''}
           <a class="btn ghost" href="${backHref}">Annuler</a>
@@ -503,9 +504,43 @@ export async function renderForm(el, id) {
     location.hash = '#';
   };
 
+
+  let st = 1;
+  const pb = f.querySelector('[value=publier]');
+  const sum = f.querySelector('.fsum'), sum2 = f.querySelector('.fsum2');
+  const paintSum = () => {
+    if (!sum) return;
+    const locv = f.location.value.trim();
+    sum.innerHTML = `<b>${esc(f.title.value.trim()) || 'Sans titre'}</b>${locv ? `<span class="card__meta">${/* reuse tag */ ''}${tagIn(locv)}</span>` : ''}`;
+    if (sum2) sum2.textContent = f.description.value.trim() || 'Aucune description';
+  };
+  const goStep = n => {
+    st = n;
+    f.classList.remove('stp1', 'stp2', 'stp3');
+    f.classList.add('stp' + n);
+    if (pb) pb.textContent = n < 3 ? 'Suivant' : 'Créer et publier';
+    paintSum();
+    chk();
+  };
+  const ok1 = () => !!(f.title.value.trim() && f.location.value.trim());
+  const chk = () => { if (pb && !id) pb.disabled = st === 1 && !ok1(); };
+  if (!id && pb) {
+    chk();
+    f.addEventListener('input', chk);
+    f.addEventListener('change', chk);
+    sum.onclick = () => goStep(1);
+    if (sum2) sum2.onclick = () => goStep(2);
+  }
+
   f.onsubmit = async e => {
     e.preventDefault();
     const fd = new FormData(f), mode = e.submitter?.value;
+    if (!id && mode === 'publier' && st < 3) {
+      if (st === 1 && !ok1()) { err.textContent = 'Le titre et le lieu sont obligatoires.'; return f.title.focus(); }
+      err.textContent = '';
+      goStep(st + 1);
+      return;
+    }
     const title = String(fd.get('title') || '').trim();
     if (!title) { err.textContent = 'Le titre est obligatoire.'; return f.title.focus(); }
     const row = {

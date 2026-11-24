@@ -126,3 +126,12 @@
   .nf-row { flex-direction: column; }
   .nf-row > .nf.ac { flex: 1 1 auto; width: 100%; }
 }
+
+.nform.stp1 .s2, .nform.stp1 .s3, .nform.stp1 .fsum, .nform.stp1 .fsum2 { display: none; }
+.nform.stp2 .s1, .nform.stp2 .s3, .nform.stp2 .fsum2 { display: none; }
+.nform.stp3 .s1, .nform.stp3 .s2 .nf { display: none; }
+.nform.stp2 .fsum, .nform.stp3 .fsum, .nform.stp3 .fsum2 { display: block; }
+.fsum, .fsum2 { margin: 0 0 var(--s4); padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; }
+.fsum b { display: block; font-size: 18px; }
+.fsum .card__meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.fsum2 { white-space: pre-wrap; color: var(--ink-2); font-size: 14px; max-height: 6lh; overflow-y: auto; }
