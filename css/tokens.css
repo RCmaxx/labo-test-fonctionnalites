@@ -6,6 +6,8 @@
   --ink-3: #9a9a9a;
   --line: #e4e4e4;
   --line-strong: #d0d0d0;
+  --line-menu: #ececea;
+  --line-logout: #dddddd;
   --soft: #f4f4f4;
   --bg: #e9ebef;
   --surface: #ffffff;
@@ -15,15 +17,8 @@
   --mark-bg: #ffe58a;
   --tab-on: #eef0f5;
   --tab-fg: #333333;
-  --av-1: #4c6ef5;
-  --av-2: #0ca678;
-  --av-3: #f08c00;
-  --av-4: #e03131;
-  --av-5: #7048e8;
-  --av-6: #1971c2;
   --shadow-bar: 0 6px 24px rgba(20, 20, 40, 0.12), 0 1px 3px rgba(20, 20, 40, 0.08);
   --danger: #b42318;
-  --on-accent: #fff; /* texte sur fond coloré (avatars) */
 
   /* Priorités : fond / texte */
   --prio-haute-bg: #ffb4b4;
@@ -73,6 +68,7 @@
   --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.7),
     inset 0 -12px 20px -12px rgba(20, 30, 45, 0.05), 0 0 0 1px #d9dadc, 0 3px 12px rgba(20, 30, 45, 0.18);
   --lift: drop-shadow(0 8px 22px rgba(0, 0, 0, 0.26)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.14));
+  --shadow-acct: 0 8px 24px rgba(0, 0, 0, 0.12);
   --shadow-light: 0 1px 2px rgba(16, 24, 40, 0.06);
   --shadow-float: 0 8px 22px rgba(0, 0, 0, 0.26), 0 2px 6px rgba(0, 0, 0, 0.14);
   --shadow-fabm: 0 4px 14px rgba(0, 0, 0, 0.18);
@@ -91,6 +87,8 @@
   --loc-min: 72px;
   --loc-h: 36px;
   --fx: 44px;
+  --menu-gap: 22px; /* menu du compte : écart au-dessus de la barre du bas */
+  --r-menu: 12px;
   /* Fiche mobile : hauteur du header et place laissée sous la fiche pour la barre du bas (appli tech) */
   --topbar-h: 57px;
   --fiche-bottom: 57px;

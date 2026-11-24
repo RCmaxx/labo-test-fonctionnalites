@@ -33,7 +33,7 @@ export const REMIND = {
 export const MGR = ['admin', 'directeur', 'responsable_tech'],
   TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v84';
+export const VERSION = 'v85';
 export const app = document.getElementById('app');
 // Mobile simulé (cadre de téléphone) : seulement sur grand écran ; sur un vrai téléphone la largeur suffit, comme l'appli tech.
 export const setSim = on => document.documentElement.classList.toggle('sim', on && innerWidth > 600);
@@ -76,6 +76,39 @@ export const S = {
   org: null, // { name }
   team: [], // membres de l'entreprise : { user_id, full_name, role }
 };
+// Avatars de l'appli tech : un animal et sa couleur pastel par prénom (le même partout, quelle que soit la liste).
+const AV_NAMED = {
+  Raphaël: ['🦉', '#E6E0F5'],
+  Julien: ['🦊', '#FFD9CC'],
+  Thomas: ['🐻', '#DDEBD9'],
+  Antoine: ['🐼', '#E6E6E6'],
+  Léa: ['👤', '#E6E6E6'],
+  Client: ['🐨', '#FFE3D1'],
+  'Client mobile': ['🐨', '#F5C4A8'],
+};
+const AV_OTHERS = [
+  ['🐢', '#DFF2E1'],
+  ['🐙', '#F7DCE8'],
+  ['🐝', '#FFF1C2'],
+  ['🐬', '#D6EEF8'],
+  ['🦄', '#EEDDF7'],
+  ['🐸', '#E3F3D0'],
+  ['🦝', '#E4E8EE'],
+  ['🦋', '#DCE3FB'],
+  ['🐞', '#FBDCDC'],
+  ['🦔', '#EFE4D6'],
+];
+export function avatar(name, role) {
+  const k = String(name || '');
+  if (role === 'directeur' && k === 'Raphaël') return { e: '🦁', bg: '#FCE7C8' };
+  let a = AV_NAMED[k];
+  if (!a) {
+    let h = 0;
+    for (const c of k) h = (h * 31 + c.codePointAt(0)) >>> 0;
+    a = AV_OTHERS[h % AV_OTHERS.length];
+  }
+  return { e: a[0], bg: a[1] };
+}
 export const roleOf = id => S.team.find(m => m.user_id === id)?.role;
 // Intervention prise par moi (un admin ne voit comme siennes que celles prises sous le rôle qu'il affiche).
 export const isMine = r =>

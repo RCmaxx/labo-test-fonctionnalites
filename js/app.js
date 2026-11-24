@@ -1,5 +1,5 @@
 import { sb } from './sb.js';
-import { S, app, route, isMob, setSim, VERSION, esc, ROLES, PNAME } from './state.js';
+import { S, app, route, isMob, setSim, avatar, VERSION, esc, ROLES, PNAME } from './state.js';
 import { renderLogin, renderOrg, renderInvitation, renderMe, signOut } from './auth.js';
 import { renderSettings } from './settings.js';
 import { renderList } from './list.js';
@@ -18,6 +18,8 @@ const GEAR =
   '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
 const USERS =
   '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M21 20c0-2.6-1.6-4.8-4-5.6"/></svg>';
+const CHEV =
+  '<svg class="chev" width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5L6 7.5L9 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ADM = 'lab-admin-sess';
 const REAL = { bis: ['tech.bis@test.local', 'Antoine'], cli: ['client@test.local', 'Client'] };
 // Mobile tech : la racine (#) est la page Terminées.
@@ -33,12 +35,6 @@ const TITLES = {
   compte: 'Mon compte',
   nouvelle: 'Nouvelle intervention',
   i: 'Intervention',
-};
-const AV = ['var(--av-1)', 'var(--av-2)', 'var(--av-3)', 'var(--av-4)', 'var(--av-5)', 'var(--av-6)'];
-const avatar = name => {
-  const s = String(name || '?').trim() || '?';
-  const i = [...s].reduce((a, c) => a + c.charCodeAt(0), 0);
-  return { bg: AV[i % 6], e: s[0].toUpperCase() };
 };
 
 let opening = true; // prochain affichage = ouverture de l'appli
@@ -82,7 +78,7 @@ async function render() {
     if (isMob() && !cli && !['nouvelles', 'i', 'invitation'].includes(page)) return location.replace('#nouvelles');
   }
   const disp = admin ? PNAME[r] || S.me.full_name : S.me.full_name || S.me.email;
-  const av = avatar(admin && r === 'client' ? 'Client' : disp);
+  const av = avatar(admin && r === 'client' ? 'Client' : disp, r);
   const pick = admin;
   const roles = Object.entries(ROLES).filter(([k]) => k !== 'client');
   const mob = !!localStorage.labosim; // choix « mobile » enregistré (le cadre sim n'existe que sur grand écran)
@@ -109,16 +105,17 @@ async function render() {
       ${cli ? '' : `<a href="#recherche" class="ico-search" aria-label="Rechercher">${SEARCH}</a>`}
     </nav>
     <div class="who">
-      <button type="button" class="acct" id="acct" aria-expanded="false" aria-label="Compte">
-        <span class="av" style="background:${av.bg}">${esc(av.e)}</span>
+      <b class="who__org">${esc(S.org?.name || '')}</b>
+      <div class="acct${pick ? ' acct--pick' : ''}">
+        <span class="av" style="background:${av.bg}" aria-hidden="true">${av.e}</span>
         <span class="acc-t"><b>${esc(disp)}</b>${pick ? '' : `<i>${esc(ROLES[r] || r)}</i>`}</span>
-      </button>
-      ${sel}
+        ${pick ? CHEV + sel : ''}
+      </div>
       ${S.me.role === 'admin' ? '<a href="#compte">Mon compte</a>' : ''}
       <button type="button" class="ghost" id="logout">Déconnexion</button>
-      <small>${VERSION}</small>
     </div>
   </nav>
+  <small class="lotv">${VERSION}</small>
   <aside class="alerts" id="alerts"></aside>
   <main></main>
   ${cli ? '' : '<a class="fabm" href="#mes" id="fabm" aria-label="Mes interventions"></a>'}
@@ -134,12 +131,6 @@ async function render() {
   paintCounts();
   loadCounts();
   app.querySelector('#logout').onclick = () => signOut();
-  const acct = app.querySelector('#acct');
-  acct.onclick = e => {
-    e.stopPropagation();
-    const on = app.querySelector('.topbar').classList.toggle('open');
-    acct.setAttribute('aria-expanded', String(on));
-  };
   app.querySelector('#gear').onclick = e => {
     e.stopPropagation();
     const on = app.querySelector('.topbar').classList.toggle('open');
@@ -329,5 +320,12 @@ addEventListener('pageshow', e => {
     opening = true;
     render();
   }
+});
+// Menu du compte (mobile) : fermé dès qu'on touche ailleurs, comme l'appli tech.
+document.addEventListener('click', e => {
+  const bar = app.querySelector('.topbar.open');
+  if (!bar || e.target.closest('.who, #gear')) return;
+  bar.classList.remove('open');
+  app.querySelector('#gear')?.setAttribute('aria-expanded', 'false');
 });
 render();

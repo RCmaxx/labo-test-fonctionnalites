@@ -51,15 +51,40 @@
   gap: var(--s2);
   margin-left: auto;
 }
+.who__org {
+  display: none;
+}
 .acct {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
   color: inherit;
+}
+/* Choix du rôle (admin) : liste invisible posée sur le compte, qui s'ouvre au toucher, comme l'appli tech */
+.acct--pick {
+  cursor: pointer;
+}
+.acct--pick #asrole {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  opacity: 0;
+  cursor: pointer;
+}
+.acct .chev {
+  color: var(--ink-2);
+}
+/* Numéro de version, en haut à gauche de l'écran (le « Lot » de l'appli tech) */
+.lotv {
+  position: fixed;
+  top: 4px;
+  left: 6px;
+  z-index: 99;
+  font-size: 10px;
+  color: var(--ink-search);
+  pointer-events: none;
 }
 .av {
   display: grid;
@@ -67,9 +92,9 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  color: var(--on-accent);
-  font-size: 13px;
-  font-weight: 700;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 600;
 }
 .acc-t {
   display: flex;
@@ -80,7 +105,7 @@
 }
 .acc-t b {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .acc-t i {
   font-style: normal;
@@ -326,41 +351,49 @@ main {
   .brand,
   .tnav,
   .who a,
-  .who #logout,
-  .who #asrole,
-  .who small,
-  .acc-t {
+  .topbar:not(.open) .who {
     display: none;
   }
   .tabbar {
     display: flex;
   }
+  /* Menu du compte, comme l'appli tech : nom du camping, compte (choix du rôle derrière), Déconnexion */
   .topbar.open .who {
-    position: absolute;
-    top: 100%;
-    right: 0;
+    position: fixed;
+    right: var(--s3);
+    bottom: calc(var(--tab-gap) + var(--tab) + var(--menu-gap));
     z-index: 20;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: var(--s2);
+    gap: 10px;
     min-width: 220px;
-    padding: var(--s3);
+    padding: var(--s3) var(--s4);
     background: var(--surface);
-    border-radius: var(--r);
-    box-shadow: var(--shadow-menu);
+    border: 1px solid var(--line-menu);
+    border-radius: var(--r-menu);
+    box-shadow: var(--shadow-acct);
   }
-  .topbar.open .brand,
-  .topbar.open .who a,
-  .topbar.open .who #logout,
-  .topbar.open .who #asrole,
-  .topbar.open .who small,
-  .topbar.open .acc-t {
-    display: initial;
-  }
-  .topbar.open #asrole {
+  .topbar.open .who__org {
     display: block;
-    max-width: none;
+    margin-bottom: 2px;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--ink-title);
+  }
+  .topbar.open .acct {
+    color: var(--ink);
+  }
+  .topbar.open #logout {
+    padding: 6px 10px;
+    border: 1px solid var(--line-logout);
+    border-radius: 9px;
+    background: transparent;
+    color: var(--ink-title);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 16px;
   }
   /* Bouton + au-dessus de la barre d'onglets, même écart de 16 px ; contenu dégagé des deux. */
   .fab,
@@ -514,27 +547,13 @@ main {
     gap: 7px;
     flex: none;
   }
-  .topbar .who .acct {
-    display: none;
-  }
   .topbar {
     position: static;
-  }
-  /* Menu du compte : ouvert par le rouage de la barre du bas, posé juste au-dessus. */
-  .topbar.open .who {
-    position: fixed;
-    top: auto;
-    right: var(--s3);
-    bottom: calc(var(--tab-gap) + var(--tab) + var(--s3));
-  }
-  .topbar.open .who .acct {
-    display: none;
   }
 }
 .sim .topbar.open .who {
   position: absolute;
-  right: var(--s3);
-  bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s3));
+  bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--menu-gap));
 }
 
 /* Vue standard, comme l'appli tech : barre sombre ; rôle et « Mon compte » derrière la pastille du compte. */
@@ -552,13 +571,6 @@ main {
   .brand {
     color: var(--on-chrome);
   }
-  .topbar small {
-    position: absolute;
-    top: 2px;
-    left: 6px;
-    font-size: 10px;
-    color: var(--on-chrome-2);
-  }
   .acct {
     padding: 3px 12px 3px 3px;
     border: 1px solid var(--on-chrome-2);
@@ -566,9 +578,6 @@ main {
     color: var(--on-chrome);
   }
   .acc-t i {
-    display: none;
-  }
-  .topbar:not(.open) .who :is(#asrole, a) {
     display: none;
   }
   .topbar .who .ghost {
