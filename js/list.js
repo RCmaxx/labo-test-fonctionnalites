@@ -289,6 +289,10 @@ function stk2(box) {
   }
 }
 
+// Barre « Rechercher » en tête de la page Nouvelles (mobile), comme l'appli tech.
+const SEARCH_BAR =
+  '<a class="msearch" href="#recherche"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Rechercher</a>';
+
 export async function renderList(el) {
   const searching = route()[0] === 'recherche' && S.me.role !== 'client';
   el.innerHTML = searching
@@ -301,7 +305,7 @@ export async function renderList(el) {
           .join('')}</div>
         <ul class="srecent" hidden></ul>
         <div id="rows"><p>Chargement…</p></div>`
-    : `<div id="rows"><p>Chargement…</p></div>`;
+    : `${isMob() && route()[0] === 'nouvelles' && S.me.role !== 'client' ? SEARCH_BAR : ''}<div id="rows"><p>Chargement…</p></div>`;
   const qel = el.querySelector('#q'),
     rows = el.querySelector('#rows');
   const [reads, msgs] = await Promise.all([
