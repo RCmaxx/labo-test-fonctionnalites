@@ -759,3 +759,13 @@
     display: none;
   }
 }
+
+/* Mobile : croix de fermeture dans un rond blanc */
+@container app (max-width: 600px) {
+  .fhead .fx {
+    width: 44px;
+    height: 44px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+  }
+}
