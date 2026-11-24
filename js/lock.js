@@ -44,7 +44,7 @@ export async function takeLock(id) {
   held = id;
   renew = setInterval(() => sb.rpc('edit_lock', { p_id: id, p_action: 'take' }).then(() => {}), 45000);
 }
-export function releaseLock() {
+function releaseLock() {
   if (!held) return;
   sb.rpc('edit_lock', { p_id: held, p_action: 'release' }).then(() => {});
   held = null;

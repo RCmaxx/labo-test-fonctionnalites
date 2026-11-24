@@ -15,7 +15,7 @@ const due = r => {
   return t <= Date.now() && Date.now() - t < 432e5 && !seen().includes(r.id);
 };
 
-export function toast(msg, err = false) {
+function toast(msg, err = false) {
   document.querySelector('.toast')?.remove();
   const t = document.createElement('div');
   t.className = 'toast' + (err ? ' err' : '');
@@ -55,7 +55,7 @@ function notif(html, href) {
 let reminders = [];
 const asked = new Set();
 
-export function checkReminders() {
+function checkReminders() {
   if (!TECH.includes(S.me?.role)) return;
   let s = seen();
   reminders.filter(due).forEach(r => {

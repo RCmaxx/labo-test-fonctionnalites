@@ -104,7 +104,7 @@ async function render() {
         <span class="acc-t"><b>${esc(disp)}</b>${pick ? '' : `<i>${esc(ROLES[r] || r)}</i>`}</span>
       </button>
       ${sel}
-      <a href="#compte">Mon compte</a>
+      ${S.me.role === 'admin' ? '<a href="#compte">Mon compte</a>' : ''}
       <button type="button" class="ghost" id="logout">Déconnexion</button>
       <button type="button" class="sim-toggle" id="sim">Mobile</button>
       <small>${VERSION}</small>

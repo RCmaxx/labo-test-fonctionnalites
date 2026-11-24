@@ -15,7 +15,6 @@ export const PNAME = {
   reception: 'Léa',
   client: 'Client',
 };
-export const PRIORITY = { basse: 'Basse', normale: 'Normale', haute: 'Haute', urgente: 'Urgente' };
 export const DONE = ['resolue', 'validee'];
 export const STATUS = {
   brouillon: 'Brouillon',
@@ -34,7 +33,7 @@ export const REMIND = {
 export const MGR = ['admin', 'directeur', 'responsable_tech'],
   TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v73';
+export const VERSION = 'v74';
 export const app = document.getElementById('app');
 document.documentElement.classList.toggle('sim', !!localStorage.labosim); // mobile simulé : même CSS que le mobile réel
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);

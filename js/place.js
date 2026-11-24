@@ -1,8 +1,8 @@
 import { esc } from './state.js';
 
-export const PIN =
+const PIN =
   '<svg class="pin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-4.8 7-11a7 7 0 1 0-14 0c0 6.2 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
-export const COMMON = [
+const COMMON = [
   'Réception',
   'Camp saisonnier',
   'Sanitaire 1',
@@ -27,8 +27,8 @@ export const COMMON = [
   'Cuisine du restaurant',
   'Salle commune',
 ];
-export const padMH = s => String(s).replace(/^((?:mh|mobil[- ]?home)\s*)(\d)\s*$/i, (_, a, d) => a + '0' + d);
-export const mhN = v =>
+const padMH = s => String(s).replace(/^((?:mh|mobil[- ]?home)\s*)(\d)\s*$/i, (_, a, d) => a + '0' + d);
+const mhN = v =>
   (String(v)
     .trim()
     .match(/^(?:mh|mobil[- ]?home)?\s*(\d+)$/i) || [])[1];

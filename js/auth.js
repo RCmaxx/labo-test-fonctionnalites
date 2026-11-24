@@ -111,7 +111,6 @@ export async function renderMe(el) {
   el.innerHTML = `
     <div class="account"><h1>Mon compte</h1>
     <section class="panel"><dl class="facts"><dt>Nom</dt><dd>${esc(S.me.full_name) || '—'}</dd><dt>E-mail</dt><dd>${esc(S.me.email)}</dd><dt>Rôle</dt><dd>${esc(ROLES[S.me.role] || S.me.role || 'aucun')}</dd></dl></section>
-    ${S.me.real === 'admin' ? `<form class="panel inline" id="acting"><label>Voir en tant que <select name="role">${options(ROLES, S.me.role)}</select></label> <button>Changer</button><p class="error"></p></form>` : ''}
     ${
       admin
         ? `<section class="panel"><h2>Invitations</h2>
@@ -122,16 +121,6 @@ export async function renderMe(el) {
     }
     <p><button id="out">Se déconnecter</button></p></div>`;
   el.querySelector('#out').onclick = signOut;
-  const acting = el.querySelector('#acting');
-  if (acting)
-    acting.onsubmit = async e => {
-      e.preventDefault();
-      const { error } = await sb.rpc('set_acting_role', { p_role: e.target.role.value });
-      if (error) return (e.target.querySelector('p').textContent = error.message);
-      stopLive();
-      S.me = null;
-      rerender();
-    };
   if (!admin) return;
   const link = t => `${location.origin}${location.pathname}#invitation/${t}`;
   const { data: invs, error } = await sb
