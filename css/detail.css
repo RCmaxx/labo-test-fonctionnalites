@@ -823,3 +823,79 @@ a[data-edit][aria-disabled='true'] {
     display: none;
   }
 }
+
+/* Mobile (fiche depuis la liste) : bulles façon messagerie — les miennes à droite, les autres à gauche */
+@container app (max-width: 600px) {
+  .detail--card .chat2 .chrono {
+    gap: 2px;
+    padding: 4px var(--s2) var(--s4);
+  }
+  .detail--card .chat2 .msg.prow {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+  }
+  .detail--card .chat2 .pnm {
+    display: contents;
+  }
+  .detail--card .chat2 .pnm > b {
+    order: 1;
+    align-self: flex-start;
+    height: 20px;
+    margin: 6px 10px 2px;
+    padding: 3px 10px 3px 8px;
+    border-radius: var(--r-pill);
+    background: var(--pb, var(--name-bg));
+    color: var(--pf, var(--ink));
+    font-size: 11.5px;
+    line-height: 14px;
+    box-shadow: inset 0 0 0 1px rgba(20, 33, 43, 0.06);
+  }
+  .detail--card .chat2 .pnm > span {
+    order: 3;
+    align-self: flex-start;
+    margin: 5px 10px 0;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 13px;
+    color: var(--ink-date);
+  }
+  .detail--card .chat2 .bub {
+    order: 2;
+    align-self: flex-start;
+    max-width: 82%;
+    padding: 10px 15px 11px;
+    border-radius: 22px 22px 22px 8px;
+    background: linear-gradient(160deg, #2a4558 0%, #14212b 70%);
+    box-shadow:
+      0 1px 1px rgba(20, 33, 43, 0.2),
+      0 4px 10px -6px rgba(20, 33, 43, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    font-size: 15.5px;
+    line-height: 22px;
+    color: #fff;
+  }
+  .detail--card .chat2 .bub .btxt {
+    color: #fff;
+  }
+  .detail--card .chat2 .msg.own > .pnm > b,
+  .detail--card .chat2 .msg.own > .pnm > span,
+  .detail--card .chat2 .msg.own > .bub {
+    align-self: flex-end;
+  }
+  .detail--card .chat2 .msg.own > .bub {
+    border-radius: 22px 22px 8px 22px;
+  }
+  .detail--card .chat2 .cin textarea {
+    border-radius: 21px;
+  }
+}
+
+@container app (max-width: 600px) {
+  .detail--card .dcard {
+    margin: 0 calc(-1 * var(--s3)) 0 calc(-1 * var(--s4));
+  }
+}

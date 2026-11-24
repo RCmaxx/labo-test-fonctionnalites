@@ -3,6 +3,7 @@ import { S, esc, isMob, DONE, MGR, TECH, REMIND, nameOf, rerender } from './stat
 import { uploadPhotos, photoTray } from './form.js';
 import { drawEdit } from './lock.js';
 import { cardOf } from './list.js';
+import { pcolor } from './pcolor.js';
 
 const WRENCH =
   '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
@@ -118,8 +119,10 @@ function fmtAgo(d) {
   return `${x.getDate()} ${MONTHS[x.getMonth()]} · ${n2(x.getHours())}:${n2(x.getMinutes())}`;
 }
 
-const pnm = (n, t, r) =>
-  `<span class="pnm"><b>${roleKind(r) === 'tech' ? WRENCH : BRIEFCASE}${esc(compactName(n || '—'))}</b><span>${t}</span></span>`;
+const pnm = (n, t, r) => {
+  const k = pcolor(n);
+  return `<span class="pnm"><b style="--pb:${k.bg};--pf:${k.fg}">${roleKind(r) === 'tech' ? WRENCH : BRIEFCASE}${esc(compactName(n || '—'))}</b><span>${t}</span></span>`;
+};
 const sy = (cls, t, tx) => `<div class="sysl${cls}"><span class="tm">${t}</span><span class="tx">${tx}</span></div>`;
 
 function phMsg(g, own, urls) {
