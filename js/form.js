@@ -181,29 +181,9 @@ export function photoTray(input, tray, onChange, max = 10) {
   return files;
 }
 
-export async function renderForm(el, id) {
-  // Verrou d'édition : une seule personne modifie à la fois.
-  const by = id && (await takeLock(id));
-  if (by) return (el.innerHTML = `<p>${esc(by)}</p>`);
-  const [cur, placesRes, techs] = await Promise.all([
-    id ? sb.from('interventions').select('*').eq('id', id).maybeSingle() : { data: { priority: 'normale' } },
-    sb.from('places').select('label, num').order('num', { nullsFirst: false }).order('label').limit(2000),
-    sb
-      .from('members')
-      .select('user_id, full_name, role')
-      .in('role', S.me.role === 'directeur' ? TECH : ['technicien']),
-  ]);
-  const i = cur.data;
-  if (!i) return (el.innerHTML = `<p>${esc(cur.error?.message || 'Intervention introuvable.')}</p>`);
-  const r = S.me.role,
-    mgr = MGR.includes(r);
-  const backHref = id ? (i.status === 'brouillon' ? '#' : `#i/${id}`) : '#';
-  const canAssign = mgr && (!id || (i.status === 'publiee' && !i.assignee_id));
-  const slotOn = !!(i.available_from || i.client_presence);
-  const from = i.available_from ? new Date(i.available_from) : null,
-    until = i.available_until ? new Date(i.available_until) : null;
-  const draftOk = !id && canDraft(r);
-  el.innerHTML = `
+/** Gabarit HTML du formulaire (création ou modification d'une intervention). */
+function formHtml({ backHref, canAssign, draftOk, from, i, id, r, slotOn, techs, until }) {
+  return `
     <div class="fpage">
       <div class="fhead">${id ? `<a href="${backHref}" class="back" aria-label="Retour">${BACK}</a>` : ''}<h1>${id ? "Modifier l'intervention" : 'Nouvelle intervention'}</h1>${id ? '' : `<button type="button" class="fx" aria-label="Fermer">${CLOSE}</button>`}</div>
       <form id="f" class="nform${id ? '' : ' stp1'}" autocomplete="off" data-prio="${i.priority || 'normale'}">
@@ -262,6 +242,31 @@ export async function renderForm(el, id) {
         <p class="error" id="ferr"></p>
       </form>
     </div>`;
+}
+
+export async function renderForm(el, id) {
+  // Verrou d'édition : une seule personne modifie à la fois.
+  const by = id && (await takeLock(id));
+  if (by) return (el.innerHTML = `<p>${esc(by)}</p>`);
+  const [cur, placesRes, techs] = await Promise.all([
+    id ? sb.from('interventions').select('*').eq('id', id).maybeSingle() : { data: { priority: 'normale' } },
+    sb.from('places').select('label, num').order('num', { nullsFirst: false }).order('label').limit(2000),
+    sb
+      .from('members')
+      .select('user_id, full_name, role')
+      .in('role', S.me.role === 'directeur' ? TECH : ['technicien']),
+  ]);
+  const i = cur.data;
+  if (!i) return (el.innerHTML = `<p>${esc(cur.error?.message || 'Intervention introuvable.')}</p>`);
+  const r = S.me.role,
+    mgr = MGR.includes(r);
+  const backHref = id ? (i.status === 'brouillon' ? '#' : `#i/${id}`) : '#';
+  const canAssign = mgr && (!id || (i.status === 'publiee' && !i.assignee_id));
+  const slotOn = !!(i.available_from || i.client_presence);
+  const from = i.available_from ? new Date(i.available_from) : null,
+    until = i.available_until ? new Date(i.available_until) : null;
+  const draftOk = !id && canDraft(r);
+  el.innerHTML = formHtml({ backHref, canAssign, draftOk, from, i, id, r, slotOn, techs, until });
 
   const f = el.querySelector('#f'),
     err = el.querySelector('#ferr');
