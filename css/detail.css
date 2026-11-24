@@ -774,9 +774,9 @@ a[data-edit][aria-disabled='true'] {
 .sim .detail--card .cin {
   bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s3));
 }
-/* Le + et la pastille ne sont pas affichés sur la fiche */
-#app[data-page='i'] .fab,
-#app[data-page='i'] .fabm {
+/* Le + et la pastille ne sont affichés que sur les listes */
+#app:is([data-page='i'], [data-page='nouvelle'], [data-page='compte'], [data-page='parametres']) .fab,
+#app:is([data-page='i'], [data-page='nouvelle'], [data-page='compte'], [data-page='parametres']) .fabm {
   display: none;
 }
 
