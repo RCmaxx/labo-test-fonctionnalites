@@ -124,6 +124,7 @@ const byDay = rows => {
   }).join('');
 };
 let itemRef = () => '';
+export const cardOf = r => itemRef(r);   // même carte que dans les listes (détail mobile)
 const CLOSED = {};
 let openId = null;
 

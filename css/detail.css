@@ -121,3 +121,11 @@ a[data-edit][aria-disabled="true"] { opacity: .5; pointer-events: none; }
   .xgear { display: none; }
   .xg .dact { display: block; }
 }
+
+/* Mobile : en-tête = flèche + carte de la liste ; description dessous, sans méta répétée */
+.dcard { display: grid; grid-template-columns: 26px minmax(0, 1fr); align-items: center; column-gap: 2px; padding: 6px var(--s4) 0 4px; }
+.dcard > .back { width: 26px; height: 40px; justify-content: center; }
+.dcard .cards { margin: 0; padding: 0; list-style: none; }
+.dtop--card { padding-top: 0; }
+.dtop--card .dmeta3 { display: none; }
+.dtop--card .ddesc { margin: 2px 0 0 30px; }

@@ -1,7 +1,8 @@
 import { sb } from './sb.js';
-import { S, esc, DONE, MGR, TECH, REMIND, nameOf, rerender } from './state.js';
+import { S, esc, isMob, DONE, MGR, TECH, REMIND, nameOf, rerender } from './state.js';
 import { uploadPhotos, photoTray } from './form.js';
 import { drawEdit } from './lock.js';
+import { cardOf } from './list.js';
 
 const WRENCH = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>';
 const BRIEFCASE = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>';
@@ -264,6 +265,8 @@ export async function renderDetail(el, id) {
   const back = inline
     ? `<a href="#" class="back xback" aria-label="Replier">${BACK}</a>`
     : `<a href="#" class="back" aria-label="Retour">${BACK}</a>`;
+  const card = !inline && chat && isMob() ? cardOf(i) : '';   // mobile : la carte de la liste sert d'en-tête, comme l'appli tech
+  const cardHead = card ? `<div class="dcard">${back}<ul class="cards">${card}</ul></div>` : '';
   const editBtn = canEdit(i) ? `<a class="btn ghost" href="#i/${i.id}/modifier" data-edit="${i.id}" aria-label="Modifier l'intervention">Modifier</a>` : '';
   const actBtns = acts.map(([a, l, c, lab]) => `<button type="button" class="${c}" data-act="${a}"${lab ? ` aria-label="${lab}" title="${lab}"` : ''}>${l}</button>`).join('');
   const closeBtn = canClose(i) ? '<button type="button" class="ghost" data-act="cloturer">Clôturer</button>' : '';
@@ -274,11 +277,11 @@ export async function renderDetail(el, id) {
   el.innerHTML = `
     <article class="detail">
       <div class="dfix">
-        <div class="dtrow">${back}<h1 class="dtitle">${esc(i.title).replace(/ (?=[^ ]*$)/, '&nbsp;')}</h1></div>
-        <section class="dtop">
+        ${cardHead || `<div class="dtrow">${back}<h1 class="dtitle">${esc(i.title).replace(/ (?=[^ ]*$)/, '&nbsp;')}</h1></div>`}
+        <section class="dtop${cardHead ? ' dtop--card' : ''}">
           <div class="dmeta3"><div class="drow"><span class="dloc">${i.location ? `<span class="ltag">${esc(locTag(i.location))}</span>` : ''}${i.assignee_id || i.proposed_to ? tagsOf(i) : ''}${i.status === 'publiee' ? '<span class="pill st-publiee">Nouveau</span>' : ''}<span class="ddate">${fmtAgo(i.created_at)}</span></span><span class="dright">${(prio || pill) ? `<span class="drt">${prio}${pill}</span>` : ''}</span></div>
             ${i.available_from || i.remind_minutes || i.client_presence ? `<p class="dslot">${i.available_from ? CLOCK + `<span>${esc(slotLine(i))}</span>` : (i.client_presence ? '<span>Présence client requise</span>' : '')}${i.remind_minutes ? `<span class="dremind">${esc(REMIND[i.remind_minutes] || `${i.remind_minutes} min avant`)}</span>` : ''}</p>` : ''}</div>
-          ${!chat && dsc ? `<p class="ddesc">${esc(dsc)}</p>` : ''}
+          ${(!chat || cardHead) && dsc ? `<p class="ddesc">${esc(dsc)}</p>` : ''}
           ${photosHtml}
         </section>
       </div>
