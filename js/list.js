@@ -324,6 +324,75 @@ const item = (r, q = '', sf = []) => {
   </a></li>`;
 };
 
+// Page Terminées : mobile = une seule liste ; sinon groupes aujourd'hui / cette semaine / avant (avec « Voir plus »).
+function paintTerminees(el, rows, done, more, { unfold, bindTake }) {
+  const d0 = day0(Date.now()),
+    w0 = weekStart();
+  const list = [...done].sort((a, b) => finAt(b) - finAt(a));
+  const auj = list.filter(r => day0(finAt(r)) === d0);
+  const sem = list.filter(r => {
+    const t = day0(finAt(r));
+    return t >= w0 && t < d0;
+  });
+  const avant = list.filter(r => day0(finAt(r)) < w0);
+  const groups = isMob()
+    ? [['all', 'Interventions terminées', list]]
+    : [
+        ['auj', "Terminées aujourd'hui", auj],
+        ['sem', 'Terminées cette semaine', sem],
+        ['avant', 'Autres interventions terminées', avant],
+      ];
+  const flat = isMob(); // mobile : une seule liste « N Interventions terminées », comme l'appli tech
+  const body = ([k, label, rows]) => {
+    if (flat)
+      return `<section class="group" data-g="all"><h2><span class="count">${rows.length}</span><span class="glab">${label}</span></h2>${rows.length ? `<ul class="cards">${rows.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
+    const inner =
+      k === 'sem' && rows.length
+        ? byDay(rows)
+        : rows.length
+          ? `<ul class="cards">${rows.map(r => item(r)).join('')}</ul>`
+          : '<p class="empty">Aucune.</p>';
+    return `<section class="group${CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2 role="button" tabindex="0" aria-expanded="${!CLOSED[k]}">${GICO[k] || ''}<span class="count">${rows.length}</span><span class="glab">${label}</span>${CHEV}</h2>${inner}</section>`;
+  };
+  const mob = isMob();
+  const html = mob
+    ? groups.map(body).join('')
+    : `<div class="gcols gdone">${groups.map(g => `<div class="gcol">${body(g)}</div>`).join('')}</div>`;
+  rows.innerHTML =
+    `<h1 class="lpage-title">Interventions terminées</h1>` +
+    html +
+    (more ? '<p class="more"><button type="button" id="more">Voir plus</button></p>' : '');
+  const g0 = rows.querySelector('.gcol');
+  if (g0) {
+    const host = document.querySelector('.sim #app');
+    const top = g0.getBoundingClientRect().top - (host ? host.getBoundingClientRect().top - host.scrollTop : 0);
+    document.documentElement.style.setProperty('--gtop', Math.round(top) + 'px');
+    rows.querySelectorAll('.gcol').forEach(c => stackSticky(c, '.group > h2'));
+  }
+  rows.querySelectorAll('.group h2[role=button]').forEach(h => {
+    h.onclick = h.onkeydown = e => {
+      if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+      if (e.type === 'click' && !e.target.closest('.glab, .count, .chev')) return;
+      e.preventDefault();
+      const g = h.parentElement,
+        k = g.dataset.g;
+      CLOSED[k] = !g.classList.contains('closed');
+      g.classList.toggle('closed', CLOSED[k]);
+      h.setAttribute('aria-expanded', String(!CLOSED[k]));
+    };
+  });
+  const btn = rows.querySelector('#more');
+  if (btn)
+    btn.onclick = () => {
+      doneN += PAGE;
+      renderList(el);
+    };
+  const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
+  if (again) unfold(again, false);
+  else openId = null;
+  bindTake();
+}
+
 export async function renderList(el) {
   const searching = route()[0] === 'recherche' && S.me.role !== 'client';
   el.innerHTML = searching
@@ -358,76 +427,8 @@ export async function renderList(el) {
   const sec = ([k, label, list], foldable) =>
     `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
 
-  const paintTerminees = (done, more) => {
-    const d0 = day0(Date.now()),
-      w0 = weekStart();
-    const list = [...done].sort((a, b) => finAt(b) - finAt(a));
-    const auj = list.filter(r => day0(finAt(r)) === d0);
-    const sem = list.filter(r => {
-      const t = day0(finAt(r));
-      return t >= w0 && t < d0;
-    });
-    const avant = list.filter(r => day0(finAt(r)) < w0);
-    const groups = isMob()
-      ? [['all', 'Interventions terminées', list]]
-      : [
-          ['auj', "Terminées aujourd'hui", auj],
-          ['sem', 'Terminées cette semaine', sem],
-          ['avant', 'Autres interventions terminées', avant],
-        ];
-    const flat = isMob(); // mobile : une seule liste « N Interventions terminées », comme l'appli tech
-    const body = ([k, label, rows]) => {
-      if (flat)
-        return `<section class="group" data-g="all"><h2><span class="count">${rows.length}</span><span class="glab">${label}</span></h2>${rows.length ? `<ul class="cards">${rows.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
-      const inner =
-        k === 'sem' && rows.length
-          ? byDay(rows)
-          : rows.length
-            ? `<ul class="cards">${rows.map(r => item(r)).join('')}</ul>`
-            : '<p class="empty">Aucune.</p>';
-      return `<section class="group${CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2 role="button" tabindex="0" aria-expanded="${!CLOSED[k]}">${GICO[k] || ''}<span class="count">${rows.length}</span><span class="glab">${label}</span>${CHEV}</h2>${inner}</section>`;
-    };
-    const mob = isMob();
-    const html = mob
-      ? groups.map(body).join('')
-      : `<div class="gcols gdone">${groups.map(g => `<div class="gcol">${body(g)}</div>`).join('')}</div>`;
-    rows.innerHTML =
-      `<h1 class="lpage-title">Interventions terminées</h1>` +
-      html +
-      (more ? '<p class="more"><button type="button" id="more">Voir plus</button></p>' : '');
-    const g0 = rows.querySelector('.gcol');
-    if (g0) {
-      const host = document.querySelector('.sim #app');
-      const top = g0.getBoundingClientRect().top - (host ? host.getBoundingClientRect().top - host.scrollTop : 0);
-      document.documentElement.style.setProperty('--gtop', Math.round(top) + 'px');
-      rows.querySelectorAll('.gcol').forEach(c => stackSticky(c, '.group > h2'));
-    }
-    rows.querySelectorAll('.group h2[role=button]').forEach(h => {
-      h.onclick = h.onkeydown = e => {
-        if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
-        if (e.type === 'click' && !e.target.closest('.glab, .count, .chev')) return;
-        e.preventDefault();
-        const g = h.parentElement,
-          k = g.dataset.g;
-        CLOSED[k] = !g.classList.contains('closed');
-        g.classList.toggle('closed', CLOSED[k]);
-        h.setAttribute('aria-expanded', String(!CLOSED[k]));
-      };
-    });
-    const btn = rows.querySelector('#more');
-    if (btn)
-      btn.onclick = () => {
-        doneN += PAGE;
-        renderList(el);
-      };
-    const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
-    if (again) unfold(again, false);
-    else openId = null;
-    bindTake();
-  };
-
   const paint = (open, done, more) => {
-    if (onDonePage()) return paintTerminees(done, more);
+    if (onDonePage()) return paintTerminees(el, rows, done, more, { unfold, bindTake });
     if (searching) {
       const all = [...open, ...done].filter(r => matches(r, search, sfilters));
       const sc = el.querySelector('#scount');
