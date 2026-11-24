@@ -47,9 +47,9 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 
 /* Barre d'onglets du bas (mobile seulement), comme l'appli : pilule blanche flottante, deux onglets égaux. */
 :root { --tab: 52px; --tab-gap: 10px; }
-.tabbar { display: none; position: fixed; left: 12px; right: 12px; bottom: var(--tab-gap); z-index: 10; height: var(--tab); box-sizing: border-box; padding: 4px; border-radius: 30px; background: var(--surface); box-shadow: var(--shadow-bar); }
-.tabbar a { flex: 1; display: grid; place-items: center; border-radius: 22px; color: var(--tab-fg); text-decoration: none; }
-.tabbar a.on { background: var(--tab-on); }
+.tabbar { display: none; position: fixed; left: 12px; right: 12px; bottom: var(--tab-gap); z-index: 10; height: var(--tab); box-sizing: border-box; padding: 4px; border-radius: 30px; background: var(--chrome); box-shadow: var(--shadow-chrome); }
+.tabbar a { flex: 1; display: grid; place-items: center; border-radius: 22px; color: var(--chrome-dim); text-decoration: none; }
+.tabbar a.on { background: var(--chrome-on); color: var(--chrome-fg); }
 .tabbar__n { min-width: 18px; height: 28px; padding: 0 7px; border-radius: 14px; display: grid; place-items: center; background: var(--alert-bg); color: var(--alert-fg); font-size: 14px; font-weight: 800; }
 .tabbar__n:empty { display: none; }
 
@@ -63,7 +63,9 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 @media (max-width: 600px) { #app { --pad: var(--s4); } }
 .sim #app { --pad: var(--s4); }
 @container app (max-width: 600px) {
-  .topbar { margin-bottom: var(--s4); position: relative; }
+  .topbar { margin-bottom: var(--s4); position: relative; border-image: linear-gradient(var(--chrome), var(--chrome)) fill 0 // 0 100vmax; }
+  .ptit { color: var(--chrome-fg); }
+  .topbar .acct { color: var(--chrome-fg); }
   .search, .group { margin-bottom: var(--s4); }
   .ptit { display: block; }
   .brand, .tnav, .who a, .who #logout, .who #sim, .who #asrole, .who small, .acc-t { display: none; }

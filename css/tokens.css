@@ -2,21 +2,24 @@
 :root {
   /* Texte et fonds */
   --ink: #1A1A1A; --ink-2: #5C5C5C; --ink-3: #9A9A9A;
-  --line: #E4E4E4; --line-strong: #D0D0D0; --soft: #F4F4F4; --bg: #F5F6F7; --surface: #FFFFFF; --group-fg: #3C3C3A; --alert-bg: #FFDDD3; --alert-fg: #E0391B; --mark-bg: #FFE58A; --tab-on: #EEF0F5; --tab-fg: #333333;
+  --line: #E4E4E4; --line-strong: #D0D0D0; --soft: #F4F4F4; --bg: #E9EBEF; --surface: #FFFFFF; --group-fg: #3C3C3A; --alert-bg: #FFDDD3; --alert-fg: #E0391B; --mark-bg: #FFE58A; --tab-on: #EEF0F5; --tab-fg: #333333;
   --av-1: #4C6EF5; --av-2: #0CA678; --av-3: #F08C00; --av-4: #E03131; --av-5: #7048E8; --av-6: #1971C2;
   --shadow-bar: 0 6px 24px rgba(20,20,40,.12), 0 1px 3px rgba(20,20,40,.08);
   --danger: #B42318;
 
   /* Priorités : fond / texte */
-  --prio-haute-bg: #FFE1DA;   --prio-haute-fg: #C42620;
-  --prio-normale-bg: #FFF1BF; --prio-normale-fg: #8A6500;
-  --prio-basse-bg: #E1EEE5;   --prio-basse-fg: #1F5C3A;
+  --prio-haute-bg: #FFB4B4; --prio-haute-fg: #A31616;
+  --prio-normale-bg: #FFE680; --prio-normale-fg: #7A5200;
+  --prio-basse-bg: #BDE5C8; --prio-basse-fg: #14532D;
 
   /* Étiquettes et états */
-  --tech-bg: #E2EAFA; --prop-bg: #E8F0FE; --prop-fg: #1D4ED8; --tech-fg: #2F5FC0;
+  --tech-bg: #8AB8FF; --prop-bg: #E8F0FE; --prop-fg: #1D4ED8; --tech-fg: #0A3590;
   --neutral-bg: #F3F4F6; --loc-mh: #EEEFF2; --neutral-sub: #6B6B6B; /* --neutral-sub : dates et lignes secondaires des cartes */
-  --done-bg: #E2E5EA;
+  --done-bg: #D6D5D3; --done-fg: #2B2A29; --done-sub: #5D5C5A; --done-line: #BFBEBB;
   --presence-fg: #B45309;
+
+  /* Barre du haut et barre d'onglets (mobile) : bleu nuit */
+  --chrome: #14212B; --chrome-fg: #FFFFFF; --chrome-dim: #9FB0BF; --chrome-on: rgba(255, 255, 255, .14); --shadow-chrome: 0 6px 24px rgba(20, 33, 43, .35);
 
   /* Rayons */
   --r-s: 8px; --r: 10px; --r-l: 16px; --r-pill: 999px;
