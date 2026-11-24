@@ -6,11 +6,12 @@ import { stopLive } from './live.js';
 const loginForm = (emailField, error = '') => `<form class="panel" id="login">${emailField}
   <label>Mot de passe <input name="password" type="password" required autocomplete="current-password"></label>
   <button class="primary">Se connecter</button><p class="error">${esc(error)}</p></form>`;
-const bindLogin = () => app.querySelector('#login').onsubmit = async e => {
-  e.preventDefault();
-  const { error } = await sb.auth.signInWithPassword(Object.fromEntries(new FormData(e.target)));
-  error ? e.target.querySelector('.error').textContent = error.message : rerender();
-};
+const bindLogin = () =>
+  (app.querySelector('#login').onsubmit = async e => {
+    e.preventDefault();
+    const { error } = await sb.auth.signInWithPassword(Object.fromEntries(new FormData(e.target)));
+    error ? (e.target.querySelector('.error').textContent = error.message) : rerender();
+  });
 
 export function renderLogin(error = '') {
   app.innerHTML = `<div class="auth"><h1>Connexion</h1><p class="muted">${VERSION}</p>
@@ -18,7 +19,13 @@ export function renderLogin(error = '') {
   bindLogin();
 }
 
-export async function signOut() { await sb.auth.signOut(); stopLive(); S.me = null; location.hash = ''; rerender(); }
+export async function signOut() {
+  await sb.auth.signOut();
+  stopLive();
+  S.me = null;
+  location.hash = '';
+  rerender();
+}
 
 // Compte connecté sans entreprise : création de la sienne.
 export function renderOrg(user) {
@@ -34,8 +41,11 @@ export function renderOrg(user) {
   app.querySelector('#out').onclick = signOut;
   app.querySelector('form').onsubmit = async e => {
     e.preventDefault();
-    const { error } = await sb.rpc('create_organization', { p_name: e.target.org.value.trim(), p_full_name: e.target.name.value.trim() });
-    error ? e.target.querySelector('p').textContent = error.message : rerender();
+    const { error } = await sb.rpc('create_organization', {
+      p_name: e.target.org.value.trim(),
+      p_full_name: e.target.name.value.trim(),
+    });
+    error ? (e.target.querySelector('p').textContent = error.message) : rerender();
   };
 }
 
@@ -43,13 +53,19 @@ export function renderOrg(user) {
 // Les @test.local n'ont pas de boîte mail : un trigger confirme ces comptes à la création.
 async function acceptInvite(token, name, out) {
   const { error } = await sb.rpc('accept_invitation', { p_token: token, p_full_name: name });
-  if (error) { if (out) out.textContent = error.message; return; }
-  stopLive(); S.me = null; location.hash = '';
+  if (error) {
+    if (out) out.textContent = error.message;
+    return;
+  }
+  stopLive();
+  S.me = null;
+  location.hash = '';
 }
 export async function renderInvitation(token, session) {
   const { data, error } = await sb.rpc('invitation_info', { p_token: token });
   const inv = data?.[0];
-  if (!inv) return app.innerHTML = `<div class="auth"><h1>Invitation</h1><p>${esc(error?.message || 'Invitation invalide, expirée ou déjà utilisée.')}</p><a href="#">Connexion</a></div>`;
+  if (!inv)
+    return (app.innerHTML = `<div class="auth"><h1>Invitation</h1><p>${esc(error?.message || 'Invitation invalide, expirée ou déjà utilisée.')}</p><a href="#">Connexion</a></div>`);
   const intro = `<h1>Invitation</h1><p>Rejoindre ${esc(inv.org_name)} en tant que ${ROLES[inv.role] || esc(inv.role)} (${esc(inv.email)}).</p>`;
   if (!session) {
     app.innerHTML = `<div class="auth">${intro}
@@ -62,12 +78,20 @@ export async function renderInvitation(token, session) {
       ${loginForm(`<label>E-mail <input name="email" type="email" required value="${esc(inv.email)}" autocomplete="username"></label>`)}`;
     app.querySelector('#signup').onsubmit = async e => {
       e.preventDefault();
-      const name = e.target.name.value.trim(), password = e.target.password.value, out = e.target.querySelector('p');
-      const { data, error } = await sb.auth.signUp({ email: inv.email, password, options: { data: { full_name: name } } });
-      if (error) return out.textContent = error.message;
+      const name = e.target.name.value.trim(),
+        password = e.target.password.value,
+        out = e.target.querySelector('p');
+      const { data, error } = await sb.auth.signUp({
+        email: inv.email,
+        password,
+        options: { data: { full_name: name } },
+      });
+      if (error) return (out.textContent = error.message);
       if (!data.session) {
         const { error: e2 } = await sb.auth.signInWithPassword({ email: inv.email, password });
-        if (e2) return out.textContent = "Compte créé, mais il n'est pas encore confirmé. Les adresses @test.local ne reçoivent pas d'e-mail : confirmez le compte dans Supabase (Authentication) puis rouvrez ce lien.";
+        if (e2)
+          return (out.textContent =
+            "Compte créé, mais il n'est pas encore confirmé. Les adresses @test.local ne reçoivent pas d'e-mail : confirmez le compte dans Supabase (Authentication) puis rouvrez ce lien.");
       }
       await acceptInvite(token, name, out);
     };
@@ -88,32 +112,60 @@ export async function renderMe(el) {
     <div class="account"><h1>Mon compte</h1>
     <section class="panel"><dl class="facts"><dt>Nom</dt><dd>${esc(S.me.full_name) || '—'}</dd><dt>E-mail</dt><dd>${esc(S.me.email)}</dd><dt>Rôle</dt><dd>${esc(ROLES[S.me.role] || S.me.role || 'aucun')}</dd></dl></section>
     ${S.me.real === 'admin' ? `<form class="panel inline" id="acting"><label>Voir en tant que <select name="role">${options(ROLES, S.me.role)}</select></label> <button>Changer</button><p class="error"></p></form>` : ''}
-    ${admin ? `<section class="panel"><h2>Invitations</h2>
+    ${
+      admin
+        ? `<section class="panel"><h2>Invitations</h2>
       <form class="inline" id="invite"><label>E-mail <input name="email" type="email" required></label>
         <label>Rôle <select name="role">${options(ROLES, 'technicien')}</select></label> <button class="primary">Créer l'invitation</button><p class="error"></p></form>
-      <ul class="invs" id="invs"><li>Chargement…</li></ul></section>` : ''}
+      <ul class="invs" id="invs"><li>Chargement…</li></ul></section>`
+        : ''
+    }
     <p><button id="out">Se déconnecter</button></p></div>`;
   el.querySelector('#out').onclick = signOut;
   const acting = el.querySelector('#acting');
-  if (acting) acting.onsubmit = async e => {
-    e.preventDefault();
-    const { error } = await sb.rpc('set_acting_role', { p_role: e.target.role.value });
-    if (error) return e.target.querySelector('p').textContent = error.message;
-    stopLive(); S.me = null; rerender();
-  };
+  if (acting)
+    acting.onsubmit = async e => {
+      e.preventDefault();
+      const { error } = await sb.rpc('set_acting_role', { p_role: e.target.role.value });
+      if (error) return (e.target.querySelector('p').textContent = error.message);
+      stopLive();
+      S.me = null;
+      rerender();
+    };
   if (!admin) return;
   const link = t => `${location.origin}${location.pathname}#invitation/${t}`;
-  const { data: invs, error } = await sb.from('invitations').select('id, email, role, token, expires_at').is('accepted_at', null).order('created_at', { ascending: false });
-  el.querySelector('#invs').innerHTML = error ? `<li>${esc(error.message)}</li>` : invs.map(i => `<li>${esc(i.email)} · ${ROLES[i.role]} · expire le ${fmt(i.expires_at)}
-    · <a href="${link(i.token)}">lien</a> <button class="danger" data-revoke="${i.id}">Annuler</button></li>`).join('') || '<li>Aucune invitation en attente.</li>';
-  el.querySelectorAll('[data-revoke]').forEach(b => b.onclick = async () => {
-    const { error } = await sb.from('invitations').delete().eq('id', b.dataset.revoke);
-    error ? b.after(` ${error.message}`) : renderMe(el);
-  });
+  const { data: invs, error } = await sb
+    .from('invitations')
+    .select('id, email, role, token, expires_at')
+    .is('accepted_at', null)
+    .order('created_at', { ascending: false });
+  el.querySelector('#invs').innerHTML = error
+    ? `<li>${esc(error.message)}</li>`
+    : invs
+        .map(
+          i => `<li>${esc(i.email)} · ${ROLES[i.role]} · expire le ${fmt(i.expires_at)}
+    · <a href="${link(i.token)}">lien</a> <button class="danger" data-revoke="${i.id}">Annuler</button></li>`
+        )
+        .join('') || '<li>Aucune invitation en attente.</li>';
+  el.querySelectorAll('[data-revoke]').forEach(
+    b =>
+      (b.onclick = async () => {
+        const { error } = await sb.from('invitations').delete().eq('id', b.dataset.revoke);
+        error ? b.after(` ${error.message}`) : renderMe(el);
+      })
+  );
   el.querySelector('#invite').onsubmit = async e => {
     e.preventDefault();
-    const { error } = await sb.from('invitations')
-      .insert({ org_id: S.me.org_id, email: e.target.email.value.trim().toLowerCase(), role: e.target.role.value, invited_by: S.me.id }).select('token').single();
-    error ? e.target.querySelector('p').textContent = error.message : renderMe(el);
+    const { error } = await sb
+      .from('invitations')
+      .insert({
+        org_id: S.me.org_id,
+        email: e.target.email.value.trim().toLowerCase(),
+        role: e.target.role.value,
+        invited_by: S.me.id,
+      })
+      .select('token')
+      .single();
+    error ? (e.target.querySelector('p').textContent = error.message) : renderMe(el);
   };
 }
