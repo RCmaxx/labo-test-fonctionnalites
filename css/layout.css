@@ -3,16 +3,26 @@
    déclenchent les mêmes règles @container, écrites une seule fois. */
 #app { container: app / inline-size; }
 
-/* Barre du haut comme l'appli : bande blanche bord à bord (fond étendu par border-image), filet bas, onglets en pastille. */
+/* Barre du haut : camping, onglets, compte / sélecteur de profils. */
 .topbar {
-  display: flex; align-items: center; gap: var(--s1);
+  display: flex; align-items: center; gap: var(--s3);
   margin: calc(-1 * var(--pad)) 0 var(--s6); padding: 9px 0 10px;
   border-image: linear-gradient(to top, var(--line) 1px, var(--surface) 0) fill 0 // 0 100vmax;
 }
 .topbar a { padding: var(--s2) var(--s3); border-radius: var(--r-s); color: var(--ink-2); text-decoration: none; }
 .topbar a.on { background: var(--soft); color: var(--ink); font-weight: 500; }
 .topbar small { color: var(--ink-3); font-size: var(--fs-s); }
-.sim-toggle { margin-left: auto; padding: 5px 10px; font-size: 12px; }
+.ptit { display: none; font-size: 17px; font-weight: 600; color: var(--ink); }
+.brand { font-weight: 600; color: var(--ink); margin-right: var(--s2); }
+.tnav { display: flex; align-items: center; gap: var(--s1); }
+.who { display: flex; align-items: center; gap: var(--s2); margin-left: auto; }
+.acct { display: flex; align-items: center; gap: 8px; padding: 0; border: 0; background: transparent; cursor: pointer; color: inherit; }
+.av { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 700; }
+.acc-t { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; text-align: left; }
+.acc-t b { font-size: 13px; font-weight: 600; }
+.acc-t i { font-style: normal; font-size: 11px; color: var(--ink-2); }
+#asrole { max-width: 180px; }
+.sim-toggle { padding: 5px 10px; font-size: 12px; }
 .ico-search { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; color: var(--ink-2); }
 .ico-search.on { background: var(--soft); color: var(--ink); }
 
@@ -53,10 +63,14 @@ main { padding-bottom: calc(var(--fab) + var(--s6) * 2); }
 @media (max-width: 600px) { #app { --pad: var(--s4); } }
 .sim #app { --pad: var(--s4); }
 @container app (max-width: 600px) {
-  .topbar { margin-bottom: var(--s4); }
+  .topbar { margin-bottom: var(--s4); position: relative; }
   .search, .group { margin-bottom: var(--s4); }
-  .topbar a[href="#"] { display: none; }
+  .ptit { display: block; }
+  .brand, .tnav, .who a, .who #logout, .who #sim, .who #asrole, .who small, .acc-t { display: none; }
   .tabbar { display: flex; }
+  .topbar.open .who { position: absolute; top: 100%; right: 0; z-index: 20; display: flex; flex-direction: column; align-items: stretch; gap: var(--s2); min-width: 220px; padding: var(--s3); background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow-menu); }
+  .topbar.open .brand, .topbar.open .who a, .topbar.open .who #logout, .topbar.open .who #sim, .topbar.open .who #asrole, .topbar.open .who small, .topbar.open .acc-t { display: initial; }
+  .topbar.open #asrole { display: block; max-width: none; }
   /* Bouton + au-dessus de la barre d'onglets, même écart de 16 px ; contenu dégagé des deux. */
   .fab { right: var(--s4); bottom: calc(var(--tab-gap) + var(--tab) + var(--s4)); }
   main { padding-bottom: calc(var(--tab-gap) + var(--tab) + var(--fab) + var(--s4) * 2); }

@@ -1,12 +1,13 @@
 export const ACCOUNTS = ['admin.a', 'resp.a', 'tech.a', 'tech.bis', 'client'];
 export const ROLES = { admin: 'Admin', directeur: 'Directeur', responsable_tech: 'Responsable tech', technicien: 'Technicien', reception: 'Réception', client: 'Client' };
+export const PNAME = { admin: 'Raphaël', directeur: 'Raphaël', responsable_tech: 'Julien', technicien: 'Thomas', reception: 'Léa', client: 'Client' };
 export const PRIORITY = { basse: 'Basse', normale: 'Normale', haute: 'Haute', urgente: 'Urgente' };
 export const DONE = ['resolue', 'validee'];
 export const STATUS = { brouillon: 'Brouillon', publiee: 'Nouvelle', prise_en_charge: 'En cours', resolue: 'Terminée', validee: 'Validée' };
 export const REMIND = { 15: '15 min avant', 30: '30 min avant', 60: '1 h avant', 120: '2 h avant', 1440: '1 jour avant' };
 export const MGR = ['admin', 'directeur', 'responsable_tech'], TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v35';
+export const VERSION = 'v36';
 export const app = document.getElementById('app');
 document.documentElement.classList.toggle('sim', !!localStorage.labosim); // mobile simulé : même CSS que le mobile réel
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -28,6 +29,7 @@ export const isMob = () => document.documentElement.classList.contains('sim') ||
 // État partagé, modifié uniquement via cet objet.
 export const S = {
   me: null, // { id, email, full_name, org_id, role (affiché), real (rôle réel) }
+  org: null, // { name }
   team: [], // membres de l'entreprise : { user_id, full_name, role }
 };
 export const nameOf = id => S.team.find(m => m.user_id === id)?.full_name || 'Quelqu’un';
