@@ -500,6 +500,7 @@ export async function renderList(el) {
         : '<p class="empty">Aucune intervention pour le moment.</p>';
     }
     rows.classList.toggle('stk2', mob && page !== 'nouvelles');
+    rows.classList.toggle('nogh', mob && page === 'nouvelles'); // comme l'appli tech : pas d'en-tête de groupe sur Nouvelles
     const g0 = rows.querySelector('.gcol');
     if (g0) {
       const host = document.querySelector('.sim #app');

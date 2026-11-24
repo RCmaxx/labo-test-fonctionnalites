@@ -419,3 +419,8 @@ mark {
 .cardpop__body {
   width: min(92%, 360px);
 }
+
+/* Mobile, page Nouvelles : cartes seules, sans titre de groupe (comme l'appli tech) */
+.nogh .group > h2 {
+  display: none;
+}
