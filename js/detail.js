@@ -395,6 +395,7 @@ export async function renderDetail(el, id) {
   }
 
   const dsc = String(i.description || '').trim();
+  const asCard = !inline && chat && isMob(); // mobile : la carte de la liste sert d'en-tête, comme l'appli tech
   if (chat) {
     const src = events.find(x => ['creee', 'publiee'].includes(x.type) && x.actor_id === i.created_by) || {};
     const ci = evs.findIndex(x => ['creee', 'publiee'].includes(x.type));
@@ -404,13 +405,31 @@ export async function renderDetail(el, id) {
       actor_name: src.actor_name || nameOf(i.created_by),
       created_at: ci >= 0 ? evs[ci].created_at : i.created_at,
     };
-    const head = dsc
-      ? { ...base, type: 'commentaire', body: dsc, cre: 1 }
-      : ci >= 0
-        ? evs[ci]
-        : { ...base, type: 'publiee' };
+    const head =
+      dsc && !asCard
+        ? { ...base, type: 'commentaire', body: dsc, cre: 1 }
+        : ci >= 0
+          ? evs[ci]
+          : { ...base, type: 'publiee' };
     if (ci >= 0) evs.splice(ci, 1);
     evs.unshift(head);
+  }
+  // Mobile : les photos jointes à la création quittent le fil et s'affichent en pastille sous la description.
+  const cph = [];
+  if (asCard) {
+    const t0 = new Date(evs[0]?.created_at);
+    evs
+      .filter(
+        e =>
+          e.type === 'photo' &&
+          e.actor_id === i.created_by &&
+          urls[e.body] &&
+          Math.abs(new Date(e.created_at) - t0) < 600000
+      )
+      .forEach(e => {
+        cph.push(e);
+        evs.splice(evs.indexOf(e), 1);
+      });
   }
   const items = [];
   evs.forEach(e => {
@@ -453,7 +472,7 @@ export async function renderDetail(el, id) {
   const back = inline
     ? `<a href="#" class="back xback" aria-label="Replier">${BACK}</a>`
     : `<a href="#" class="back" aria-label="Retour">${BACK}</a>`;
-  const card = !inline && chat && isMob() ? cardOf(i) : ''; // mobile : la carte de la liste sert d'en-tête, comme l'appli tech
+  const card = asCard ? cardOf(i) : '';
   const cardHead = card ? `<div class="dcard">${back}<ul class="cards">${card}</ul></div>` : '';
   const editBtn = canEdit(i)
     ? `<a class="btn ghost" href="#i/${i.id}/modifier" data-edit="${i.id}" aria-label="Modifier l'intervention">Modifier</a>`
@@ -481,6 +500,14 @@ export async function renderDetail(el, id) {
           <div class="dmeta3"><div class="drow"><span class="dloc">${i.location ? `<span class="ltag">${esc(locTag(i.location))}</span>` : ''}${i.assignee_id || i.proposed_to ? tagsOf(i) : ''}${i.status === 'publiee' ? '<span class="pill st-publiee">Nouveau</span>' : ''}<span class="ddate">${fmtAgo(i.created_at)}</span></span><span class="dright">${prio || pill ? `<span class="drt">${prio}${pill}</span>` : ''}</span></div>
             ${i.available_from || i.remind_minutes || i.client_presence ? `<p class="dslot">${i.available_from ? CLOCK + `<span>${esc(slotLine(i))}</span>` : i.client_presence ? '<span>Présence client requise</span>' : ''}${i.remind_minutes ? `<span class="dremind">${esc(REMIND[i.remind_minutes] || `${i.remind_minutes} min avant`)}</span>` : ''}</p>` : ''}</div>
           ${(!chat || cardHead) && dsc ? `<p class="ddesc">${esc(dsc)}</p>` : ''}
+          ${
+            cph.length
+              ? `<div class="dph0"><span class="phpill" role="button" tabindex="0" data-ph="${esc(cph.map(e => urls[e.body]).join(' '))}">${cph
+                  .slice(0, 3)
+                  .map(e => `<img src="${urls[e.body]}" alt="">`)
+                  .join('')}<span>${cph.length} photo${cph.length > 1 ? 's' : ''}</span></span></div>`
+              : ''
+          }
           ${photosHtml}
         </section>
       </div>

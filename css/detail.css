@@ -899,3 +899,8 @@ a[data-edit][aria-disabled='true'] {
     margin: 0 calc(-1 * var(--s3)) 0 calc(-1 * var(--s4));
   }
 }
+
+/* Mobile : photos de création en pastille sous la description */
+.dtop--card .dph0 {
+  margin: 6px 0 0 30px;
+}
