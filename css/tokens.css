@@ -19,7 +19,7 @@
   --presence-fg: #B45309;
 
   /* Barre du haut et barre d'onglets (mobile) : bleu nuit */
-  --chrome: #14212B; --chrome-fg: #FFFFFF; --chrome-dim: #9FB0BF; --chrome-on: rgba(255, 255, 255, .14); --shadow-chrome: 0 6px 24px rgba(20, 33, 43, .35);
+  --chrome: #14212B; --chrome-fg: #FFFFFF; --chrome-dim: #9FB0BF; --chrome-on: rgba(255, 255, 255, .14); --pill-total-bg: #FFFFFF; --pill-total-fg: #111111; --pill-mine-bg: #05090D; --pill-mine-fg: #5B9DFF; --shadow-chrome: 0 6px 24px rgba(20, 33, 43, .35);
 
   /* Rayons */
   --r-s: 8px; --r: 10px; --r-l: 16px; --r-pill: 999px;
