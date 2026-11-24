@@ -1,7 +1,7 @@
 import { sb } from './sb.js';
 import { renderDetail } from './detail.js';
 import { renderCircles } from './circles.js';
-import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, STATUS, isMob, route, p2 } from './state.js';
+import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, STATUS, isMob, route, p2, svg } from './state.js';
 
 // Page des terminées : #terminees, et sur mobile la page d'accueil (premier onglet).
 const onDonePage = () => route()[0] === 'terminees' || (isMob() && !route()[0] && S.me.role !== 'client');
@@ -64,10 +64,10 @@ const dateForms = iso => {
     `${d} ${M} ${y}`,
     `${p2(d)} ${M} ${y}`,
     `${d} ${M.slice(0, 3)} ${y}`,
-    `${p2(d)}/${p(m)}/${y}`,
+    `${p2(d)}/${p2(m)}/${y}`,
     `${d}/${m}/${y}`,
-    `${p2(d)}-${p(m)}-${y}`,
-    `${y}-${p(m)}-${p2(d)}`,
+    `${p2(d)}-${p2(m)}-${y}`,
+    `${y}-${p2(m)}-${p2(d)}`,
   ];
 };
 const dateHit = (r, q) => {
@@ -161,18 +161,20 @@ const withSearch = (q, words) => {
   }
   return q;
 };
-const WR =
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/></svg>';
+const WR = svg(
+  '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>'
+);
+const DONE_I = svg('<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>');
 const GICO = {
   mes: WR,
-  dem: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M22 6H2"/></svg>',
-  publiee:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></svg>',
+  dem: svg('<path d="M4 4h16v16H4z"/><path d="M22 6H2"/>'),
+  publiee: svg(
+    '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/>'
+  ),
   prise_en_charge: WR,
-  auj: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
-  sem: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
-  avant:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
+  auj: DONE_I,
+  sem: DONE_I,
+  avant: DONE_I,
 };
 const day0 = d => new Date(d).setHours(0, 0, 0, 0);
 const arrival = r => {
@@ -290,7 +292,7 @@ const item = (r, q = '', sf = []) => {
 };
 
 // Page Terminées : mobile = une seule liste ; sinon groupes aujourd'hui / cette semaine / avant (avec « Voir plus »).
-function paintTerminees(el, rows, done, more, { unfold, bindTake }) {
+function paintTerminees(el, rows, done, more, reopen) {
   const d0 = day0(Date.now()),
     w0 = weekStart();
   const list = [...done].sort((a, b) => finAt(b) - finAt(a));
@@ -352,10 +354,7 @@ function paintTerminees(el, rows, done, more, { unfold, bindTake }) {
       doneN += PAGE;
       renderList(el);
     };
-  const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
-  if (again) unfold(again, false);
-  else openId = null;
-  bindTake();
+  reopen();
 }
 
 export async function renderList(el) {
@@ -370,7 +369,7 @@ export async function renderList(el) {
           .join('')}</div>
         <ul class="srecent" hidden></ul>
         <div id="rows"><p>Chargement…</p></div>`
-    : `${isMob() && route()[0] === '' && S.me.role !== 'client' ? SEARCH_BAR : ''}<div id="rows"><p>Chargement…</p></div>`;
+    : `${isMob() && onDonePage() && S.me.role !== 'client' ? SEARCH_BAR : ''}<div id="rows"><p>Chargement…</p></div>`;
   const qel = el.querySelector('#q'),
     rows = el.querySelector('#rows');
   const [reads, msgs] = await Promise.all([
@@ -393,7 +392,7 @@ export async function renderList(el) {
     `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
 
   const paint = (open, done, more) => {
-    if (onDonePage()) return paintTerminees(el, rows, done, more, { unfold, bindTake });
+    if (onDonePage()) return paintTerminees(el, rows, done, more, reopen);
     if (searching) {
       const all = [...open, ...done].filter(r => matches(r, search, sfilters));
       const sc = el.querySelector('#scount');
@@ -408,11 +407,7 @@ export async function renderList(el) {
           ? `<ul class="cards scards">${all.map(r => item(r, search, sfilters)).join('')}</ul>`
           : ''
         : '';
-      const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
-      if (again) unfold(again, false);
-      else openId = null;
-      bindTake();
-      return;
+      return reopen();
     }
     const me = S.me.id,
       r = S.me.role,
@@ -449,14 +444,7 @@ export async function renderList(el) {
     groups = groups.filter(([k, , list]) => (k !== 'mes' || list.length) && (k !== 'dem' || canDem));
 
     if (r === 'client') {
-      rows.innerHTML = `<section class="group" data-g="publiee"><h2>${GICO.publiee}<span class="count">${open.length}</span><span class="glab">Mes interventions</span></h2>${
-        open.length
-          ? `<ul class="cards">${open
-              .sort(byArrival)
-              .map(r => item(r))
-              .join('')}</ul>`
-          : '<p class="empty">Aucune.</p>'
-      }</section>`;
+      rows.innerHTML = sec(['publiee', 'Mes interventions', open.sort(byArrival)]);
       return;
     }
     if (mob && page === 'mes')
@@ -466,22 +454,19 @@ export async function renderList(el) {
     if (mob && page === 'nouvelles') groups = [['publiee', 'Interventions', open.sort(byArrival)]];
     else if (mob) groups = groups.filter(g => ['mes', 'prise_en_charge'].includes(g[0]));
 
-    const std = !mob;
-    const shown = groups.filter(g => g[2].length || (std && g[0] === 'auj'));
-    const foldable = mob;
+    const shown = groups.filter(g => g[2].length || (!mob && g[0] === 'auj'));
     const COL = { dem: 0, publiee: 0, mes: 1, prise_en_charge: 1, auj: 2 };
-    if (std) {
-      rows.innerHTML = `<div class="gcols">${[0, 1, 2]
-        .map(c => {
-          const gs = shown.filter(g => COL[g[0]] === c);
-          return `<div class="gcol">${gs.length ? gs.map(g => sec(g, foldable)).join('') : ''}</div>`;
-        })
-        .join('')}</div>`;
-    } else {
-      rows.innerHTML = shown.length
-        ? shown.map(g => sec(g, foldable)).join('')
-        : '<p class="empty">Aucune intervention pour le moment.</p>';
-    }
+    rows.innerHTML = !mob
+      ? `<div class="gcols">${[0, 1, 2]
+          .map(
+            c =>
+              `<div class="gcol">${shown
+                .filter(g => COL[g[0]] === c)
+                .map(g => sec(g))
+                .join('')}</div>`
+          )
+          .join('')}</div>`
+      : shown.map(g => sec(g, true)).join('') || '<p class="empty">Aucune intervention pour le moment.</p>';
     rows.classList.toggle('stk2', mob && page !== 'nouvelles');
     rows.classList.toggle('nogh', mob && page === 'nouvelles'); // comme l'appli tech : pas d'en-tête de groupe sur Nouvelles
     const g0 = rows.querySelector('.gcol');
@@ -493,10 +478,7 @@ export async function renderList(el) {
     }
     if (rows.classList.contains('stk2'))
       stackSticky(rows, ':scope > .group:is([data-g=mes], [data-g=prise_en_charge]) > h2');
-    const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
-    if (again) unfold(again, false);
-    else openId = null;
-    bindTake();
+    reopen();
     rows.querySelectorAll('.group h2[role=button]').forEach(h => {
       h.onclick = h.onkeydown = e => {
         if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
@@ -511,6 +493,12 @@ export async function renderList(el) {
     });
   };
 
+  const reopen = () => {
+    const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
+    if (again) unfold(again, false);
+    else openId = null;
+    bindTake();
+  };
   const fold = u => {
     if (!u.classList.contains('is-open')) return u.remove();
     u.classList.remove('is-open');
@@ -583,76 +571,42 @@ export async function renderList(el) {
   };
   const load = async () => {
     const words = search.trim().split(/\s+/).filter(Boolean);
-    const openQ = scope(
-      sb
-        .from('interventions')
-        .select(COLS)
+    const iv = () => scope(sb.from('interventions').select(COLS));
+    const doneQ = (q = iv()) => q.in('status', DONE).order('resolved_at', { ascending: false, nullsFirst: false });
+    const openQ = () =>
+      iv()
         .not('status', 'in', `(brouillon,${DONE.join(',')})`)
-    ).order('created_at', { ascending: false });
-    if (searching) {
-      const [o, d] = await Promise.all([
-        scope(
-          sb
-            .from('interventions')
-            .select(COLS)
-            .not('status', 'in', `(brouillon,${DONE.join(',')})`)
-        )
-          .order('created_at', { ascending: false })
-          .limit(300),
-        scope(sb.from('interventions').select(COLS).in('status', DONE))
-          .order('resolved_at', { ascending: false, nullsFirst: false })
-          .limit(200),
-      ]);
-      const err = o.error || d.error;
-      if (err) return (rows.innerHTML = `<p>${esc(err.message)}</p>`);
-      paint(o.data || [], d.data || []);
-      return;
-    }
-    if (onDonePage()) {
+        .order('created_at', { ascending: false });
+    const fail = e => (rows.innerHTML = `<p>${esc(e.message)}</p>`);
+    let o, d;
+    if (searching) [o, d] = await Promise.all([openQ().limit(300), doneQ().limit(200)]);
+    else if (onDonePage()) {
       if (!words.length && DC.data && DC.n === doneN && Date.now() - DC.at < 90000)
         return paint([], DC.data, DC.data.length === doneN);
-      const q = words.length
-        ? withSearch(scope(sb.from('interventions').select(COLS).in('status', DONE)), words)
-            .order('resolved_at', { ascending: false, nullsFirst: false })
-            .limit(200)
-        : scope(sb.from('interventions').select(COLS).in('status', DONE))
-            .order('resolved_at', { ascending: false, nullsFirst: false })
-            .order('id')
-            .limit(doneN);
-      const { data, error } = await q;
-      if (error) return (rows.innerHTML = `<p>${esc(error.message)}</p>`);
-      if (!words.length) Object.assign(DC, { n: doneN, at: Date.now(), data: data || [] });
-      paint([], data || [], !words.length && (data || []).length === doneN);
-      return;
-    }
-    if (words.length) {
-      const { data, error } = await withSearch(
-        scope(sb.from('interventions').select(COLS).neq('status', 'brouillon')),
-        words
-      )
+      d = await (words.length ? doneQ(withSearch(iv(), words)).limit(200) : doneQ().order('id').limit(doneN));
+      if (d.error) return fail(d.error);
+      if (!words.length) Object.assign(DC, { n: doneN, at: Date.now(), data: d.data || [] });
+      return paint([], d.data || [], !words.length && (d.data || []).length === doneN);
+    } else if (words.length) {
+      const { data, error } = await withSearch(iv().neq('status', 'brouillon'), words)
         .order('created_at', { ascending: false })
         .limit(200);
-      if (error) return (rows.innerHTML = `<p>${esc(error.message)}</p>`);
+      if (error) return fail(error);
       const all = data || [];
-      paint(
+      return paint(
         all.filter(r => !DONE.includes(r.status)),
         all.filter(r => DONE.includes(r.status))
       );
-      return;
+    } else {
+      const t0 = new Date();
+      t0.setHours(0, 0, 0, 0);
+      [o, d] = await Promise.all([
+        openQ(),
+        isMob() || S.me.role === 'client' ? { data: [] } : doneQ(iv().gte('resolved_at', t0.toISOString())).limit(100),
+      ]);
     }
-    const t0 = new Date();
-    t0.setHours(0, 0, 0, 0);
-    const [open, done] = await Promise.all([
-      openQ,
-      isMob() || S.me.role === 'client'
-        ? { data: [] }
-        : scope(sb.from('interventions').select(COLS).in('status', DONE).gte('resolved_at', t0.toISOString()))
-            .order('resolved_at', { ascending: false })
-            .limit(100),
-    ]);
-    const err = open.error || done.error;
-    if (err) return (rows.innerHTML = `<p>${esc(err.message)}</p>`);
-    paint(open.data || [], done.data || []);
+    if (o.error || d.error) return fail(o.error || d.error);
+    paint(o.data || [], d.data || []);
   };
   if (qel)
     qel.oninput = e => {

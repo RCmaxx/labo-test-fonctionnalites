@@ -33,7 +33,7 @@ export const REMIND = {
 export const MGR = ['admin', 'directeur', 'responsable_tech'],
   TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v75';
+export const VERSION = 'v76';
 export const app = document.getElementById('app');
 document.documentElement.classList.toggle('sim', !!localStorage.labosim); // mobile simulé : même CSS que le mobile réel
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -80,3 +80,6 @@ export const rerender = () => dispatchEvent(new Event('labo:render'));
 export const MONTHS = 'janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.'.split(' ');
 export const p2 = n => String(n).padStart(2, '0');
 export const hostModal = () => document.querySelector('.sim #app') || document.body;
+// Icône trait (24×24) : d = contenu SVG, w = épaisseur, s = taille en px (sinon pilotée par le CSS).
+export const svg = (d, w = 2, s) =>
+  `<svg${s ? ` width="${s}" height="${s}"` : ''} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
