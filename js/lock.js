@@ -14,7 +14,7 @@ export async function loadLocks() {
   const { data, error } = await sb.rpc('edit_locks');
   if (error) return;
   LOCKS.clear();
-  data.forEach(l =>
+  (data || []).forEach(l =>
     LOCKS.set(l.intervention_id, { by: l.editing_by, name: l.editing_name, until: Date.now() + l.secs_left * 1000 })
   );
   drawEdit();
