@@ -1,6 +1,7 @@
 import { sb } from './sb.js';
 import { renderDetail } from './detail.js';
 import { renderCircles } from './circles.js';
+import { PIN } from './place.js';
 import { S, esc, fmtCard, nameOf, DONE, PAGE, TECH, STATUS, isMob, route, p2, svg, WRENCH } from './state.js';
 
 // Page des terminées : #terminees, et sur mobile la page d'accueil (premier onglet).
@@ -146,7 +147,7 @@ const place = r => {
   const m = String(r.location || '')
     .trim()
     .match(/^(?:mobil[- ]?home|mh)\s*(\d+)$/i);
-  const label = m ? `<small>MH</small>${m[1].padStart(2, '0')}` : esc(r.location) || 'Sans lieu';
+  const label = m ? `<small>MH</small>${m[1].padStart(2, '0')}` : r.location ? PIN + esc(r.location) : 'Sans lieu';
   return `<span class="tag tag--place tag--${r.priority || 'normale'}">${label}</span>`;
 };
 const COLS =
@@ -322,7 +323,7 @@ function paintTerminees(el, rows, done, more, reopen) {
   const mob = isMob();
   const html = mob
     ? groups.map(body).join('')
-    : `<div class="gcols gdone">${groups.map(g => `<div class="gcol">${body(g)}</div>`).join('')}</div>`;
+    : `<div class="gcols gdone">${groups.map(g => `<div class="gcol">${g[2].length ? body(g) : ''}</div>`).join('')}</div>`;
   rows.innerHTML =
     `<h1 class="lpage-title">Interventions terminées</h1>` +
     html +
@@ -389,7 +390,7 @@ export async function renderList(el) {
     if (!last[k] || created_at > last[k]) u.new = true;
   });
   const sec = ([k, label, list], foldable) =>
-    `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
+    `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${!foldable && k === 'publiee' && S.me.role !== 'client' ? '<a class="gadd" href="#nouvelle" aria-label="Nouvelle intervention">+</a>' : ''}${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
 
   const paint = (open, done, more) => {
     if (onDonePage()) return paintTerminees(el, rows, done, more, reopen);

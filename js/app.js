@@ -108,7 +108,6 @@ async function render() {
       ${sel}
       ${S.me.role === 'admin' ? '<a href="#compte">Mon compte</a>' : ''}
       <button type="button" class="ghost" id="logout">Déconnexion</button>
-      <button type="button" class="sim-toggle" id="sim">Mobile</button>
       <small>${VERSION}</small>
     </div>
   </nav>
@@ -126,10 +125,6 @@ async function render() {
   drawAlerts();
   paintCounts();
   loadCounts();
-  app.querySelector('#sim').onclick = () => {
-    localStorage.labosim = document.documentElement.classList.toggle('sim') ? '1' : '';
-    render();
-  };
   app.querySelector('#logout').onclick = () => signOut();
   const acct = app.querySelector('#acct');
   acct.onclick = e => {

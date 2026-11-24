@@ -474,3 +474,32 @@ mark {
     margin-left: calc(-1 * var(--s2));
   }
 }
+
+/* Vue standard, comme l'appli tech : « + » rond devant « Nouvelles interventions » (pas de bouton flottant),
+   colonnes Terminées défilant chacune de leur côté. */
+.gadd {
+  display: none;
+}
+@container app (min-width: 601px) {
+  .gadd {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    margin: 0 var(--s3) 0 -44px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--surface);
+    font-size: 24px;
+    line-height: 1;
+    text-decoration: none;
+  }
+  .gcol:has(.gadd) {
+    padding-left: 44px;
+  }
+  .gdone .gcol {
+    max-height: calc(100dvh - var(--gtop, 200px) - var(--s4));
+    overflow-y: auto;
+  }
+}

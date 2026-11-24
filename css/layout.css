@@ -90,10 +90,6 @@
 #asrole {
   max-width: 180px;
 }
-.sim-toggle {
-  padding: 5px 10px;
-  font-size: 12px;
-}
 .ico-search {
   display: grid;
   place-items: center;
@@ -330,7 +326,6 @@ main {
   .tnav,
   .who a,
   .who #logout,
-  .who #sim,
   .who #asrole,
   .who small,
   .acc-t {
@@ -357,7 +352,6 @@ main {
   .topbar.open .brand,
   .topbar.open .who a,
   .topbar.open .who #logout,
-  .topbar.open .who #sim,
   .topbar.open .who #asrole,
   .topbar.open .who small,
   .topbar.open .acc-t {
@@ -511,6 +505,45 @@ main {
   bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s3));
 }
 
+/* Vue standard, comme l'appli tech : barre sombre ; rôle et « Mon compte » derrière la pastille du compte. */
+@container app (min-width: 601px) {
+  .topbar {
+    border-image: linear-gradient(var(--chrome), var(--chrome)) fill 0 / 0 / 0 100vmax;
+  }
+  .topbar a {
+    color: var(--on-chrome-2);
+  }
+  .topbar a.on {
+    background: var(--surface);
+    color: var(--chrome);
+  }
+  .brand {
+    color: var(--on-chrome);
+  }
+  .topbar small {
+    position: absolute;
+    top: 2px;
+    left: 6px;
+    font-size: 10px;
+    color: var(--on-chrome-2);
+  }
+  .acct {
+    padding: 3px 12px 3px 3px;
+    border: 1px solid var(--on-chrome-2);
+    border-radius: var(--r-pill);
+    color: var(--on-chrome);
+  }
+  .acc-t i {
+    display: none;
+  }
+  .topbar:not(.open) .who :is(#asrole, a) {
+    display: none;
+  }
+  .topbar .who .ghost {
+    background: var(--surface);
+  }
+}
+
 /* Balayage entre onglets (js/tabs.js) */
 body.dragtab,
 body.dragtab #app {
@@ -525,4 +558,10 @@ body.dragtab #app {
 body.warming .topbar .ptit,
 body.warming .tabbar {
   visibility: hidden;
+}
+@container app (min-width: 601px) {
+  .fab,
+  .fabm {
+    display: none;
+  }
 }
