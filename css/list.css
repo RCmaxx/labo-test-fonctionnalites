@@ -690,6 +690,7 @@ mark {
   }
   .gcol .group > h2 {
     margin-bottom: 27px; /* espace entre le titre de colonne et la première carte, comme l'appli tech */
+    padding-left: 11px;
   }
   .gcol .cards {
     margin-right: 12px;

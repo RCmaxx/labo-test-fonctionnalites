@@ -637,6 +637,7 @@ main {
 @container app (min-width: 601px) {
   .topbar {
     border-image: linear-gradient(var(--chrome), var(--chrome)) fill 0 / 0 / 0 100vmax;
+    margin-bottom: calc(var(--s6) + 2px);
   }
   .topbar a {
     color: var(--on-chrome-2);
@@ -649,13 +650,18 @@ main {
     color: var(--on-chrome);
   }
   .acct {
-    padding: 3px 12px 3px 3px;
+    padding: 3px 10px 3px 3px;
     border: 1px solid var(--on-chrome-2);
     border-radius: var(--r-pill);
     color: var(--on-chrome);
   }
   .acc-t i {
     display: none;
+  }
+  .acct .av {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
   }
   .topbar .who .ghost {
     padding: 5px 10px;
