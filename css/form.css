@@ -295,13 +295,67 @@
 }
 
 /* Assignation : puces exclusives. */
-.nform .assign {
+/* Étape 3, comme l'appli tech : un cadre avec présence client, assignation et photos. */
+.nb3 {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--s2);
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
 }
-.nform .assign legend {
-  flex: 1 0 100%;
+.nb3 #hp {
+  justify-content: center;
+}
+.asg {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.asg__t {
+  display: none;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+.asg--on .asg__t {
+  display: inline;
+}
+.asgb {
+  min-height: 0;
+  padding: 3px var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+.asg--on .asgb {
+  padding: 0;
+  border: 0;
+}
+.nform .assign {
+  display: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.asg--open .assign {
+  position: absolute;
+  inset: -1px 0;
+  z-index: 2;
+  display: block;
+  background: var(--surface);
+}
+.asx {
+  display: flex;
+  gap: 6px;
+  height: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 .nform .assign label {
   margin: 0;
@@ -533,21 +587,35 @@
 
 /* Photos : bandeau de vignettes + bouton +. */
 .nph {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .pstrip {
   display: flex;
   align-items: center;
-  gap: var(--s4);
+  gap: 10px;
+  min-width: 0;
   overflow-x: auto;
-  padding: 10px 10px 2px 2px;
 }
-.ptray {
+.ptray,
+.pslots {
   display: flex;
-  gap: var(--s4);
+  gap: 10px;
   margin: 0;
+}
+.pslot {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--photo);
+  height: var(--photo);
+  border: 1px dashed var(--pslot-bd);
+  border-radius: 6px;
+  color: var(--pslot-fg);
+}
+.pslot[hidden] {
+  display: none;
 }
 .ptray:empty {
   display: none;
@@ -588,8 +656,8 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  width: var(--photo);
-  height: var(--photo);
+  width: var(--padd);
+  height: var(--padd);
   border: 1px solid var(--line-mid);
   border-radius: 50%;
   background: var(--surface);
@@ -818,8 +886,73 @@
     line-height: 1.2;
     letter-spacing: 0.02em;
   }
-  .nform:not(.pop) .seg {
+  .nform .seg {
     display: none;
+  }
+  /* Récapitulatif des étapes 2 et 3 : la carte seule, au retrait des cartes de la liste */
+  .nform .fsum {
+    margin: 0;
+    padding: 0 var(--card-inset);
+    border: 0;
+    background: none;
+  }
+  .nform .fsum .card {
+    pointer-events: none;
+  }
+  .nform .fsum2 {
+    margin: 0;
+    padding: 11px 13px;
+    color: var(--ink);
+    font-size: var(--fs-field);
+    line-height: 1.4;
+  }
+  .nform .fsum2--empty {
+    color: var(--ink-3);
+  }
+  .nb3 #hp .hptx {
+    font-size: 11px;
+  }
+  .pbtn--on {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    border-color: var(--pb-bg);
+    background: var(--pb-bg);
+    color: var(--pb-fg);
+  }
+  .pbtn--on small {
+    font-size: 9.5px;
+    font-weight: 600;
+  }
+  .pbtn--on span {
+    font-weight: 600;
+  }
+  .pbtn.p-basse {
+    --pb-bg: var(--prio-basse-bg);
+    --pb-fg: var(--prio-basse-fg);
+  }
+  .pbtn.p-normale {
+    --pb-bg: var(--prio-normale-bg);
+    --pb-fg: var(--prio-normale-fg);
+  }
+  .pbtn.p-haute {
+    --pb-bg: var(--prio-haute-bg);
+    --pb-fg: var(--prio-haute-fg);
+  }
+  /* Suggestions de lieu : rangée de pastilles dans un cadre blanc, à droite du champ (par-dessus la date) */
+  .nform .nf.ac .ac-list {
+    left: calc(100% + var(--s2));
+    top: -6px;
+    min-width: 0;
+    max-width: var(--sugg-max);
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: var(--s2);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: var(--surface);
   }
   .nform .nactions {
     grid-template-columns: 1fr 1fr;

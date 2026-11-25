@@ -1,11 +1,16 @@
 import { initDrafts } from './drafts.js';
-import { initPlaceField, tagIn } from './place.js';
+import { initPlaceField } from './place.js';
+import { cardOf } from './list.js';
 import { initSlotPicker, dIn, TIMES } from './slot.js';
 import { sb } from './sb.js';
 import { S, esc, REMIND, MGR, TECH, MONTHS, p2, hostModal, WRENCH, BRIEFCASE } from './state.js';
 import { takeLock } from './lock.js';
 
-const PRIO_L = { basse: 'À faire', normale: 'Important', haute: 'Urgent', urgente: 'Urgente' };
+// Cases photo vides de l'étape 3 (pointillés + appareil), comme l'appli tech.
+const PSLOTS = 5;
+const PSLOT =
+  '<i class="pslot"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M9.2 4.5h5.6l1.5 2.2H19a2.5 2.5 0 0 1 2.5 2.5v8.3A2.5 2.5 0 0 1 19 20H5a2.5 2.5 0 0 1-2.5-2.5V9.2A2.5 2.5 0 0 1 5 6.7h2.7zM12 9.6a3.6 3.6 0 1 0 0 7.2a3.6 3.6 0 1 0 0-7.2z"/></svg></i>';
+const PRIO_L = { basse: 'À faire', normale: 'Important', haute: 'Urgent' }; // les trois priorités du formulaire (appli tech)
 const BACK =
   '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
 const CLOSE =
@@ -178,12 +183,12 @@ function formHtml({ backHref, canAssign, draftOk, from, i, id, r, slotOn, techs,
   return `
     <div class="fpage">
       <div class="fhead">${id ? `<a href="${backHref}" class="back" aria-label="Retour">${BACK}</a>` : ''}<h1>${id ? "Modifier l'intervention" : 'Nouvelle intervention'}</h1>${id ? '' : `<button type="button" class="fx" aria-label="Fermer">${CLOSE}</button>`}</div>
-      <form id="f" class="nform${id ? '' : ' stp1'}" autocomplete="off" data-prio="${i.priority || 'normale'}">
+      <form id="f" class="nform${id ? '' : ' stp1'}" autocomplete="off" data-prio="${i.priority || ''}">
         <div class="fsum" hidden role="button" tabindex="0"></div>
         <div class="s1"><div class="nf-row">
           <div class="nf"><input name="title" type="text" maxlength="70" required placeholder="${r === 'client' ? "Titre de l'intervention" : 'Titre'}" value="${esc(i.title)}"></div>
           <div class="nf ac"><input name="location" type="text" maxlength="80" placeholder="Lieu" value="${esc(i.location)}" aria-autocomplete="list" aria-expanded="false" autocorrect="off" spellcheck="false"><ul class="ac-list" role="listbox" hidden></ul></div>
-          <div class="pbw"><button type="button" class="pbtn" aria-expanded="false">Priorité</button></div>
+          <div class="pbw"><button type="button" class="pbtn">Priorité</button></div>
           <span class="ndate">${esc(new Date().toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).replace(' à', ''))}</span>
         </div>
         <fieldset class="seg"><legend>Priorité</legend>${Object.entries(PRIO_L)
@@ -193,16 +198,7 @@ function formHtml({ backHref, canAssign, draftOk, from, i, id, r, slotOn, techs,
           )
           .join('')}</fieldset></div>
         <div class="s2"><div class="fsum2" hidden role="button" tabindex="0"></div><div class="nf"><textarea name="description" rows="6" placeholder="${r === 'client' ? 'Décrivez votre demande en quelques lignes' : 'Description'}">${esc(i.description)}</textarea></div></div>
-        <div class="s3">${
-          canAssign
-            ? `<fieldset class="assign"><legend>Assigner à un technicien</legend>${(techs.data || [])
-                .map(
-                  t =>
-                    `<label><input type="checkbox" name="assign" value="${t.user_id}" ${i.proposed_to === t.user_id ? 'checked' : ''}><span class="cwho">${t.role === 'technicien' ? WRENCH : BRIEFCASE}<span>${esc(t.full_name)}</span></span></label>`
-                )
-                .join('')}</fieldset>`
-            : ''
-        }
+        <div class="s3"><div class="nb3">
         <fieldset id="hp"${slotOn ? ' class="on"' : ''}><legend class="sr">Passage</legend>
           <input type="radio" name="passage" value="now" ${slotOn ? '' : 'checked'}>
           <input type="radio" name="passage" value="slot" ${slotOn ? 'checked' : ''}>
@@ -210,6 +206,20 @@ function formHtml({ backHref, canAssign, draftOk, from, i, id, r, slotOn, techs,
           <button type="button" class="hpsw2" role="switch" aria-checked="${slotOn}" aria-label="Présence client requise"></button>
           <span class="hpcr"><button type="button" class="hpclk" aria-label="Choisir le créneau" ${slotOn ? '' : 'disabled'}>${CLOCK}</button><span class="hpv"></span></span>
         </fieldset>
+        ${
+          canAssign
+            ? `<div class="asg"><span class="asg__t">Intervention assignée à :</span><button type="button" class="asgb">+ Assigner à un technicien</button><fieldset class="assign"><legend class="sr">Assigner à un technicien</legend><div class="asx"><label class="anone"><input type="checkbox" name="anone"><span class="cwho"><span>Non assigné</span></span></label>${(
+                techs.data || []
+              )
+                .map(
+                  t =>
+                    `<label><input type="checkbox" name="assign" value="${t.user_id}" ${i.proposed_to === t.user_id ? 'checked' : ''}><span class="cwho">${t.role === 'technicien' ? WRENCH : BRIEFCASE}<span>${esc(t.full_name)}</span></span></label>`
+                )
+                .join('')}</div></fieldset></div>`
+            : ''
+        }
+        <div class="nph"><label class="padd" aria-label="Ajouter des photos"><input name="photos" type="file" accept="image/*" multiple><span>+</span></label><div class="pstrip"><div class="ptray"></div><div class="pslots" aria-hidden="true">${PSLOT.repeat(PSLOTS)}</div></div></div>
+        </div>
         <div class="nf slot" hidden>
           <input type="hidden" name="slot_d" value="${from ? dIn(from) : ''}">
           <input type="hidden" name="slot_a" value="${tIn(from)}">
@@ -222,9 +232,7 @@ function formHtml({ backHref, canAssign, draftOk, from, i, id, r, slotOn, techs,
               ''
             )}</div></div><div class="wcol"><span class="wh">De</span><div class="wheel" data-k="slot_a">${TIMES.map(t => `<div class="wi" data-v="${t}">${t}</div>`).join('')}</div></div><div class="wcol"><span class="wh">À</span><div class="wheel" data-k="slot_b">${TIMES.map(t => `<div class="wi" data-v="${t}">${t}</div>`).join('')}</div></div><div class="wband" aria-hidden="true"></div></div><button type="button" class="primary wok">Valider</button><button type="button" class="ghost wrm">Retirer le créneau</button></div></div>
         </div>
-        <div class="nph">Photos
-          <div class="pstrip"><div class="ptray"></div><label class="padd" aria-label="Ajouter des photos"><input name="photos" type="file" accept="image/*" multiple><span>+</span></label></div>
-        </div></div>
+        </div>
         <div class="nactions">
           <button type="submit" class="primary" value="${id ? 'save' : 'publier'}">${id ? 'Enregistrer' : 'Suivant'}</button>
           ${draftOk ? `<span class="bdwrap"><button type="submit" class="ghost" value="brouillon" hidden tabindex="-1"></button><button type="button" class="ghost bdchev" aria-haspopup="menu" aria-expanded="false" aria-label="Brouillons"></button><button type="button" class="ghost bdsave">Brouillon +</button></span>` : ''}
@@ -262,21 +270,54 @@ export async function renderForm(el, id) {
 
   const f = el.querySelector('#f'),
     err = el.querySelector('#ferr');
-  // Mobile : la priorité se choisit depuis un bouton (les pastilles s'ouvrent dessous), comme l'appli tech.
-  const pbtn = f.querySelector('.pbtn');
+  // Mobile, comme l'appli tech : chaque appui sur Priorité passe à la suivante (À faire → Important → Urgent → À faire).
+  const pbtn = f.querySelector('.pbtn'),
+    prios = [...f.querySelectorAll('[name=priority]')];
   const syncPrio = () => {
-    const v = f.priority?.value;
-    pbtn.textContent = v ? PRIO_L[v] : 'Priorité';
+    const c = prios.find(x => x.checked);
+    pbtn.className = 'pbtn' + (c ? ` pbtn--on p-${c.value}` : '');
+    pbtn.innerHTML = c ? `<small>Priorité</small><span>${PRIO_L[c.value]}</span>` : 'Priorité';
   };
-  pbtn.addEventListener('click', () => pbtn.setAttribute('aria-expanded', String(f.classList.toggle('pop'))));
-  f.addEventListener('change', e => {
-    if (e.target.name !== 'priority') return;
-    syncPrio();
-    f.classList.remove('pop');
-    pbtn.setAttribute('aria-expanded', 'false');
+  pbtn.addEventListener('mousedown', e => e.preventDefault()); // garde le clavier sur le champ en cours
+  pbtn.addEventListener('click', () => {
+    const next = prios[(prios.findIndex(x => x.checked) + 1) % prios.length];
+    next.checked = true;
+    next.dispatchEvent(new Event('change', { bubbles: true }));
   });
+  f.addEventListener('change', e => e.target.name === 'priority' && syncPrio());
   syncPrio();
   const { syncTag } = initPlaceField(f, placesRes);
+  // Assignation, comme l'appli tech : le bouton déplie une rangée d'étiquettes à sa place ; le choix la referme
+  // et s'affiche dans le bouton (« Non assigné » efface le choix).
+  const asg = f.querySelector('.asg');
+  if (asg) {
+    const ab = asg.querySelector('.asgb'),
+      T0 = ab.textContent;
+    const shut = () => {
+      asg.classList.remove('asg--open');
+      document.removeEventListener('pointerdown', out, true);
+    };
+    const out = e => !e.target.closest('.asx label') && !ab.contains(e.target) && shut();
+    const name = () => {
+      const c = asg.querySelector('[name=assign]:checked');
+      asg.classList.toggle('asg--on', !!c);
+      ab.innerHTML = c ? c.closest('label').querySelector('.cwho').outerHTML : T0;
+    };
+    ab.addEventListener('click', () => {
+      if (asg.classList.contains('asg--open')) return shut();
+      asg.classList.add('asg--open');
+      document.addEventListener('pointerdown', out, true);
+    });
+    asg.addEventListener('change', e => {
+      if (e.target.name === 'anone') {
+        asg.querySelectorAll('[name=assign]').forEach(x => (x.checked = false));
+        e.target.checked = false;
+      }
+      name();
+      shut();
+    });
+    name();
+  }
   const slot = initSlotPicker(f, { id, i, r, slotOn, err });
   const { hp, sheet, paintSlot, place, setPassage } = slot;
   const tray = f.querySelector('.ptray');
@@ -286,6 +327,7 @@ export async function renderForm(el, id) {
     tray,
     files => {
       f.querySelector('.padd').hidden = files.length + exN >= 10;
+      f.querySelectorAll('.pslot').forEach((x, k) => (x.hidden = k >= PSLOTS - files.length - exN)); // les photos prennent la place des cases vides
     },
     () => 10 - exN
   );
@@ -378,9 +420,20 @@ export async function renderForm(el, id) {
     sum2 = f.querySelector('.fsum2');
   const paintSum = () => {
     if (!sum) return;
-    const locv = f.location.value.trim();
-    sum.innerHTML = `<b>${esc(f.title.value.trim()) || 'Sans titre'}</b>${locv ? `<span class="card__meta">${/* reuse tag */ ''}${tagIn(locv)}</span>` : ''}`;
-    if (sum2) sum2.textContent = f.description.value.trim() || 'Aucune description';
+    // Récapitulatif = la carte de la liste telle qu'elle sera publiée, comme l'appli tech.
+    const draft = {
+      id: '',
+      title: f.title.value.trim() || 'Sans titre',
+      location: f.location.value.trim(),
+      priority: f.dataset.prio || 'normale',
+      status: 'publiee',
+      created_at: new Date().toISOString(),
+    };
+    sum.innerHTML = `<ul class="cards">${cardOf(draft)}</ul>`;
+    if (sum2) {
+      sum2.textContent = f.description.value.trim() || 'Description'; // vide : comme le champ de l'appli tech
+      sum2.classList.toggle('fsum2--empty', !f.description.value.trim());
+    }
   };
   const goStep = n => {
     st = n;
@@ -390,11 +443,12 @@ export async function renderForm(el, id) {
     paintSum();
     chk();
   };
-  const ok1 = () => !!(f.title.value.trim() && f.location.value.trim());
+  // Comme l'appli tech : titre, lieu et priorité choisie pour passer à la suite.
+  const ok1 = () => !!(f.title.value.trim() && f.location.value.trim() && f.dataset.prio);
   const sv = f.querySelector('.bdsave');
   const chk = () => {
     if (pb && !id) pb.disabled = st === 1 && !ok1();
-    if (sv) sv.disabled = !f.title.value.trim(); // brouillon : il faut au moins un titre, comme l'appli tech
+    if (sv) sv.disabled = !f.title.value.trim() && !f.location.value.trim(); // brouillon : un titre ou un lieu, comme l'appli tech
   };
   if (!id && pb) {
     chk();

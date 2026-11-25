@@ -97,6 +97,9 @@
   --prio-w: 80px;
   --loc-min: 72px;
   --loc-h: 36px;
+  --sugg-max: 256px; /* largeur maxi des suggestions de lieu */
+  --pslot-bd: #d6d6d6; /* case photo vide */
+  --pslot-fg: #cfcfcb;
   --fx: 44px;
   /* Glissement d'ouverture de fiche (appli tech) */
   --slide-ms: 0.28s;
@@ -165,7 +168,8 @@
   --ink-wheel: #9a9a9a;
   --ink-past: #d0d0d0;
   --wheel-band: rgba(0, 0, 0, 0.05);
-  --photo: 52px;
+  --photo: 50px;
+  --padd: 36px; /* bouton + des photos */
   --form-max: 608px;
 
   /* Typographie */
