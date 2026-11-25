@@ -246,36 +246,11 @@ function formHtml({ backHref, canAssign, draftOk, from, i, id, r, slotOn, techs,
     </div>`;
 }
 
-export async function renderForm(el, id) {
-  // Verrou d'édition : une seule personne modifie à la fois.
-  const by = id && (await takeLock(id));
-  if (by) return (el.innerHTML = `<p>${esc(by)}</p>`);
-  const [cur, placesRes, techs] = await Promise.all([
-    id ? sb.from('interventions').select('*').eq('id', id).maybeSingle() : { data: {} },
-    sb.from('places').select('label, num').order('num', { nullsFirst: false }).order('label').limit(2000),
-    sb
-      .from('members')
-      .select('user_id, full_name, role')
-      .in('role', S.me.role === 'directeur' ? TECH : ['technicien']),
-  ]);
-  const i = cur.data;
-  if (!i) return (el.innerHTML = `<p>${esc(cur.error?.message || 'Intervention introuvable.')}</p>`);
-  const r = S.me.role,
-    mgr = MGR.includes(r);
-  const backHref = id ? (i.status === 'brouillon' ? '#' : `#i/${id}`) : '#';
-  const canAssign = mgr && (!id || (i.status === 'publiee' && !i.assignee_id));
-  const slotOn = !!(i.available_from || i.client_presence);
-  const from = i.available_from ? new Date(i.available_from) : null,
-    until = i.available_until ? new Date(i.available_until) : null;
-  const draftOk = !id && canDraft(r);
-  el.innerHTML = formHtml({ backHref, canAssign, draftOk, from, i, id, r, slotOn, techs, until });
-
-  const f = el.querySelector('#f'),
-    err = el.querySelector('#ferr');
-  // Mobile, comme l'appli tech : chaque appui sur Priorité passe à la suivante (À faire → Important → Urgent → À faire).
+// Mobile, comme l'appli tech : chaque appui sur Priorité passe à la suivante (À faire → Important → Urgent → À faire).
+function initPriority(f) {
   const pbtn = f.querySelector('.pbtn'),
     prios = [...f.querySelectorAll('[name=priority]')];
-  const syncPrio = () => {
+  const sync = () => {
     const c = prios.find(x => x.checked);
     pbtn.className = 'pbtn' + (c ? ` pbtn--on p-${c.value}` : '');
     pbtn.innerHTML = c ? `<small>Priorité</small><span>${PRIO_L[c.value]}</span>` : 'Priorité';
@@ -286,91 +261,98 @@ export async function renderForm(el, id) {
     next.checked = true;
     next.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  f.addEventListener('change', e => e.target.name === 'priority' && syncPrio());
-  syncPrio();
-  const { syncTag } = initPlaceField(f, placesRes);
-  // Assignation, comme l'appli tech : le bouton déplie une rangée d'étiquettes à sa place ; le choix la referme
-  // et s'affiche dans le bouton (« Non assigné » efface le choix).
+  f.addEventListener('change', e => e.target.name === 'priority' && sync());
+  sync();
+}
+
+// Assignation, comme l'appli tech : le bouton déplie une rangée d'étiquettes à sa place ; le choix la referme
+// et s'affiche dans le bouton (« Non assigné » efface le choix).
+function initAssign(f) {
   const asg = f.querySelector('.asg');
-  if (asg) {
-    const ab = asg.querySelector('.asgb'),
-      T0 = ab.textContent;
-    const shut = () => {
-      asg.classList.remove('asg--open');
-      document.removeEventListener('pointerdown', out, true);
-    };
-    const out = e => !e.target.closest('.asx label') && !ab.contains(e.target) && shut();
-    const name = () => {
-      const c = asg.querySelector('[name=assign]:checked');
-      asg.classList.toggle('asg--on', !!c);
-      ab.innerHTML = c ? c.closest('label').querySelector('.cwho').outerHTML : T0;
-    };
-    ab.addEventListener('click', () => {
-      if (asg.classList.contains('asg--open')) return shut();
-      asg.classList.add('asg--open');
-      document.addEventListener('pointerdown', out, true);
-    });
-    asg.addEventListener('change', e => {
-      if (e.target.name === 'anone') {
-        asg.querySelectorAll('[name=assign]').forEach(x => (x.checked = false));
-        e.target.checked = false;
-      }
-      name();
-      shut();
-    });
+  if (!asg) return;
+  const ab = asg.querySelector('.asgb'),
+    T0 = ab.textContent;
+  const shut = () => {
+    asg.classList.remove('asg--open');
+    document.removeEventListener('pointerdown', out, true);
+  };
+  const out = e => !e.target.closest('.asx label') && !ab.contains(e.target) && shut();
+  const name = () => {
+    const c = asg.querySelector('[name=assign]:checked');
+    asg.classList.toggle('asg--on', !!c);
+    ab.innerHTML = c ? c.closest('label').querySelector('.cwho').outerHTML : T0;
+  };
+  ab.addEventListener('click', () => {
+    if (asg.classList.contains('asg--open')) return shut();
+    asg.classList.add('asg--open');
+    document.addEventListener('pointerdown', out, true);
+  });
+  asg.addEventListener('change', e => {
+    if (e.target.name === 'anone') {
+      asg.querySelectorAll('[name=assign]').forEach(x => (x.checked = false));
+      e.target.checked = false;
+    }
     name();
-  }
-  const slot = initSlotPicker(f, { id, i, r, slotOn, err });
-  const { hp, sheet, paintSlot, place, setPassage } = slot;
+    shut();
+  });
+  name();
+}
+
+// Photos : plateau d'ajout + photos déjà enregistrées (modification). Renvoie la liste des fichiers à envoyer.
+function initPhotos(f, { id, err }) {
   const tray = f.querySelector('.ptray');
   let exN = 0;
+  const full = n => (f.querySelector('.padd').hidden = n + exN >= 10);
   const picked = photoTray(
     f.photos,
     tray,
     files => {
-      f.querySelector('.padd').hidden = files.length + exN >= 10;
+      full(files.length);
       f.querySelectorAll('.pslot').forEach((x, k) => (x.hidden = k >= PSLOTS - files.length - exN)); // les photos prennent la place des cases vides
     },
     () => 10 - exN
   );
-  if (id)
-    (async () => {
-      const { data } = await sb
-        .from('intervention_photos')
-        .select('id, path')
-        .eq('intervention_id', id)
-        .order('created_at');
-      const rows = data || [];
-      if (!rows.length || !tray.isConnected) return;
-      const { data: urls } = await sb.storage.from('photos').createSignedUrls(
-        rows.map(p => p.path),
-        3600
-      );
-      const map = Object.fromEntries((urls || []).map(d => [d.path, d.signedUrl]));
-      for (const row of rows) {
-        const s = document.createElement('span');
-        s.className = 'pt';
-        s.dataset.ex = row.id;
-        s.innerHTML = `<img src="${esc(map[row.path] || '')}" alt=""><button type="button" class="pt-x" data-ex="${row.id}" aria-label="Retirer la photo">×</button>`;
-        tray.append(s);
-      }
-      exN = tray.querySelectorAll('[data-ex]').length;
-      f.querySelector('.padd').hidden = picked.length + exN >= 10;
-      tray.addEventListener('click', async e => {
-        const x = e.target.closest('.pt-x[data-ex]');
-        if (!x) return;
-        if (!(await confirmBox('Supprimer ?', 'Oui', { cancel: 'Non' }))) return;
-        const row = rows.find(r => r.id === x.dataset.ex);
-        const { error } = await sb.from('intervention_photos').delete().eq('id', row.id);
-        if (error) return (err.textContent = error.message);
-        await sb.storage.from('photos').remove([row.path]);
-        x.closest('.pt').remove();
-        exN = tray.querySelectorAll('[data-ex]').length;
-        f.querySelector('.padd').hidden = picked.length + exN >= 10;
-      });
-    })();
+  if (!id) return picked;
+  (async () => {
+    const { data } = await sb
+      .from('intervention_photos')
+      .select('id, path')
+      .eq('intervention_id', id)
+      .order('created_at');
+    const rows = data || [];
+    if (!rows.length || !tray.isConnected) return;
+    const { data: urls } = await sb.storage.from('photos').createSignedUrls(
+      rows.map(p => p.path),
+      3600
+    );
+    const map = Object.fromEntries((urls || []).map(d => [d.path, d.signedUrl]));
+    for (const row of rows) {
+      const s = document.createElement('span');
+      s.className = 'pt';
+      s.dataset.ex = row.id;
+      s.innerHTML = `<img src="${esc(map[row.path] || '')}" alt=""><button type="button" class="pt-x" data-ex="${row.id}" aria-label="Retirer la photo">×</button>`;
+      tray.append(s);
+    }
+    const count = () => (exN = tray.querySelectorAll('[data-ex]').length);
+    tray.addEventListener('click', async e => {
+      const x = e.target.closest('.pt-x[data-ex]');
+      if (!x || !(await confirmBox('Supprimer ?', 'Oui', { cancel: 'Non' }))) return;
+      const row = rows.find(r => r.id === x.dataset.ex);
+      const { error } = await sb.from('intervention_photos').delete().eq('id', row.id);
+      if (error) return (err.textContent = error.message);
+      await sb.storage.from('photos').remove([row.path]);
+      x.closest('.pt').remove();
+      count();
+      full(picked.length);
+    });
+    count();
+    full(picked.length);
+  })();
+  return picked;
+}
 
-  const { clearDraft, db } = initDrafts(f, { id, mgr, err, slot, syncTag, paintSlot, place, setPassage, hp, sheet });
+// Sorties du formulaire (retour, croix, Annuler, suppression du brouillon) : confirmation si des saisies seraient perdues.
+function initExit(el, f, { id, draftOk, backHref, picked, clearDraft, db, err }) {
   const dirty = () =>
     !!(f.title.value.trim() || f.location.value.trim() || f.description.value.trim() || picked.length);
   let s0 = null;
@@ -411,23 +393,31 @@ export async function renderForm(el, id) {
     fx.onclick = async () => {
       if (await canLeave()) location.hash = backHref;
     };
-
-  const delBtn = f.querySelector('.bddel-form');
-  if (delBtn)
-    delBtn.onclick = async () => {
+  const del = f.querySelector('.bddel-form');
+  if (del)
+    del.onclick = async () => {
       if (!(await confirmBox('Voulez-vous vraiment supprimer ce brouillon ?', 'Supprimer'))) return;
       const { error } = await sb.from('interventions').delete().eq('id', id);
       if (error) return (err.textContent = error.message);
       location.hash = '#';
     };
+}
 
+// Création en 3 étapes (mobile, comme l'appli tech) : titre/lieu/priorité, description, récapitulatif.
+function initSteps(f, { id, r }) {
   let st = 1;
-  const pb = f.querySelector('[value=publier]');
-  const sum = f.querySelector('.fsum'),
+  const pb = f.querySelector('[value=publier]'),
+    sv = f.querySelector('.bdsave'),
+    sum = f.querySelector('.fsum'),
     sum2 = f.querySelector('.fsum2');
+  const ok1 = () => !!(f.title.value.trim() && (r === 'client' || f.location.value.trim()) && f.dataset.prio); // le client n'a pas de champ Lieu
+  const chk = () => {
+    if (pb && !id) pb.disabled = st === 1 && !ok1();
+    if (sv) sv.disabled = !f.title.value.trim() && !f.location.value.trim(); // brouillon : un titre ou un lieu, comme l'appli tech
+  };
   const paintSum = () => {
     if (!sum) return;
-    // Récapitulatif = la carte de la liste telle qu'elle sera publiée, comme l'appli tech.
+    // Récapitulatif = la carte de la liste telle qu'elle sera publiée.
     const draft = {
       id: '',
       title: f.title.value.trim() || 'Sans titre',
@@ -450,13 +440,6 @@ export async function renderForm(el, id) {
     paintSum();
     chk();
   };
-  // Comme l'appli tech : titre, lieu et priorité choisie pour passer à la suite.
-  const ok1 = () => !!(f.title.value.trim() && (r === 'client' || f.location.value.trim()) && f.dataset.prio); // le client n'a pas de champ Lieu
-  const sv = f.querySelector('.bdsave');
-  const chk = () => {
-    if (pb && !id) pb.disabled = st === 1 && !ok1();
-    if (sv) sv.disabled = !f.title.value.trim() && !f.location.value.trim(); // brouillon : un titre ou un lieu, comme l'appli tech
-  };
   if (!id && pb) {
     chk();
     f.addEventListener('input', chk);
@@ -464,77 +447,118 @@ export async function renderForm(el, id) {
     sum.onclick = () => goStep(1);
     if (sum2) sum2.onclick = () => goStep(2);
   }
+  return { step: () => st, goStep, ok1 };
+}
+
+// Champs du formulaire → ligne à enregistrer. Renvoie { row } ou { error }.
+function readRow(f, { id, i }) {
+  const fd = new FormData(f);
+  const title = String(fd.get('title') || '').trim();
+  if (!title) return { error: 'Le titre est obligatoire.' };
+  const row = {
+    title: title.slice(0, 70),
+    location: String(fd.get('location') || '').trim(),
+    description: String(fd.get('description') || '').trim(),
+    priority: fd.get('priority') || 'normale',
+    available_from: null,
+    available_until: null,
+    remind_minutes: null,
+    client_presence: fd.get('passage') === 'slot',
+  };
+  const day = f.slot_d.value,
+    a = f.slot_a.value,
+    b = f.slot_b.value;
+  if (row.client_presence && day && a) {
+    if (b && b <= a) return { error: "L'heure de fin doit suivre l'heure de début." };
+    const start = new Date(`${day}T${a}`);
+    if (start < (id && i.created_at ? new Date(i.created_at) : new Date(Date.now() - 6e4)))
+      return { error: 'Ce créneau est déjà passé.' };
+    row.available_from = start.toISOString();
+    row.available_until = new Date(b ? `${day}T${b}` : start.getTime() + 9e5).toISOString();
+  }
+  return { row };
+}
+
+// Enregistre (modification ou création, publiée ou en brouillon) et assigne. Renvoie [erreur, id].
+async function persist({ row, id, i, canAssign, mode, who }) {
+  if (id) {
+    let res = await sb.from('interventions').update(row).eq('id', id);
+    if (!res.error && canAssign && who !== (i.proposed_to || null))
+      res = await sb.rpc('assign_tech', { p_id: id, p_tech: who });
+    return [res.error, id];
+  }
+  const { data, error } = await sb
+    .from('interventions')
+    .insert({ ...row, org_id: S.me.org_id })
+    .select('id')
+    .single();
+  if (error || mode !== 'publier') return [error, data?.id];
+  let res = await sb.rpc('transition', { p_id: data.id, p_action: 'publier', p_comment: '' });
+  if (!res.error && who) res = await sb.rpc('assign_tech', { p_id: data.id, p_tech: who });
+  return [res.error, data.id];
+}
+
+export async function renderForm(el, id) {
+  // Verrou d'édition : une seule personne modifie à la fois.
+  const by = id && (await takeLock(id));
+  if (by) return (el.innerHTML = `<p>${esc(by)}</p>`);
+  const [cur, placesRes, techs] = await Promise.all([
+    id ? sb.from('interventions').select('*').eq('id', id).maybeSingle() : { data: {} },
+    sb.from('places').select('label, num').order('num', { nullsFirst: false }).order('label').limit(2000),
+    sb
+      .from('members')
+      .select('user_id, full_name, role')
+      .in('role', S.me.role === 'directeur' ? TECH : ['technicien']),
+  ]);
+  const i = cur.data;
+  if (!i) return (el.innerHTML = `<p>${esc(cur.error?.message || 'Intervention introuvable.')}</p>`);
+  const r = S.me.role,
+    mgr = MGR.includes(r);
+  const backHref = id ? (i.status === 'brouillon' ? '#' : `#i/${id}`) : '#';
+  const canAssign = mgr && (!id || (i.status === 'publiee' && !i.assignee_id));
+  const slotOn = !!(i.available_from || i.client_presence);
+  const from = i.available_from ? new Date(i.available_from) : null,
+    until = i.available_until ? new Date(i.available_until) : null;
+  const draftOk = !id && canDraft(r);
+  el.innerHTML = formHtml({ backHref, canAssign, draftOk, from, i, id, r, slotOn, techs, until });
+
+  const f = el.querySelector('#f'),
+    err = el.querySelector('#ferr');
+  initPriority(f);
+  const { syncTag } = initPlaceField(f, placesRes);
+  initAssign(f);
+  const slot = initSlotPicker(f, { id, i, r, slotOn, err });
+  const picked = initPhotos(f, { id, err });
+  const { hp, sheet, paintSlot, place, setPassage } = slot;
+  const { clearDraft, db } = initDrafts(f, { id, mgr, err, slot, syncTag, paintSlot, place, setPassage, hp, sheet });
+  initExit(el, f, { id, draftOk, backHref, picked, clearDraft, db, err });
+  const steps = initSteps(f, { id, r });
 
   f.onsubmit = async e => {
     e.preventDefault();
-    const fd = new FormData(f),
-      mode = e.submitter?.value;
+    const mode = e.submitter?.value,
+      st = steps.step();
     if (!id && mode === 'publier' && st < 3) {
-      if (st === 1 && !ok1()) {
+      if (st === 1 && !steps.ok1()) {
         err.textContent = 'Le titre et le lieu sont obligatoires.';
         return f.title.focus();
       }
       err.textContent = '';
-      goStep(st + 1);
-      return;
+      return steps.goStep(st + 1);
     }
-    const title = String(fd.get('title') || '').trim();
-    if (!title) {
-      err.textContent = 'Le titre est obligatoire.';
+    const { row, error: bad } = readRow(f, { id, i });
+    if (bad) {
+      err.textContent = bad;
       return f.title.focus();
     }
-    const row = {
-      title: title.slice(0, 70),
-      location: String(fd.get('location') || '').trim(),
-      description: String(fd.get('description') || '').trim(),
-      priority: fd.get('priority') || 'normale',
-      available_from: null,
-      available_until: null,
-      remind_minutes: null,
-      client_presence: fd.get('passage') === 'slot',
-    };
-    if (row.client_presence) {
-      const day = f.slot_d.value,
-        a = f.slot_a.value,
-        b = f.slot_b.value;
-      if (day && a) {
-        if (b && b <= a) return (err.textContent = "L'heure de fin doit suivre l'heure de début.");
-        const start = new Date(`${day}T${a}`);
-        if (start < (id && i.created_at ? new Date(i.created_at) : new Date(Date.now() - 6e4)))
-          return (err.textContent = 'Ce créneau est déjà passé.');
-        row.available_from = start.toISOString();
-        row.available_until = new Date(b ? `${day}T${b}` : start.getTime() + 9e5).toISOString();
-      }
-    }
-    const files = [...picked];
-    const who = f.querySelector('[name=assign]:checked')?.value || null;
-    const run = async () => {
-      if (id) {
-        let res = await sb.from('interventions').update(row).eq('id', id);
-        if (!res.error && canAssign && who !== (i.proposed_to || null))
-          res = await sb.rpc('assign_tech', { p_id: id, p_tech: who });
-        return [res.error, id];
-      }
-      const { data, error } = await sb
-        .from('interventions')
-        .insert({ ...row, org_id: S.me.org_id })
-        .select('id')
-        .single();
-      if (error || mode !== 'publier') return [error, data?.id];
-      let res = await sb.rpc('transition', { p_id: data.id, p_action: 'publier', p_comment: '' });
-      if (!res.error && who) res = await sb.rpc('assign_tech', { p_id: data.id, p_tech: who });
-      return [res.error, data.id];
-    };
     const btn = e.submitter;
     if (btn) btn.disabled = true;
-    let [error, iid] = await run();
-    if (!error && files.length) error = await uploadPhotos(iid, files);
+    const who = f.querySelector('[name=assign]:checked')?.value || null;
+    let [error, iid] = await persist({ row, id, i, canAssign, mode, who });
+    if (!error && picked.length) error = await uploadPhotos(iid, [...picked]);
     if (!error && !id && row.available_from) {
       const m = await askReminder();
-      if (m) {
-        const u = await sb.from('interventions').update({ remind_minutes: m }).eq('id', iid);
-        if (u.error) error = u.error;
-      }
+      if (m) error = (await sb.from('interventions').update({ remind_minutes: m }).eq('id', iid)).error || error;
     }
     if (btn) btn.disabled = false;
     if (error) err.textContent = error.message;
