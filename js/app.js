@@ -118,7 +118,6 @@ function topbarHtml({ r, admin, cli }) {
         <span class="acc-t"><b>${esc(disp)}</b>${pick ? '' : `<i>${esc(ROLES[r] || r)}</i>`}</span>
         ${pick ? CHEV + profileSelect(r) : ''}
       </div>
-      ${S.me.role === 'admin' ? '<a href="#compte">Mon compte</a>' : ''}
       <button type="button" class="ghost" id="logout">Déconnexion</button>
     </div>
   </nav>`;

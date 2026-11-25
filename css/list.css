@@ -377,8 +377,8 @@
 }
 .cards > li > .xgear {
   position: absolute;
-  top: var(--s2);
-  right: var(--s2);
+  bottom: 6px; /* rouage en bas à droite de la carte dépliée, comme l'appli tech */
+  right: 8px;
 }
 
 .lpage-title {
@@ -642,8 +642,18 @@ mark {
     position: relative;
     margin-top: var(--s1);
   }
-  .gcols > * {
+  .gcols > .gcol {
     padding-top: 36px;
+    padding-right: calc(var(--s2) + 12px); /* comme l'appli tech : titres 12 px plus larges que les cartes */
+  }
+  .gcol .group > h2 {
+    margin-bottom: 27px; /* espace entre le titre de colonne et la première carte, comme l'appli tech */
+  }
+  .gcol .cards {
+    margin-right: 12px;
+  }
+  .gcol .card__title {
+    font-size: 17px; /* vue standard de l'appli tech : titre à 17 px (18 px sur mobile) */
   }
 }
 /* Écran large, comme l'appli tech : le + passe dans la marge à gauche, centré dans la marge, à hauteur du titre */

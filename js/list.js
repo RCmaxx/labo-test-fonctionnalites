@@ -399,7 +399,7 @@ async function loadUnread() {
 }
 
 const sec = ([k, label, list], foldable) =>
-  `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
+  `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : ''}</section>`;
 
 // Résultats de la recherche : compteur + cartes (rien tant que le champ est vide).
 function paintSearch(el, rows, all) {
@@ -456,7 +456,7 @@ function paintGroups(rows, groups, page) {
       .map(g => sec(g))
       .join('')}</div>`;
   rows.innerHTML = !mob
-    ? `<div class="gcols"><a class="gadd" href="#nouvelle" aria-label="Nouvelle intervention">+</a>${[0, 1, 2].map(col).join('')}</div>`
+    ? `<div class="gcols"><a class="gadd" href="#nouvelle" aria-label="Nouvelle intervention"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>${[0, 1, 2].map(col).join('')}</div>`
     : shown.map(g => sec(g, true)).join('') || '<p class="empty">Aucune intervention pour le moment.</p>';
   rows.classList.toggle('stk2', mob && page !== 'nouvelles');
   rows.classList.toggle('nogh', mob && page === 'nouvelles'); // comme l'appli tech : pas d'en-tête de groupe sur Nouvelles
