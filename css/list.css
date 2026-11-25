@@ -378,19 +378,26 @@
   border-radius: 0 0 var(--r-l) var(--r-l);
   background: var(--surface);
 }
-.unfold .detail--card .chat2 {
+.unfold[data-id] .detail--card .chat2 {
   flex: 1 1 auto;
   min-height: 0;
+  padding: 0 16px;
+  background: var(--surface);
+  border-radius: 0 0 12px 12px;
 }
-.unfold .detail--card .chat2 .chrono {
+.unfold[data-id] .detail--card .chat2 .chrono {
   flex: 1 1 auto;
   min-height: 0;
+  margin-right: -16px;
+  padding: 4px 16px 16px 12px;
+  gap: 6px;
+  background: var(--surface);
   overflow-y: auto;
 }
-.unfold .detail--card .cin {
+.unfold .detail--card .chat2 .cin {
   position: static;
   gap: 10px;
-  padding: 6px 16px; /* zone de saisie compacte de la fiche dépliée, comme l'appli tech */
+  padding: 5px 0 7px; /* zone de saisie compacte de la fiche dépliée, comme l'appli tech */
 }
 .unfold .detail--card .cin .cph,
 .unfold .detail--card .cin .csend {
@@ -406,8 +413,9 @@
   width: 16px;
   height: 16px;
 }
-.unfold .detail--card .cin textarea {
+.unfold .detail--card .chat2 .cin textarea {
   min-height: 34px;
+  line-height: 18px;
   padding: 7px 14px;
   border-radius: 18px;
   font-size: 14px;
