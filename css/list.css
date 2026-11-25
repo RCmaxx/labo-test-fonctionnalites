@@ -711,11 +711,13 @@ mark {
     padding-left: 11px;
   }
   .gdone > .gcol {
-    padding-top: 9px;
+    padding-top: 10px;
   }
   .gdone .gcol .group > h2 {
-    padding-left: 0;
-    margin-bottom: 33px;
+    min-height: 31px;
+    margin-inline: -16px -32px;
+    margin-bottom: 25px;
+    padding-inline: 16px;
   }
   .gcol .cards {
     margin-right: 12px;
