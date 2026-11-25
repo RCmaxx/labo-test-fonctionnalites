@@ -439,30 +439,8 @@ function buildChat({ i, events, urls, chat, inline }) {
   return { asCard, chatHtml, cph, dsc };
 }
 
-export async function renderDetail(el, id) {
-  el.innerHTML = '<p>Chargement…</p>';
-  const inline = !!el.closest('.unfold');
-  const [{ data: i, error }, ev, ph] = await Promise.all([
-    sb.from('interventions').select('*').eq('id', id).maybeSingle(),
-    sb
-      .from('intervention_events')
-      .select('id, type, body, actor_id, actor_name, actor_role, created_at')
-      .eq('intervention_id', id)
-      .order('created_at')
-      .order('id'),
-    sb.from('intervention_photos').select('path, uploaded_by').eq('intervention_id', id).order('created_at'),
-  ]);
-  if (error || !i) return (el.innerHTML = `<p>${esc(error?.message || 'Intervention introuvable.')}</p>`);
-  const photos = ph.data || [],
-    urls = await signedUrls(photos.map(p => p.path));
-  const events = ev.data || [],
-    chat = S.me.role !== 'client';
-  const closed = DONE.includes(i.status);
-  const canComment = chat && !closed && (i.status !== 'brouillon' || i.created_by === S.me.id);
-  const acts = actions(i),
-    mgr = MGR.includes(S.me.role);
-  const { asCard, chatHtml, cph, dsc } = buildChat({ i, events, urls, chat, inline });
-  const phList = !chat ? photos.filter(p => urls[p.path]) : [];
+// Gabarit de la fiche : en-tête, pièces jointes, boutons d'action, fil de discussion.
+function detailHtml({ i, urls, phList, chat, inline, canComment, acts, mgr, asCard, chatHtml, cph, dsc }) {
   const photosHtml = phList.length
     ? `<div class="phc-w"><div class="phc">${phList.map(p => `<div class="phs"><a href="${urls[p.path]}" target="_blank" rel="noopener"><img src="${urls[p.path]}" alt="Photo"></a></div>`).join('')}</div>${phList.length > 3 ? `<button type="button" class="phc-a phc-p" aria-label="Photo précédente" hidden>‹</button><button type="button" class="phc-a phc-n" aria-label="Photo suivante">›</button>` : ''}${phList.length > 1 ? `<span class="phc-i">Photo ${Math.min(3, phList.length)}/${phList.length}</span>` : ''}</div>`
     : '';
@@ -494,7 +472,7 @@ export async function renderDetail(el, id) {
       ? `<div class="dact"><div class="actions">${editBtn}${actBtns}${closeBtn}${delBtn}</div></div>`
       : '';
 
-  el.innerHTML = `
+  return `
     <article class="detail${cardHead || inline ? ' detail--card' : ''}">
       <div class="dfix">
         ${cardHead || (inline ? '' : `<div class="dtrow">${back}<h1 class="dtitle">${esc(i.title).replace(/ (?=[^ ]*$)/, '&nbsp;')}</h1></div>`)}
@@ -523,23 +501,10 @@ export async function renderDetail(el, id) {
           : ''
       }
     </article>`;
-  drawEdit();
+}
 
-  const fail = err => err && (el.querySelector('#acterr').textContent = err.message);
-  const refold = () => el.closest('.unfold')?.previousElementSibling?.querySelector('a.card')?.click();
-  const foldOrList = () => {
-    if (!inline) return (location.hash = '');
-    refold();
-    rerender();
-  };
-  const xb = el.querySelector('.xback');
-  if (xb)
-    xb.onclick = e => {
-      e.preventDefault();
-      refold();
-    };
-
-  // Dépliée dans la liste (ordinateur) : le rouage se pose sur la carte, comme l'appli tech.
+// Dépliée dans la liste (ordinateur) : le rouage se pose sur la carte, comme l'appli tech.
+function addGear(el, inline) {
   const row = inline ? el.closest('.unfold')?.previousElementSibling : el.querySelector('.dmeta3 .drow');
   row?.querySelector(':scope > .xgear')?.remove();
   const actEls = [...el.querySelectorAll('.dact .actions > a, .dact .actions > button')];
@@ -557,7 +522,10 @@ export async function renderDetail(el, id) {
       gearMenu(g, actEls);
     });
   }
+}
 
+// Photos de la fiche : défilement, compteur, agrandissement.
+function initPhotoUi(el, phList, urls) {
   const phc = el.querySelector('.phc'),
     phi = el.querySelector('.phc-i');
   if (phc) {
@@ -595,7 +563,33 @@ export async function renderDetail(el, id) {
         zoomImg(L[0], L);
       })
   );
+}
 
+// « Terminer » / « Prendre » / « Ne plus prendre » : appui maintenu 1 s (contour qui se dessine), relâcher avant annule.
+function bindHold(b, act) {
+  b.insertAdjacentHTML('beforeend', HOLD);
+  let tm = null;
+  const stop = () => {
+    clearTimeout(tm);
+    tm = null;
+    b.classList.remove('holding');
+  };
+  b.onpointerdown = e => {
+    if (b.disabled) return;
+    e.preventDefault();
+    b.classList.add('holding');
+    tm = setTimeout(() => {
+      stop();
+      act(b);
+    }, 1000);
+  };
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, stop));
+  b.oncontextmenu = e => e.preventDefault();
+  b.onclick = e => e.preventDefault();
+}
+
+// Boutons d'action de la fiche (transitions, suppression, clôture).
+function initActions(el, { id, inline, photos, fail, foldOrList }) {
   async function doDelete() {
     if (!(await confirmBox('Voulez-vous vraiment supprimer cette intervention ?', 'Supprimer'))) return;
     const r = photos.length ? await sb.storage.from('photos').remove(photos.map(p => p.path)) : {};
@@ -631,26 +625,56 @@ export async function renderDetail(el, id) {
       b.onclick = () => act(b);
       return;
     }
-    b.insertAdjacentHTML('beforeend', HOLD);
-    let tm = null;
-    const stop = () => {
-      clearTimeout(tm);
-      tm = null;
-      b.classList.remove('holding');
-    };
-    b.onpointerdown = e => {
-      if (b.disabled) return;
-      e.preventDefault();
-      b.classList.add('holding');
-      tm = setTimeout(() => {
-        stop();
-        act(b);
-      }, 1000);
-    };
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, stop));
-    b.oncontextmenu = e => e.preventDefault();
-    b.onclick = e => e.preventDefault();
+    bindHold(b, act);
   });
+}
+
+export async function renderDetail(el, id) {
+  el.innerHTML = '<p>Chargement…</p>';
+  const inline = !!el.closest('.unfold');
+  const [{ data: i, error }, ev, ph] = await Promise.all([
+    sb.from('interventions').select('*').eq('id', id).maybeSingle(),
+    sb
+      .from('intervention_events')
+      .select('id, type, body, actor_id, actor_name, actor_role, created_at')
+      .eq('intervention_id', id)
+      .order('created_at')
+      .order('id'),
+    sb.from('intervention_photos').select('path, uploaded_by').eq('intervention_id', id).order('created_at'),
+  ]);
+  if (error || !i) return (el.innerHTML = `<p>${esc(error?.message || 'Intervention introuvable.')}</p>`);
+  const photos = ph.data || [],
+    urls = await signedUrls(photos.map(p => p.path));
+  const events = ev.data || [],
+    chat = S.me.role !== 'client';
+  const closed = DONE.includes(i.status);
+  const canComment = chat && !closed && (i.status !== 'brouillon' || i.created_by === S.me.id);
+  const acts = actions(i),
+    mgr = MGR.includes(S.me.role);
+  const { asCard, chatHtml, cph, dsc } = buildChat({ i, events, urls, chat, inline });
+  const phList = !chat ? photos.filter(p => urls[p.path]) : [];
+  el.innerHTML = detailHtml({ i, urls, phList, chat, inline, canComment, acts, mgr, asCard, chatHtml, cph, dsc });
+  drawEdit();
+
+  const fail = err => err && (el.querySelector('#acterr').textContent = err.message);
+  const refold = () => el.closest('.unfold')?.previousElementSibling?.querySelector('a.card')?.click();
+  const foldOrList = () => {
+    if (!inline) return (location.hash = '');
+    refold();
+    rerender();
+  };
+  const xb = el.querySelector('.xback');
+  if (xb)
+    xb.onclick = e => {
+      e.preventDefault();
+      refold();
+    };
+
+  addGear(el, inline);
+
+  initPhotoUi(el, phList, urls);
+
+  initActions(el, { id, inline, photos, fail, foldOrList });
 
   if (!chat) return;
   sb.from('intervention_reads')

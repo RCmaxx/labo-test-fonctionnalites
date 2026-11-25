@@ -5,26 +5,50 @@ export const dIn = v => {
 };
 export const TIMES = Array.from({ length: 96 }, (_, i) => `${p2(Math.floor(i / 4))}:${p2((i % 4) * 15)}`);
 
-// Sélecteur de créneau (date, heure, passage) du formulaire : roues de défilement dans une feuille.
-/** Branche le sélecteur sur le formulaire `f` ; rend ce dont le reste du formulaire a besoin. */
-export function initSlotPicker(f, { id, i, r, slotOn, err }) {
-  const hp = f.querySelector('#hp'),
-    clk = f.querySelector('.hpclk'),
-    hpv = f.querySelector('.hpv');
-  const sheet = f.querySelector('.wsheet');
-  document.querySelectorAll('.wsheet').forEach(x => x !== sheet && x.remove());
-  hostModal().append(sheet);
-  addEventListener('hashchange', () => sheet.remove(), { once: true });
+// Roues date / début / fin : sélection au défilement, créneaux passés grisés, fin toujours après le début.
+function initWheels(f, sheet, isPast) {
   const wheels = [...sheet.querySelectorAll('.wheel')];
+  const wheel = k => wheels.find(w => w.dataset.k === k);
   const IH = () => sheet.querySelector('.wi')?.offsetHeight || 36;
   const vis = w => [...w.children].filter(x => !x.hidden);
+  const mark = (items, k) => items.forEach((x, j) => x.classList.toggle('sel', j === k));
   let placing = false,
     npBusy = false,
-    lastA = null,
-    slotDone = !!i.available_from,
-    saved = null;
-  const T0 = () => (id && i.created_at ? new Date(i.created_at) : new Date());
-  const isPast = (d, t) => !!(d && t) && new Date(`${d}T${t}`) < T0();
+    lastA = null;
+  const goTo = (w, k) => {
+    w.scrollTo({ top: k * IH(), behavior: 'smooth' });
+    mark([...w.children], k);
+    f[w.dataset.k].value = w.children[k].dataset.v;
+  };
+  // Début déjà passé : premier horaire libre, sinon jour suivant.
+  const skipPast = d => {
+    const wa = wheel('slot_a'),
+      wd = wheel('slot_d');
+    const k = [...wa.children].findIndex(x => !x.classList.contains('past'));
+    if (k >= 0) return goTo(wa, k);
+    const j = wd ? [...wd.children].findIndex(x => x.dataset.v > d) : -1;
+    if (j >= 0) goTo(wd, j);
+  };
+  // Fin : jamais avant le début ; suit le début quand on le change.
+  const fitEnd = src => {
+    const wb = wheel('slot_b'),
+      a0 = f.slot_a.value;
+    [...wb.children].forEach(x => {
+      x.hidden = !!x.dataset.v && !!a0 && x.dataset.v <= a0;
+    });
+    const nx = () => TIMES.find(t => t > a0) || '';
+    const fromA = src?.dataset?.k === 'slot_a';
+    if (f.slot_b.value && a0 && f.slot_b.value <= a0) f.slot_b.value = nx();
+    if (fromA && !placing && lastA !== null && a0 !== lastA) f.slot_b.value = nx();
+    if (!f.slot_b.value && a0) f.slot_b.value = nx();
+    if (fromA) lastA = a0;
+    const k = Math.max(
+      0,
+      vis(wb).findIndex(x => x.dataset.v === f.slot_b.value)
+    );
+    mark(vis(wb), k);
+    if (Math.abs(wb.scrollTop - k * IH()) > 2) wb.scrollTop = k * IH();
+  };
   const noPast = src => {
     if (npBusy) return;
     npBusy = true;
@@ -35,41 +59,8 @@ export function initSlotPicker(f, { id, i, r, slotOn, err }) {
         .forEach(w =>
           [...w.children].forEach(x => x.classList.toggle('past', !!x.dataset.v && isPast(d, x.dataset.v)))
         );
-      const wa = wheels.find(w => w.dataset.k === 'slot_a'),
-        wd = wheels.find(w => w.dataset.k === 'slot_d');
-      if (wa && isPast(d, f.slot_a.value)) {
-        const k = [...wa.children].findIndex(x => !x.classList.contains('past'));
-        if (k >= 0) {
-          wa.scrollTo({ top: k * IH(), behavior: 'smooth' });
-          [...wa.children].forEach((x, j) => x.classList.toggle('sel', j === k));
-          f.slot_a.value = wa.children[k].dataset.v;
-        } else if (wd) {
-          const j = [...wd.children].findIndex(x => x.dataset.v > d);
-          if (j >= 0) {
-            wd.scrollTo({ top: j * IH(), behavior: 'smooth' });
-            [...wd.children].forEach((x, q) => x.classList.toggle('sel', q === j));
-            f.slot_d.value = wd.children[j].dataset.v;
-          }
-        }
-      }
-      const wb = wheels.find(w => w.dataset.k === 'slot_b'),
-        a0 = f.slot_a.value;
-      if (wb) {
-        [...wb.children].forEach(x => {
-          x.hidden = !!x.dataset.v && !!a0 && x.dataset.v <= a0;
-        });
-        const nx = () => TIMES.find(t => t > a0) || '';
-        if (f.slot_b.value && a0 && f.slot_b.value <= a0) f.slot_b.value = nx();
-        if (src?.dataset?.k === 'slot_a' && !placing && lastA !== null && a0 !== lastA) f.slot_b.value = nx();
-        if (!f.slot_b.value && a0) f.slot_b.value = nx();
-        if (src?.dataset?.k === 'slot_a') lastA = a0;
-        const k = Math.max(
-          0,
-          vis(wb).findIndex(x => x.dataset.v === f.slot_b.value)
-        );
-        vis(wb).forEach((x, j) => x.classList.toggle('sel', j === k));
-        if (Math.abs(wb.scrollTop - k * IH()) > 2) wb.scrollTop = k * IH();
-      }
+      if (wheel('slot_a') && isPast(d, f.slot_a.value)) skipPast(d);
+      if (wheel('slot_b')) fitEnd(src);
     } finally {
       npBusy = false;
     }
@@ -79,15 +70,15 @@ export function initSlotPicker(f, { id, i, r, slotOn, err }) {
       idx = Math.max(0, Math.min(items.length - 1, Math.round(w.scrollTop / IH())));
     const prev = f[w.dataset.k].value,
       next = items[idx]?.dataset.v || '';
-    items.forEach((x, k) => x.classList.toggle('sel', k === idx));
+    mark(items, idx);
     f[w.dataset.k].value = next;
     if (w.dataset.k === 'slot_d' && !placing && prev && next && prev !== next) {
-      f.slot_a.value = '08:00';
-      const wa = wheels.find(x => x.dataset.k === 'slot_a'),
+      f.slot_a.value = '08:00'; // nouveau jour : on repart de 8 h
+      const wa = wheel('slot_a'),
         k = wa ? [...wa.children].findIndex(x => x.dataset.v === '08:00') : -1;
-      if (wa && k >= 0) {
+      if (k >= 0) {
         wa.scrollTo({ top: k * IH() });
-        [...wa.children].forEach((x, j) => x.classList.toggle('sel', j === k));
+        mark([...wa.children], k);
       }
       f.slot_b.value = TIMES.find(tm => tm > '08:00') || '';
     }
@@ -130,6 +121,65 @@ export function initSlotPicker(f, { id, i, r, slotOn, err }) {
       if (it) w.scrollTo({ top: vis(w).indexOf(it) * IH(), behavior: 'smooth' });
     };
   });
+  return { place };
+}
+
+// Fenêtre des roues : posée contre le bouton du créneau, à l'intérieur de l'écran.
+function popPosition(sheet, hp) {
+  const bx = sheet.querySelector('.wbox');
+  sheet.classList.add('pop');
+  if (!bx) return;
+  const r = hp.getBoundingClientRect(),
+    sr = sheet.getBoundingClientRect(),
+    w = bx.offsetWidth,
+    h = bx.offsetHeight;
+  let l = r.right + 8 - sr.left,
+    t = r.bottom - h - sr.top;
+  if (l + w > sr.width - 8) {
+    l = r.right - w - sr.left;
+    t = r.bottom + 8 - sr.top;
+  }
+  bx.style.left = Math.max(8, Math.min(l, sr.width - w - 8)) + 'px';
+  bx.style.top = Math.max(8, Math.min(t, sr.height - h - 8)) + 'px';
+}
+
+// Texte du créneau choisi, ex. « Demain 09:00–09:15 ».
+function slotText(f, sheet) {
+  const lab = sheet.querySelector('.wheel[data-k=slot_d] .wi.sel')?.textContent;
+  const d = new Date(f.slot_d.value + 'T00:00'),
+    t = new Date();
+  t.setHours(0, 0, 0, 0);
+  const n = Math.round((d - t) / 864e5);
+  const day =
+    lab ||
+    (n === 0
+      ? "Aujourd'hui"
+      : n === 1
+        ? 'Demain'
+        : d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }));
+  return `${day} ${f.slot_a.value}${f.slot_b.value ? '–' + f.slot_b.value : ''}`;
+}
+
+// Sélecteur de créneau (date, heure, passage) du formulaire : roues de défilement dans une feuille.
+/** Branche le sélecteur sur le formulaire `f` ; rend ce dont le reste du formulaire a besoin. */
+export function initSlotPicker(f, { id, i, r, slotOn, err }) {
+  const hp = f.querySelector('#hp'),
+    clk = f.querySelector('.hpclk'),
+    hpv = f.querySelector('.hpv'),
+    sheet = f.querySelector('.wsheet');
+  document.querySelectorAll('.wsheet').forEach(x => x !== sheet && x.remove());
+  hostModal().append(sheet);
+  addEventListener('hashchange', () => sheet.remove(), { once: true });
+  let slotDone = !!i.available_from,
+    saved = null;
+  const T0 = () => (id && i.created_at ? new Date(i.created_at) : new Date());
+  const isPast = (d, t) => !!(d && t) && new Date(`${d}T${t}`) < T0();
+  const { place } = initWheels(f, sheet, isPast);
+  const KS = ['slot_d', 'slot_a', 'slot_b'];
+  const paintSlot = () => {
+    const on = hp.classList.contains('on') && slotDone && f.slot_d.value && f.slot_a.value;
+    hpv.textContent = on ? slotText(f, sheet) : '';
+  };
   const setPassage = on => {
     hp.classList.toggle('on', on);
     f.querySelector('[name=passage][value=slot]').checked = on;
@@ -139,54 +189,17 @@ export function initSlotPicker(f, { id, i, r, slotOn, err }) {
     if (on && !f.slot_d.value) f.slot_d.value = dIn();
     paintSlot();
   };
-  const paintSlot = () => {
-    if (!hp.classList.contains('on') || !slotDone || !f.slot_d.value || !f.slot_a.value) {
-      hpv.textContent = '';
-      return;
-    }
-    const lab = sheet.querySelector('.wheel[data-k=slot_d] .wi.sel')?.textContent;
-    const d = new Date(f.slot_d.value + 'T00:00'),
-      t = new Date();
-    t.setHours(0, 0, 0, 0);
-    const n = Math.round((d - t) / 864e5);
-    const day =
-      lab ||
-      (n === 0
-        ? "Aujourd'hui"
-        : n === 1
-          ? 'Demain'
-          : d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }));
-    hpv.textContent = `${day} ${f.slot_a.value}${f.slot_b.value ? '–' + f.slot_b.value : ''}`;
-  };
-  const KS = ['slot_d', 'slot_a', 'slot_b'];
-  const pos = () => {
-    const bx = sheet.querySelector('.wbox');
-    sheet.classList.add('pop');
-    if (!bx) return;
-    const r = hp.getBoundingClientRect(),
-      sr = sheet.getBoundingClientRect(),
-      w = bx.offsetWidth,
-      h = bx.offsetHeight;
-    let l = r.right + 8 - sr.left,
-      t = r.bottom - h - sr.top;
-    if (l + w > sr.width - 8) {
-      l = r.right - w - sr.left;
-      t = r.bottom + 8 - sr.top;
-    }
-    bx.style.left = Math.max(8, Math.min(l, sr.width - w - 8)) + 'px';
-    bx.style.top = Math.max(8, Math.min(t, sr.height - h - 8)) + 'px';
-  };
   const openSheet = () => {
     saved = KS.map(k => f[k].value);
     sheet.hidden = false;
-    pos();
+    popPosition(sheet, hp);
     requestAnimationFrame(place);
   };
   const closeSheet = () => {
     sheet.hidden = true;
     if (saved)
-      KS.forEach((k, i) => {
-        f[k].value = saved[i];
+      KS.forEach((k, j) => {
+        f[k].value = saved[j];
       });
     if (!slotDone) setPassage(false);
     paintSlot();

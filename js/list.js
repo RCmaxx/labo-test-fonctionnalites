@@ -353,14 +353,10 @@ function paintTerminees(el, rows, done, more, reopen) {
 const LAST = {};
 export const lastView = page => LAST[page] || '';
 
-export async function renderList(el) {
-  const searching = route()[0] === 'recherche' && S.me.role !== 'client',
-    key = route()[0] || '';
-  el.innerHTML =
-    !searching && LAST[key]
-      ? LAST[key]
-      : searching
-        ? `<div class="shead"><input type="search" id="q" value="${esc(search)}" placeholder="Rechercher" aria-label="Rechercher"></div>
+// Squelette de la page avant l'arrivée des données (la recherche a son champ, ses filtres et ses recherches récentes).
+const shellHtml = searching =>
+  searching
+    ? `<div class="shead"><input type="search" id="q" value="${esc(search)}" placeholder="Rechercher" aria-label="Rechercher"></div>
         <div class="sfilters" role="group" aria-label="Filtres de recherche">${Object.entries(SF)
           .map(
             ([k, v]) =>
@@ -371,9 +367,10 @@ export async function renderList(el) {
         <p class="scount" id="scount"></p>
         <ul class="srecent" hidden></ul>
         <div id="rows"><p>Chargement…</p></div>`
-        : `${isMob() && onDonePage() && S.me.role !== 'client' ? SEARCH_BAR : ''}<div id="rows"><p>Chargement…</p></div>`;
-  const qel = el.querySelector('#q'),
-    rows = el.querySelector('#rows');
+    : `${isMob() && onDonePage() && S.me.role !== 'client' ? SEARCH_BAR : ''}<div id="rows"><p>Chargement…</p></div>`;
+
+// Messages des autres par intervention (comme l'appli tech : nombre, pastille rouge s'il en reste de non lus).
+async function loadUnread() {
   const [reads, msgs] = await Promise.all([
     sb.from('intervention_reads').select('intervention_id, last_read_at').eq('user_id', S.me.id),
     sb
@@ -385,125 +382,206 @@ export async function renderList(el) {
       .limit(5000),
   ]);
   const last = Object.fromEntries((reads.data || []).map(r => [r.intervention_id, r.last_read_at]));
-  const unread = (UNREAD = {});
-  // Comme l'appli tech : nombre de messages des autres ; pastille rouge s'il en reste de non lus.
+  UNREAD = {};
   (msgs.data || []).forEach(({ intervention_id: k, created_at }) => {
-    const u = (unread[k] ||= { n: 0, new: false });
+    const u = (UNREAD[k] ||= { n: 0, new: false });
     u.n++;
     if (!last[k] || created_at > last[k]) u.new = true;
   });
-  const sec = ([k, label, list], foldable) =>
-    `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
+}
 
-  const paint = (open, done, more) => {
-    if (onDonePage()) return paintTerminees(el, rows, done, more, reopen);
-    if (searching) {
-      const all = [...open, ...done].filter(r => matches(r, search, sfilters));
-      const sc = el.querySelector('#scount');
-      if (sc)
-        sc.textContent = search.trim()
-          ? all.length
-            ? `${all.length} résultat${all.length > 1 ? 's' : ''}`
-            : 'Aucun résultat'
-          : '';
-      rows.innerHTML = search.trim()
-        ? all.length
-          ? `<ul class="cards scards">${all.map(r => item(r, search, sfilters)).join('')}</ul>`
-          : ''
-        : '';
-      return reopen();
-    }
-    const me = S.me.id,
-      r = S.me.role,
-      mob = isMob(),
-      page = route()[0];
-    const mine = x => x.assignee_id === me && (S.me.real !== 'admin' || !x.assignee_role || x.assignee_role === r);
-    const pmine = x =>
-      x.status === 'publiee' &&
-      !x.available_from &&
-      x.proposed_to &&
-      TECH.includes(r) &&
-      (x.proposed_to === me || (S.me.real === 'admin' && roleOf(x.proposed_to) === r));
-    const canDem = ['directeur', 'responsable_tech'].includes(r);
-    const asked = x => canDem && x.assigned_by === me && !mine(x) && !pmine(x);
-    let groups = [
-      [
-        'mes',
-        'Mes interventions',
-        open.filter(x => (x.status === 'prise_en_charge' && mine(x)) || pmine(x)).sort(byArrival),
-      ],
-      ['dem', "Mes demandes d'intervention", open.filter(asked)],
-      [
-        'publiee',
-        'Nouvelles interventions',
-        open.filter(x => x.status === 'publiee' && !pmine(x) && !asked(x)).sort(byArrival),
-      ],
-      [
-        'prise_en_charge',
-        TECH.includes(r) ? 'Autres interventions en cours' : 'En cours',
-        open.filter(x => x.status === 'prise_en_charge' && !mine(x) && !asked(x)).sort(byArrival),
-      ],
-    ];
-    if (!mob && r !== 'client') groups.push(['auj', "Terminées aujourd'hui", done.filter(isTodayDone).sort(byFin)]);
-    groups = groups.filter(([k, , list]) => (k !== 'mes' || list.length) && (k !== 'dem' || canDem));
+const sec = ([k, label, list], foldable) =>
+  `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
 
-    if (r === 'client') {
-      rows.innerHTML = sec(['all', "Mes demandes d'intervention", open.sort(byArrival)]); // comme l'appli tech
-      return;
-    }
-    if (mob && page === 'mes') {
-      renderCircles(rows, open.filter(x => x.status === 'prise_en_charge' && mine(x)).sort(byArrival), x => item(x));
-      LAST[key] = el.innerHTML; // page Mes : affichage gardé aussi (balayage sans « Chargement… »)
-      return;
-    }
-    if (mob && page === 'nouvelles') groups = [['publiee', 'Interventions', open.sort(byArrival)]];
-    else if (mob) groups = groups.filter(g => ['mes', 'prise_en_charge'].includes(g[0]));
+// Résultats de la recherche : compteur + cartes (rien tant que le champ est vide).
+function paintSearch(el, rows, all) {
+  const n = all.length,
+    on = search.trim();
+  const sc = el.querySelector('#scount');
+  if (sc) sc.textContent = on ? (n ? `${n} résultat${n > 1 ? 's' : ''}` : 'Aucun résultat') : '';
+  rows.innerHTML = on && n ? `<ul class="cards scards">${all.map(r => item(r, search, sfilters)).join('')}</ul>` : '';
+}
 
-    const shown = groups.filter(g => g[2].length || (!mob && g[0] === 'auj'));
-    const COL = { dem: 0, publiee: 0, mes: 1, prise_en_charge: 1, auj: 2 };
-    rows.innerHTML = !mob
-      ? `<div class="gcols">${S.me.role !== 'client' ? '<a class="gadd" href="#nouvelle" aria-label="Nouvelle intervention">+</a>' : ''}${[
-          0, 1, 2,
-        ]
-          .map(
-            c =>
-              `<div class="gcol">${shown
-                .filter(g => COL[g[0]] === c)
-                .map(g => sec(g))
-                .join('')}</div>`
-          )
-          .join('')}</div>`
-      : shown.map(g => sec(g, true)).join('') || '<p class="empty">Aucune intervention pour le moment.</p>';
-    rows.classList.toggle('stk2', mob && page !== 'nouvelles');
-    rows.classList.toggle('nogh', mob && page === 'nouvelles'); // comme l'appli tech : pas d'en-tête de groupe sur Nouvelles
-    const g0 = rows.querySelector('.gcol');
-    if (g0) {
-      const host = document.querySelector('.sim #app');
-      const top = g0.getBoundingClientRect().top - (host ? host.getBoundingClientRect().top - host.scrollTop : 0);
-      document.documentElement.style.setProperty('--gtop', Math.round(top) + 'px');
-      rows.querySelectorAll('.gcol').forEach(c => stackSticky(c, '.group > h2'));
-    }
-    if (rows.classList.contains('stk2'))
-      stackSticky(rows, ':scope > .group:is([data-g=mes], [data-g=prise_en_charge]) > h2');
-    reopen();
-    rows.querySelectorAll('.group h2[role=button]').forEach(h => {
-      h.onclick = h.onkeydown = e => {
-        if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
-        if (e.type === 'click' && !e.target.closest('.glab, .count, .chev')) return;
-        e.preventDefault();
-        const g = h.parentElement,
-          k = g.dataset.g;
-        CLOSED[k] = !g.classList.contains('closed');
-        g.classList.toggle('closed', CLOSED[k]);
-        h.setAttribute('aria-expanded', String(!CLOSED[k]));
-      };
-    });
+// Groupes de la page d'accueil selon le profil ; `mine` sert aussi à la page « Mes » mobile.
+function groupsOf(open, done) {
+  const me = S.me.id,
+    r = S.me.role;
+  const mine = x => x.assignee_id === me && (S.me.real !== 'admin' || !x.assignee_role || x.assignee_role === r);
+  const pmine = x =>
+    x.status === 'publiee' &&
+    !x.available_from &&
+    x.proposed_to &&
+    TECH.includes(r) &&
+    (x.proposed_to === me || (S.me.real === 'admin' && roleOf(x.proposed_to) === r));
+  const canDem = ['directeur', 'responsable_tech'].includes(r);
+  const asked = x => canDem && x.assigned_by === me && !mine(x) && !pmine(x);
+  const groups = [
+    [
+      'mes',
+      'Mes interventions',
+      open.filter(x => (x.status === 'prise_en_charge' && mine(x)) || pmine(x)).sort(byArrival),
+    ],
+    ['dem', "Mes demandes d'intervention", open.filter(asked)],
+    [
+      'publiee',
+      'Nouvelles interventions',
+      open.filter(x => x.status === 'publiee' && !pmine(x) && !asked(x)).sort(byArrival),
+    ],
+    [
+      'prise_en_charge',
+      TECH.includes(r) ? 'Autres interventions en cours' : 'En cours',
+      open.filter(x => x.status === 'prise_en_charge' && !mine(x) && !asked(x)).sort(byArrival),
+    ],
+  ];
+  if (!isMob() && r !== 'client') groups.push(['auj', "Terminées aujourd'hui", done.filter(isTodayDone).sort(byFin)]);
+  return { mine, groups: groups.filter(([k, , list]) => (k !== 'mes' || list.length) && (k !== 'dem' || canDem)) };
+}
+
+// Affiche les groupes : colonnes en vue standard, sections repliables en mobile.
+function paintGroups(rows, groups, page) {
+  const mob = isMob();
+  const shown = groups.filter(g => g[2].length || (!mob && g[0] === 'auj'));
+  const COL = { dem: 0, publiee: 0, mes: 1, prise_en_charge: 1, auj: 2 };
+  const col = c =>
+    `<div class="gcol">${shown
+      .filter(g => COL[g[0]] === c)
+      .map(g => sec(g))
+      .join('')}</div>`;
+  rows.innerHTML = !mob
+    ? `<div class="gcols"><a class="gadd" href="#nouvelle" aria-label="Nouvelle intervention">+</a>${[0, 1, 2].map(col).join('')}</div>`
+    : shown.map(g => sec(g, true)).join('') || '<p class="empty">Aucune intervention pour le moment.</p>';
+  rows.classList.toggle('stk2', mob && page !== 'nouvelles');
+  rows.classList.toggle('nogh', mob && page === 'nouvelles'); // comme l'appli tech : pas d'en-tête de groupe sur Nouvelles
+  const g0 = rows.querySelector('.gcol');
+  if (g0) {
+    const host = document.querySelector('.sim #app');
+    const top = g0.getBoundingClientRect().top - (host ? host.getBoundingClientRect().top - host.scrollTop : 0);
+    document.documentElement.style.setProperty('--gtop', Math.round(top) + 'px');
+    rows.querySelectorAll('.gcol').forEach(c => stackSticky(c, '.group > h2'));
+  }
+  if (rows.classList.contains('stk2'))
+    stackSticky(rows, ':scope > .group:is([data-g=mes], [data-g=prise_en_charge]) > h2');
+  rows.querySelectorAll('.group h2[role=button]').forEach(h => {
+    h.onclick = h.onkeydown = e => {
+      if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+      if (e.type === 'click' && !e.target.closest('.glab, .count, .chev')) return;
+      e.preventDefault();
+      const g = h.parentElement,
+        k = g.dataset.g;
+      CLOSED[k] = !g.classList.contains('closed');
+      g.classList.toggle('closed', CLOSED[k]);
+      h.setAttribute('aria-expanded', String(!CLOSED[k]));
+    };
+  });
+}
+
+// Fiche dépliée sous une carte (vue standard).
+function fold(u) {
+  if (!u.classList.contains('is-open')) return u.remove();
+  u.classList.remove('is-open');
+  u.addEventListener('transitionend', () => u.remove(), { once: true });
+}
+function unfold(rows, a, anim = true) {
+  const id = a.getAttribute('href').split('/')[1],
+    cur = rows.querySelector('.unfold');
+  if (cur) {
+    fold(cur);
+    if (cur.dataset.id === id && anim) return (openId = null);
+  }
+  openId = id;
+  a.parentElement.insertAdjacentHTML(
+    'afterend',
+    `<li class="unfold${anim ? '' : ' is-open is-now'}" data-id="${id}"><div><div class="unfold__body"></div></div></li>`
+  );
+  const u = a.parentElement.nextElementSibling;
+  renderDetail(u.querySelector('.unfold__body'), id).then(
+    () => anim && requestAnimationFrame(() => u.classList.add('is-open'))
+  );
+}
+
+// Requêtes de la page courante → { open, done, more } ou { error }.
+async function fetchRows(searching) {
+  const words = search.trim().split(/\s+/).filter(Boolean);
+  const iv = () => scope(sb.from('interventions').select(COLS));
+  const doneQ = (q = iv()) => q.in('status', DONE).order('resolved_at', { ascending: false, nullsFirst: false });
+  const openQ = () =>
+    iv()
+      .not('status', 'in', `(brouillon,${DONE.join(',')})`)
+      .order('created_at', { ascending: false });
+  const res = (o, d, more) => ({ error: o.error || d.error, open: o.data || [], done: d.data || [], more });
+  if (searching) return res(...(await Promise.all([openQ().limit(300), doneQ().limit(200)])));
+  if (onDonePage()) {
+    if (!words.length && DC.data && DC.n === doneN && Date.now() - DC.at < 90000)
+      return { open: [], done: DC.data, more: DC.data.length === doneN };
+    const d = await (words.length ? doneQ(withSearch(iv(), words)).limit(200) : doneQ().order('id').limit(doneN));
+    if (!d.error && !words.length) Object.assign(DC, { n: doneN, at: Date.now(), data: d.data || [] });
+    return res({}, d, !words.length && (d.data || []).length === doneN);
+  }
+  if (words.length) {
+    const a = await withSearch(iv().neq('status', 'brouillon'), words)
+      .order('created_at', { ascending: false })
+      .limit(200);
+    const all = a.data || [];
+    return {
+      error: a.error,
+      open: all.filter(r => !DONE.includes(r.status)),
+      done: all.filter(r => DONE.includes(r.status)),
+    };
+  }
+  const t0 = new Date();
+  t0.setHours(0, 0, 0, 0);
+  return res(
+    ...(await Promise.all([
+      openQ(),
+      isMob() || S.me.role === 'client' ? { data: [] } : doneQ(iv().gte('resolved_at', t0.toISOString())).limit(100),
+    ]))
+  );
+}
+
+// Page Recherche : saisie (avec délai), filtres, recherches récentes.
+function initSearchPage(el, { qel, load, again }) {
+  qel.oninput = e => {
+    search = e.target.value;
+    if (search.trim().length >= 2) remember(search.trim());
+    clearTimeout(tq);
+    tq = setTimeout(load, 250);
   };
+  el.querySelectorAll('.sfilters .sf').forEach(
+    bt =>
+      (bt.onclick = () => {
+        const k = bt.dataset.sf;
+        sfilters = sfilters.includes(k) ? sfilters.filter(x => x !== k) : [...sfilters, k];
+        again();
+      })
+  );
+  const rec = el.querySelector('.srecent'),
+    rs = recent();
+  if (rec && rs.length && !search.trim()) {
+    rec.hidden = false;
+    rec.innerHTML = rs.map(t => `<li><button type="button" class="ghost">${esc(t)}</button></li>`).join('');
+    rec.onclick = e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      search = b.textContent;
+      qel.value = search;
+      load();
+      rec.hidden = true;
+    };
+  }
+  qel.focus();
+}
+
+export async function renderList(el) {
+  const searching = route()[0] === 'recherche' && S.me.role !== 'client',
+    key = route()[0] || '';
+  el.innerHTML = !searching && LAST[key] ? LAST[key] : shellHtml(searching);
+  const rows = el.querySelector('#rows');
+  await loadUnread();
 
   const reopen = () => {
     if (!searching) LAST[key] = el.innerHTML;
     const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
-    if (again) unfold(again, false);
+    if (again) unfold(rows, again, false);
     else openId = null;
     if (isMob())
       bindPress(
@@ -512,27 +590,39 @@ export async function renderList(el) {
         () => renderList(el)
       );
   };
-  const fold = u => {
-    if (!u.classList.contains('is-open')) return u.remove();
-    u.classList.remove('is-open');
-    u.addEventListener('transitionend', () => u.remove(), { once: true });
-  };
-  const unfold = (a, anim = true) => {
-    const id = a.getAttribute('href').split('/')[1],
-      cur = rows.querySelector('.unfold');
-    if (cur) {
-      fold(cur);
-      if (cur.dataset.id === id && anim) return (openId = null);
+  const paint = (open, done, more) => {
+    if (onDonePage()) return paintTerminees(el, rows, done, more, reopen);
+    if (searching) {
+      paintSearch(
+        el,
+        rows,
+        [...open, ...done].filter(r => matches(r, search, sfilters))
+      );
+      return reopen();
     }
-    openId = id;
-    a.parentElement.insertAdjacentHTML(
-      'afterend',
-      `<li class="unfold${anim ? '' : ' is-open is-now'}" data-id="${id}"><div><div class="unfold__body"></div></div></li>`
+    const r = S.me.role,
+      mob = isMob(),
+      page = route()[0];
+    if (r === 'client') {
+      rows.innerHTML = sec(['all', "Mes demandes d'intervention", open.sort(byArrival)]); // comme l'appli tech
+      return;
+    }
+    const { mine, groups } = groupsOf(open, done);
+    if (mob && page === 'mes') {
+      renderCircles(rows, open.filter(x => x.status === 'prise_en_charge' && mine(x)).sort(byArrival), x => item(x));
+      LAST[key] = el.innerHTML; // page Mes : affichage gardé aussi (balayage sans « Chargement… »)
+      return;
+    }
+    paintGroups(
+      rows,
+      !mob
+        ? groups
+        : page === 'nouvelles'
+          ? [['publiee', 'Interventions', open.sort(byArrival)]]
+          : groups.filter(g => ['mes', 'prise_en_charge'].includes(g[0])),
+      page
     );
-    const u = a.parentElement.nextElementSibling;
-    renderDetail(u.querySelector('.unfold__body'), id).then(
-      () => anim && requestAnimationFrame(() => u.classList.add('is-open'))
-    );
+    reopen();
   };
 
   rows.onclick = e => {
@@ -540,78 +630,14 @@ export async function renderList(el) {
     if (!a || e.metaKey || e.ctrlKey || S.me.role === 'client') return;
     if (a.getAttribute('href') === '#' || isMob()) return; // mobile : la fiche s'ouvre comme une page (lien), comme l'appli tech
     e.preventDefault();
-    unfold(a);
+    unfold(rows, a);
   };
   const load = async () => {
-    const words = search.trim().split(/\s+/).filter(Boolean);
-    const iv = () => scope(sb.from('interventions').select(COLS));
-    const doneQ = (q = iv()) => q.in('status', DONE).order('resolved_at', { ascending: false, nullsFirst: false });
-    const openQ = () =>
-      iv()
-        .not('status', 'in', `(brouillon,${DONE.join(',')})`)
-        .order('created_at', { ascending: false });
-    const fail = e => (rows.innerHTML = `<p>${esc(e.message)}</p>`);
-    let o, d;
-    if (searching) [o, d] = await Promise.all([openQ().limit(300), doneQ().limit(200)]);
-    else if (onDonePage()) {
-      if (!words.length && DC.data && DC.n === doneN && Date.now() - DC.at < 90000)
-        return paint([], DC.data, DC.data.length === doneN);
-      d = await (words.length ? doneQ(withSearch(iv(), words)).limit(200) : doneQ().order('id').limit(doneN));
-      if (d.error) return fail(d.error);
-      if (!words.length) Object.assign(DC, { n: doneN, at: Date.now(), data: d.data || [] });
-      return paint([], d.data || [], !words.length && (d.data || []).length === doneN);
-    } else if (words.length) {
-      const { data, error } = await withSearch(iv().neq('status', 'brouillon'), words)
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (error) return fail(error);
-      const all = data || [];
-      return paint(
-        all.filter(r => !DONE.includes(r.status)),
-        all.filter(r => DONE.includes(r.status))
-      );
-    } else {
-      const t0 = new Date();
-      t0.setHours(0, 0, 0, 0);
-      [o, d] = await Promise.all([
-        openQ(),
-        isMob() || S.me.role === 'client' ? { data: [] } : doneQ(iv().gte('resolved_at', t0.toISOString())).limit(100),
-      ]);
-    }
-    if (o.error || d.error) return fail(o.error || d.error);
-    paint(o.data || [], d.data || []);
+    const { error, open, done, more } = await fetchRows(searching);
+    if (error) rows.innerHTML = `<p>${esc(error.message)}</p>`;
+    else paint(open, done, more);
   };
-  if (qel)
-    qel.oninput = e => {
-      search = e.target.value;
-      if (search.trim().length >= 2) remember(search.trim());
-      clearTimeout(tq);
-      tq = setTimeout(load, 250);
-    };
-  if (searching) {
-    el.querySelectorAll('.sfilters .sf').forEach(
-      bt =>
-        (bt.onclick = () => {
-          const k = bt.dataset.sf;
-          sfilters = sfilters.includes(k) ? sfilters.filter(x => x !== k) : [...sfilters, k];
-          renderList(el);
-        })
-    );
-    const rec = el.querySelector('.srecent');
-    const rs = recent();
-    if (rec && rs.length && !search.trim()) {
-      rec.hidden = false;
-      rec.innerHTML = rs.map(t => `<li><button type="button" class="ghost">${esc(t)}</button></li>`).join('');
-      rec.onclick = e => {
-        const b = e.target.closest('button');
-        if (!b) return;
-        search = b.textContent;
-        if (qel) qel.value = search;
-        load();
-        rec.hidden = true;
-      };
-    }
-    qel?.focus();
-  }
+  const qel = el.querySelector('#q');
+  if (searching && qel) initSearchPage(el, { qel, load, again: () => renderList(el) });
   await load();
 }
