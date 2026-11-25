@@ -149,7 +149,7 @@ const place = r => {
     .trim()
     .match(/^(?:mobil[- ]?home|mh)\s*(\d+)$/i);
   const label = m ? `<small>MH</small>${m[1].padStart(2, '0')}` : r.location ? PIN + esc(r.location) : 'Sans lieu';
-  return `<span class="tag tag--place tag--${r.priority || 'normale'}">${label}</span>`;
+  return `<span class="tag tag--place${m ? ' tag--mh' : ''} tag--${r.priority || 'normale'}">${label}</span>`;
 };
 export const COLS =
   'id, title, location, description, status, priority, assignee_id, assignee_role, proposed_to, assigned_by, available_from, available_until, created_by, created_at, resolved_at, validated_at, client_presence';
