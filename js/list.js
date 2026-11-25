@@ -485,6 +485,7 @@ function paintGroups(rows, groups, page) {
 
 // Fiche dépliée sous une carte (vue standard).
 function fold(u) {
+  u.previousElementSibling?.querySelector(':scope > .xgear')?.remove(); // le rouage part avec la fiche
   if (!u.classList.contains('is-open')) return u.remove();
   u.classList.remove('is-open');
   u.addEventListener('transitionend', () => u.remove(), { once: true });

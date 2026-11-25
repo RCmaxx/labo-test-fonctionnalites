@@ -123,8 +123,8 @@
   transition: box-shadow 0.15s;
 }
 @media (any-hover: hover) {
-  .card:hover {
-    box-shadow: var(--shadow-float);
+  .card:not(.card--done):hover {
+    --card-bg: #f2f2f2; /* survol : fond gris, sans soulèvement, comme l'appli tech */
   }
 }
 .card--done {
