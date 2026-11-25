@@ -46,7 +46,7 @@ async function run(id, a, done) {
     return;
   }
   if (a === 'supprimer') {
-    if (!(await confirmBox('Voulez-vous vraiment supprimer cette intervention ?', 'Supprimer', 'Annuler'))) return;
+    if (!(await confirmBox('Voulez-vous vraiment supprimer cette intervention ?', 'Supprimer'))) return;
     const { data: ph } = await sb.from('intervention_photos').select('path').eq('intervention_id', id);
     if (ph?.length) await sb.storage.from('photos').remove(ph.map(p => p.path));
     const { error } = await sb.from('interventions').delete().eq('id', id);
@@ -54,7 +54,7 @@ async function run(id, a, done) {
     toast('Intervention supprimée.');
     return done();
   }
-  if (a === 'liberer' && !(await confirmBox("Se retirer de l'intervention ?"))) return;
+  if (a === 'liberer' && !(await confirmBox("Se retirer de l'intervention ?", 'Oui', { cancel: 'Non' }))) return;
   const { error } =
     a === 'demander'
       ? await sb.rpc('request_transfer', { p_id: id })

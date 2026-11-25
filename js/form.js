@@ -1,3 +1,4 @@
+import { confirmBox } from './alerts.js';
 import { initDrafts } from './drafts.js';
 import { initPlaceField } from './place.js';
 import { cardOf } from './list.js';
@@ -166,10 +167,11 @@ export function photoTray(input, tray, onChange, max = 10) {
     const x = e.target.closest('.pt-x');
     if (x && !x.closest('[data-new]')) return;
     if (x) {
-      if (confirm('Supprimer ?')) {
+      confirmBox('Supprimer ?', 'Oui', { cancel: 'Non' }).then(ok => {
+        if (!ok) return;
         files.splice(+x.dataset.i, 1);
         draw();
-      }
+      });
       return;
     }
     const img = e.target.closest('.pt img');
@@ -357,7 +359,7 @@ export async function renderForm(el, id) {
       tray.addEventListener('click', async e => {
         const x = e.target.closest('.pt-x[data-ex]');
         if (!x) return;
-        if (!confirm('Supprimer ?')) return;
+        if (!(await confirmBox('Supprimer ?', 'Oui', { cancel: 'Non' }))) return;
         const row = rows.find(r => r.id === x.dataset.ex);
         const { error } = await sb.from('intervention_photos').delete().eq('id', row.id);
         if (error) return (err.textContent = error.message);
@@ -378,7 +380,12 @@ export async function renderForm(el, id) {
       s0 = snap();
     }, 400);
   const canLeave = async () => {
-    if (id) return s0 === null || snap() === s0 || confirm('Attention, votre modification ne sera pas enregistrée.');
+    if (id)
+      return (
+        s0 === null ||
+        snap() === s0 ||
+        confirmBox('Attention, votre modification ne sera pas enregistrée.', 'Quitter', { cancel: 'Rester' })
+      );
     if (!dirty()) {
       clearDraft();
       return true;
@@ -408,7 +415,7 @@ export async function renderForm(el, id) {
   const delBtn = f.querySelector('.bddel-form');
   if (delBtn)
     delBtn.onclick = async () => {
-      if (!confirm('Voulez-vous vraiment supprimer ce brouillon ?')) return;
+      if (!(await confirmBox('Voulez-vous vraiment supprimer ce brouillon ?', 'Supprimer'))) return;
       const { error } = await sb.from('interventions').delete().eq('id', id);
       if (error) return (err.textContent = error.message);
       location.hash = '#';

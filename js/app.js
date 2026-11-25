@@ -6,7 +6,7 @@ import { renderList } from './list.js';
 import { renderDetail } from './detail.js';
 import { renderForm } from './form.js';
 import { startLive, stopLive } from './live.js';
-import { drawAlerts } from './alerts.js';
+import { drawAlerts, toast } from './alerts.js';
 import { loadCounts, paintCounts } from './counts.js';
 import { initTabs } from './tabs.js';
 import { openMine } from './mine.js';
@@ -232,7 +232,7 @@ async function pickRole(sel) {
       if (fe || !fx?.token_hash) {
         localStorage.removeItem(ADM);
         sel.disabled = false;
-        return;
+        return toast(fx?.error || `Connexion au compte ${REAL[rk][1]} impossible.`, true); // message de l'appli tech
       }
       const { data: vo, error: ve } = await sb.auth.verifyOtp({ token_hash: fx.token_hash, type: 'magiclink' });
       if (ve || !vo?.session) {
@@ -246,6 +246,7 @@ async function pickRole(sel) {
     }
     setMob(!!mob);
     location.hash = '';
+    toast(mob ? 'Connecté en tant que Client mobile.' : `Connecté en tant que ${REAL[rk][1]}.`);
     return render();
   }
   if (localStorage.getItem(ADM) && S.me.email !== (await sb.auth.getSession()).data.session?.user?.email) {
@@ -254,9 +255,15 @@ async function pickRole(sel) {
   const { error } = await sb.rpc('set_acting_role', { p_role: rk });
   if (error) {
     sel.disabled = false;
-    return;
+    return toast(error.message, true);
   }
   setMob(!!mob);
+  // Message de l'appli tech après un changement de profil.
+  toast(
+    rk === 'admin'
+      ? 'Vous êtes de nouveau administrateur.'
+      : `Vous voyez l'appli en tant que ${mob ? sel.selectedOptions[0].text : SHORT[rk]}.`
+  );
   S.me = null;
   S.org = null;
   render();

@@ -1,3 +1,4 @@
+import { confirmBox } from './alerts.js';
 import { sb } from './sb.js';
 import { S, esc, hostModal } from './state.js';
 
@@ -61,7 +62,7 @@ export function initDrafts(f, ctx) {
         if (del) {
           e.preventDefault();
           close();
-          if (!confirm('Voulez-vous vraiment supprimer ce brouillon ?')) return;
+          if (!(await confirmBox('Voulez-vous vraiment supprimer ce brouillon ?', 'Supprimer'))) return;
           const { error } = await sb.from('interventions').delete().eq('id', del.dataset.del);
           if (error) return (err.textContent = error.message);
           rows = rows.filter(x => x.id !== del.dataset.del);

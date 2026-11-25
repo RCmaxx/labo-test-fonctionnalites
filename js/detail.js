@@ -1,3 +1,4 @@
+import { confirmBox } from './alerts.js';
 import { sb } from './sb.js';
 import {
   S,
@@ -594,7 +595,7 @@ export async function renderDetail(el, id) {
   );
 
   async function doDelete() {
-    if (!confirm('Supprimer cette intervention ?')) return;
+    if (!(await confirmBox('Voulez-vous vraiment supprimer cette intervention ?', 'Supprimer'))) return;
     const r = photos.length ? await sb.storage.from('photos').remove(photos.map(p => p.path)) : {};
     const { error } = r.error ? r : await sb.from('interventions').delete().eq('id', id);
     if (error) return fail(error);
@@ -605,7 +606,8 @@ export async function renderDetail(el, id) {
 
   const act = async b => {
     if (b.dataset.act === 'cloturer') return closeChooser(id, doDelete, () => renderDetail(el, id));
-    if (b.dataset.act === 'liberer' && !confirm("Se retirer de l'intervention ?")) return;
+    if (b.dataset.act === 'liberer' && !(await confirmBox("Se retirer de l'intervention ?", 'Oui', { cancel: 'Non' })))
+      return;
     b.disabled = true;
     const { error } =
       b.dataset.act === 'demander'

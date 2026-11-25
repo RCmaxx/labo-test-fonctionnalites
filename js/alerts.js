@@ -24,11 +24,12 @@ export function toast(msg, err = false) {
   toast._t = setTimeout(() => t.remove(), 3500);
 }
 
-export function confirmBox(msg, okLab = 'Oui', cancelLab = 'Non') {
+// Fenêtre de confirmation, comme l'appli tech : Annuler à gauche, l'action à droite (en rouge sauf danger: false).
+export function confirmBox(msg, ok, { cancel = 'Annuler', danger = true } = {}) {
   return new Promise(res => {
     const o = document.createElement('div');
     o.className = 'modal';
-    o.innerHTML = `<div class="mbox"><p class="mq">${msg}</p><div class="mbtns"><button type="button" class="primary" data-ok>${okLab}</button>${cancelLab ? `<button type="button" class="ghost">${cancelLab}</button>` : ''}</div></div>`;
+    o.innerHTML = `<div class="mbox"><p class="mq">${msg}</p><div class="mbtns">${cancel ? `<button type="button" class="ghost">${cancel}</button>` : ''}<button type="button" class="primary${danger ? ' danger-fill' : ''}" data-ok>${ok}</button></div></div>`;
     hostModal().append(o);
     o.onclick = e => {
       const b = e.target.closest('button');
@@ -80,7 +81,9 @@ export async function checkTransfers() {
     asked.add(q.id);
     const t = q.interventions?.title;
     const ok = await confirmBox(
-      `${esc(nameOf(q.requester_id))} demande l'intervention${t ? ` « ${esc(t)} »` : ''}. Transférer ?`
+      `${esc(nameOf(q.requester_id, q.requester_role))} demande l'intervention${t ? ` « ${esc(t)} »` : ''}. Transférer ?`,
+      'Oui',
+      { cancel: 'Non', danger: false }
     );
     const { error } = await sb.rpc('answer_transfer', { p_req: q.id, p_ok: ok });
     if (error) toast(error.message, true);
@@ -96,7 +99,7 @@ export async function checkTransfers() {
     if (asked.has(q.id)) continue;
     asked.add(q.id);
     await sb.rpc('ack_transfer', { p_req: q.id });
-    await confirmBox(`${esc(nameOf(q.holder_id))} n'a pas accepté votre demande.`, 'OK', '');
+    await confirmBox(`${esc(nameOf(q.holder_id))} n'a pas accepté votre demande`, 'OK', { cancel: '', danger: false });
   }
 }
 

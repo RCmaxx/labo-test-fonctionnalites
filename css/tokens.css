@@ -106,6 +106,7 @@
   --slide-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ink-pure: #000;
   --menu-gap: 22px; /* menu du compte : écart au-dessus de la barre du bas */
+  --toast-mob: 84px; /* message bref au-dessus de la barre du bas */
   --r-menu: 12px;
   /* Fiche mobile : hauteur du header et place laissée sous la fiche pour la barre du bas (appli tech) */
   --topbar-h: 57px;
