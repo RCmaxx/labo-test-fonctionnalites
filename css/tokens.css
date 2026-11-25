@@ -138,7 +138,8 @@
   --ph-bg: #e6e6e6;
   --ph-count-bg: rgba(255, 255, 255, 0.92);
   --overlay: rgba(0, 0, 0, 0.25);
-  --veil: rgba(0, 0, 0, 0.4); /* voile de l'appui long */
+  --veil: rgba(0, 0, 0, 0.4); /* voile de l'appui long et de la fenêtre de création */
+  --nbox-bg: #fafafa; /* fenêtre de création (ordinateur) */
   --gs-veil: rgba(0, 0, 0, 0.25); /* voile du panneau du rouage */
   /* Panneau « mes interventions » */
   --ms-veil: rgba(20, 30, 45, 0.35);

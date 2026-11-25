@@ -623,9 +623,11 @@ mark {
     display: grid;
     place-items: center;
     flex: none;
-    width: 32px;
-    height: 32px;
-    margin: 0 var(--s3) 0 -44px;
+    position: absolute;
+    top: -40px;
+    left: 0;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: var(--ink);
     color: var(--surface);
@@ -633,8 +635,12 @@ mark {
     line-height: 1;
     text-decoration: none;
   }
-  .gcol:has(.gadd) {
-    padding-left: 44px;
+  /* le + se pose au-dessus du titre « Nouvelles interventions » : place gardée au-dessus des colonnes */
+  .gcols {
+    margin-top: var(--s2);
+  }
+  .gcols > * {
+    padding-top: 40px;
   }
   .gdone .gcol {
     max-height: calc(100dvh - var(--gtop, 200px) - var(--s4));
