@@ -6,7 +6,7 @@ import { lastView } from './list.js';
 
 const TB = ['#', '#nouvelles', '#mes'];
 const EXCL =
-  '.phc, .pstrip, .dstrip, .wsheet, .phsheet, .phbig, input, textarea, [contenteditable], dialog, .modal, .cardpop';
+  '.phc, .pstrip, .dstrip, .wsheet, .phsheet, .phbig, input, textarea, [contenteditable], dialog, .modal, .cardpop, .itv-sheet';
 const EASE = 'cubic-bezier(.2,.8,.2,1)',
   MS = 220;
 const norm = h => h || '#';

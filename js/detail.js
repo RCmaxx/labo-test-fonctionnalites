@@ -453,7 +453,7 @@ function buildChat({ i, events, urls, chat, inline }) {
 }
 
 // Gabarit de la fiche : en-tête, pièces jointes, boutons d'action, fil de discussion.
-function detailHtml({ i, urls, phList, chat, inline, canComment, acts, mgr, asCard, chatHtml, cph, dsc }) {
+function detailHtml({ i, sheet, latestComment, urls, phList, chat, inline, canComment, acts, mgr, asCard, chatHtml, cph, dsc }) {
   const photosHtml = phList.length
     ? `<div class="phc-w"><div class="phc">${phList.map(p => `<div class="phs"><a href="${urls[p.path]}" target="_blank" rel="noopener"><img src="${urls[p.path]}" alt="Photo"></a></div>`).join('')}</div>${phList.length > 3 ? `<button type="button" class="phc-a phc-p" aria-label="Photo précédente" hidden>‹</button><button type="button" class="phc-a phc-n" aria-label="Photo suivante">›</button>` : ''}${phList.length > 1 ? `<span class="phc-i">Photo ${Math.min(3, phList.length)}/${phList.length}</span>` : ''}</div>`
     : '';
@@ -465,8 +465,12 @@ function detailHtml({ i, urls, phList, chat, inline, canComment, acts, mgr, asCa
       : '';
   const prio = PRIO_L[i.priority] ? `<span class="prio p-${i.priority}">${PRIO_L[i.priority]}</span>` : '';
   const back = `<a href="#" class="back${inline ? ' xback' : ''}" aria-label="${inline ? 'Replier' : 'Retour'}">${BACK}</a>`;
-  const card = asCard ? cardOf(i) : '';
+  const card = asCard && !sheet ? cardOf(i) : '';
   const cardHead = card ? `<div class="dcard">${back}<ul class="cards">${card}</ul></div>` : '';
+  const priorityLabel = { basse: 'À faire', normale: 'Important', haute: 'Urgent', urgente: 'Urgent' };
+  const sheetHead = sheet
+    ? `<div class="itv-title"><h1>${esc(i.title)}</h1><span class="itv-priority" data-priority="${esc(i.priority)}">${priorityLabel[i.priority] || 'Important'}</span></div>`
+    : '';
   const editBtn = canEdit(i)
     ? `<a class="btn ghost" href="#i/${i.id}/modifier" data-edit="${i.id}" aria-label="Modifier l'intervention">Modifier</a>`
     : '';
@@ -488,11 +492,11 @@ function detailHtml({ i, urls, phList, chat, inline, canComment, acts, mgr, asCa
   return `
     <article class="detail${cardHead || inline ? ' detail--card' : ''}">
       <div class="dfix">
-        ${cardHead || (inline ? '' : `<div class="dtrow">${back}<h1 class="dtitle">${esc(i.title).replace(/ (?=[^ ]*$)/, '&nbsp;')}</h1></div>`)}
+        ${sheetHead || cardHead || (inline ? '' : `<div class="dtrow">${back}<h1 class="dtitle">${esc(i.title).replace(/ (?=[^ ]*$)/, '&nbsp;')}</h1></div>`)}
         <section class="dtop${cardHead || inline ? ' dtop--card' : ''}">
           <div class="dmeta3"><div class="drow"><span class="dloc">${i.location ? `<span class="ltag">${esc(locTag(i.location))}</span>` : ''}${i.assignee_id || i.proposed_to ? tagsOf(i) : ''}${i.status === 'publiee' ? '<span class="pill st-publiee">Nouveau</span>' : ''}<span class="ddate">${fmtAgo(i.created_at)}</span></span><span class="dright">${prio || pill ? `<span class="drt">${prio}${pill}</span>` : ''}</span></div>
             ${i.available_from || i.remind_minutes || i.client_presence ? `<p class="dslot">${i.available_from ? CLOCK + `<span>${esc(slotLine(i))}</span>` : i.client_presence ? '<span>Présence client requise</span>' : ''}${i.remind_minutes ? `<span class="dremind">${esc(REMIND[i.remind_minutes] || `${i.remind_minutes} min avant`)}</span>` : ''}</p>` : ''}</div>
-          ${(!chat || cardHead) && dsc ? `<p class="ddesc">${esc(dsc)}</p>` : ''}
+          ${(!chat || cardHead || sheet) && dsc ? `<p class="ddesc">${esc(dsc)}</p>` : ''}
           ${
             cph.length
               ? `<div class="dph0"><span class="phpill" role="button" tabindex="0" data-ph="${esc(cph.map(e => urls[e.body]).join(' '))}">${cph
@@ -504,6 +508,7 @@ function detailHtml({ i, urls, phList, chat, inline, canComment, acts, mgr, asCa
           ${photosHtml}
         </section>
       </div>
+      ${latestComment ? `<aside class="itv-preview"><b>Dernier commentaire</b><p>${esc(latestComment.body || '')}</p></aside>` : ''}
       ${dactHtml}
       <p class="error" id="acterr"></p>
       ${
@@ -643,6 +648,10 @@ function initActions(el, { id, inline, photos, fail, foldOrList }) {
 }
 
 export async function renderDetail(el, id) {
+  const sheet = el.closest('.itv-sheet');
+  if (!el.isConnected) return;
+  const footer = sheet?.querySelector('.itv-footer');
+  footer?.replaceChildren();
   el.innerHTML = '<p>Chargement…</p>';
   const inline = !!el.closest('.unfold');
   const [{ data: i, error }, ev, ph] = await Promise.all([
@@ -658,6 +667,7 @@ export async function renderDetail(el, id) {
   if (error || !i) return (el.innerHTML = `<p>${esc(error?.message || 'Intervention introuvable.')}</p>`);
   const photos = ph.data || [],
     urls = await signedUrls(photos.map(p => p.path));
+  if (!el.isConnected) return;
   const events = ev.data || [],
     chat = S.me.role !== 'client';
   const closed = DONE.includes(i.status);
@@ -666,12 +676,17 @@ export async function renderDetail(el, id) {
     mgr = MGR.includes(S.me.role);
   const { asCard, chatHtml, cph, dsc } = buildChat({ i, events, urls, chat, inline });
   const phList = !chat ? photos.filter(p => urls[p.path]) : [];
-  el.innerHTML = detailHtml({ i, urls, phList, chat, inline, canComment, acts, mgr, asCard, chatHtml, cph, dsc });
+  const latestComment = sheet && [...events].reverse().find(event => event.type === 'commentaire');
+  el.innerHTML = detailHtml({ i, sheet, latestComment, urls, phList, chat, inline, canComment, acts, mgr, asCard, chatHtml, cph, dsc });
   drawEdit();
 
   const fail = err => err && (el.querySelector('#acterr').textContent = err.message);
   const refold = () => el.closest('.unfold')?.previousElementSibling?.querySelector('a.card')?.click();
   const foldOrList = () => {
+    if (sheet) {
+      sheet.querySelector('.itv-close').click();
+      return rerender();
+    }
     if (!inline) return (location.hash = '');
     refold();
     rerender();
@@ -683,15 +698,20 @@ export async function renderDetail(el, id) {
       refold();
     };
 
-  addGear(el, inline);
+  if (!sheet) addGear(el, inline);
 
   initPhotoUi(el, phList, urls);
 
   initActions(el, { id, inline, photos, fail, foldOrList });
 
+  const actionsBar = el.querySelector('.dact');
+  if (footer && actionsBar) footer.append(actionsBar);
+
   if (!chat) return;
-  sb.from('intervention_reads')
+  const markRead = () => sb.from('intervention_reads')
     .upsert({ user_id: S.me.id, intervention_id: id, last_read_at: new Date().toISOString() })
     .then(() => {});
+  if (sheet && !sheet.classList.contains('expanded')) sheet.addEventListener('itv:expand', markRead, { once: true });
+  else markRead();
   initComposer(el, { id, photos, fail, redraw: () => renderDetail(el, id) });
 }

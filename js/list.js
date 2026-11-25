@@ -1,4 +1,5 @@
 import { sb } from './sb.js';
+import { openInterventionSheet } from './sheet.js';
 import { renderDetail } from './detail.js';
 import { renderCircles } from './circles.js';
 import { PIN } from './place.js';
@@ -673,8 +674,12 @@ export async function renderList(el) {
   rows.onclick = e => {
     const a = e.target.closest('a.card');
     if (!a || e.metaKey || e.ctrlKey || S.me.role === 'client') return;
-    if (a.getAttribute('href') === '#' || isMob()) return; // mobile : la fiche s'ouvre comme une page (lien), comme l'appli tech
+    if (a.getAttribute('href') === '#' || e.defaultPrevented || e.shiftKey || e.altKey) return;
     e.preventDefault();
+    if (isMob()) {
+      openInterventionSheet(a, content => renderDetail(content, a.dataset.id));
+      return;
+    }
     unfold(rows, a);
   };
   const load = async () => {

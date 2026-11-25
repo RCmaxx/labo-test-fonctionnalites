@@ -33,7 +33,7 @@ export const REMIND = {
 export const MGR = ['admin', 'directeur', 'responsable_tech'],
   TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v113';
+export const VERSION = 'v114';
 export const app = document.getElementById('app');
 // Mobile simulé (cadre de téléphone) : seulement sur grand écran ; sur un vrai téléphone la largeur suffit, comme l'appli tech.
 export const setSim = on => document.documentElement.classList.toggle('sim', on && innerWidth > 600);
@@ -128,7 +128,7 @@ export const nameOf = (id, role) => {
 export const rerender = () => dispatchEvent(new Event('labo:render'));
 export const MONTHS = 'janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.'.split(' ');
 export const p2 = n => String(n).padStart(2, '0');
-export const hostModal = () => document.querySelector('.sim #app') || document.body;
+export const hostModal = () => document.querySelector('.itv-sheet') || document.querySelector('.sim #app') || document.body;
 // Icône trait (24×24) : d = contenu SVG, w = épaisseur, s = taille en px (sinon pilotée par le CSS).
 export const svg = (d, w = 2, s) =>
   `<svg${s ? ` width="${s}" height="${s}"` : ''} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;

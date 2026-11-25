@@ -989,3 +989,48 @@ main.slide-in {
     transform: translateX(100%);
   }
 }
+
+/* Fiche ouverte depuis une carte mobile. */
+.itv-sheet { position: fixed; inset: 0; z-index: 45; display: grid; align-items: end; justify-items: center; background: rgb(13 25 38 / .48); overscroll-behavior: contain; }
+.itv-panel { width: min(100%, 460px); height: min(68dvh, 620px); max-height: calc(100dvh - var(--kb, 0px)); display: flex; flex-direction: column; background: #fff; border-radius: 24px 24px 0 0; overflow: hidden; animation: itv-slide .24s ease-out; transition: height .22s ease; }
+.itv-sheet.expanded .itv-panel { height: min(calc(100dvh - var(--kb, 0px)), 844px); }
+@keyframes itv-slide { from { transform: translateY(100%); } }
+@media (prefers-reduced-motion: reduce) { .itv-panel { animation: none; transition: none; } }
+.itv-controls { position: relative; display: grid; justify-items: center; align-items: center; flex: 0 0 48px; }
+.itv-controls button { border: 0; background: transparent; color: var(--ink); }
+.itv-grip { width: 100%; height: 48px; touch-action: none; }
+.itv-grip::before { content: ""; display: block; width: 44px; height: 5px; margin: auto; border-radius: 4px; background: #adb9c6; }
+.itv-close { position: absolute; inset: 2px 8px auto auto; width: 44px; height: 44px; font-size: 26px; }
+.itv-content { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.itv-content .detail { display: block; height: auto; min-height: 0; padding: 0; margin: 0; }
+.itv-content .dfix { position: static; background: #fff; box-shadow: none; }
+.itv-title { padding: 0 16px 8px; }
+.itv-title h1 { margin: 0; font-size: 23px; overflow-wrap: anywhere; }
+.itv-content .dmeta3 { display: block; }
+.itv-preview { margin: 12px 16px; padding: 12px; border-radius: 12px; background: #edf3f9; overflow-wrap: anywhere; }
+.itv-preview p { margin: 5px 0 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.itv-sheet:not(.expanded) .itv-content .chat2, .itv-sheet.expanded .itv-preview { display: none; }
+.itv-footer { flex: none; padding: 8px 16px max(12px, env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid #e7edf3; }
+.itv-footer:empty { padding-top: 0; border-top: 0; }
+.itv-footer .dact { padding: 0; }
+.itv-footer .dact .actions { flex-wrap: wrap; gap: 8px; }
+.itv-footer .dact .actions > :is(button, a.btn) {
+  flex: 0 1 auto;
+  min-height: 44px;
+  margin: 0;
+  padding-inline: 12px;
+}
+.itv-footer .dact .actions > button.primary { flex: 1 1 auto; }
+.itv-footer .dact .actions > button.ibtn { flex: 0 0 44px; padding: 0; }
+.itv-priority { display: inline-block; margin-top: 8px; padding: 4px 9px; border-radius: 999px; background: var(--prio-normale-bg); color: #000; font-size: 12px; font-weight: 600; }
+.itv-priority[data-priority="haute"], .itv-priority[data-priority="urgente"] { background: var(--prio-haute-bg); }
+.itv-priority[data-priority="basse"] { background: var(--prio-basse-bg); }
+
+/* L’aperçu laisse le geste vertical au panneau. Le détail agrandi défile normalement. */
+.itv-sheet:not(.expanded) .itv-content { touch-action: pan-x pinch-zoom; }
+
+.itv-sheet .dact { display: block; }
+.itv-sheet .cin { position: static; }
+.itv-content .detail { border-radius: 0; }
+.itv-content .chat2 { border: 0; box-shadow: none; }
+.itv-sheet { bottom: var(--kb, 0px); }

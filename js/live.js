@@ -15,6 +15,11 @@ function refresh() {
     const [page, , sub] = route(),
       f = document.activeElement;
     if (page === 'nouvelle' || page === 'compte' || sub === 'modifier' || (f?.closest('main') && f.value)) return;
+    const sheet = document.querySelector('.itv-sheet');
+    if (sheet) {
+      sheet.addEventListener('itv:close', refresh, { once: true });
+      return;
+    }
     onChange();
   }, 300);
 }
