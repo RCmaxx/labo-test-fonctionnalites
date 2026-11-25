@@ -268,7 +268,7 @@ const item = (r, q = '', sf = []) => {
     const on = k => !sf.length || sf.includes(k);
     if (on('rep') && F.rep && hit(F.rep)) ex.push(`Signalé par ${mark(F.rep, q)}`);
     if (on('tech') && F.tech && hit(F.tech)) ex.push(`Technicien ${mark(F.tech, q)}`);
-    if (on('statut') && hit(F.statut)) ex.push(`Statut ${esc(STATUS[r.status] || r.status)}`);
+    if (on('statut') && hit(F.statut)) ex.push(`Statut <mark>${esc(STATUS[r.status] || r.status)}</mark>`); // trouvé par le statut : tout le libellé surligné
   }
   const slot = slotLab(r),
     mine = isPmine(r);
@@ -352,13 +352,15 @@ function paintTerminees(el, rows, done, more, reopen) {
 export async function renderList(el) {
   const searching = route()[0] === 'recherche' && S.me.role !== 'client';
   el.innerHTML = searching
-    ? `<div class="shead"><input type="search" id="q" value="${esc(search)}" placeholder="Rechercher" aria-label="Rechercher"><p class="scount" id="scount"></p></div>
+    ? `<div class="shead"><input type="search" id="q" value="${esc(search)}" placeholder="Rechercher" aria-label="Rechercher"></div>
         <div class="sfilters" role="group" aria-label="Filtres de recherche">${Object.entries(SF)
           .map(
             ([k, v]) =>
               `<button type="button" class="sf${sfilters.includes(k) ? ' on' : ''}" data-sf="${k}" aria-pressed="${sfilters.includes(k)}">${v}</button>`
           )
           .join('')}</div>
+        <p class="shint">Plusieurs mots : toutes les interventions qui contiennent chacun d'eux. Accents et majuscules ignorés.</p>
+        <p class="scount" id="scount"></p>
         <ul class="srecent" hidden></ul>
         <div id="rows"><p>Chargement…</p></div>`
     : `${isMob() && onDonePage() && S.me.role !== 'client' ? SEARCH_BAR : ''}<div id="rows"><p>Chargement…</p></div>`;

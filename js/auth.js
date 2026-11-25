@@ -1,22 +1,96 @@
 import { sb } from './sb.js';
-import { S, app, esc, fmt, options, rerender, ACCOUNTS, ROLES, VERSION } from './state.js';
+import { S, app, esc, fmt, options, rerender, ACCOUNTS, ROLES } from './state.js';
+import { toast } from './alerts.js';
 import { stopLive } from './live.js';
 
 // Formulaire de connexion unique : le champ e-mail varie (liste des comptes de test, ou e-mail invité).
 const loginForm = (emailField, error = '') => `<form class="panel" id="login">${emailField}
   <label>Mot de passe <input name="password" type="password" required autocomplete="current-password"></label>
   <button class="primary">Se connecter</button><p class="error">${esc(error)}</p></form>`;
+// Un nom court (« admin.a ») vaut l'adresse de test correspondante, comme dans l'appli tech.
+const emailOf = v => (v.trim().includes('@') ? v.trim() : v.trim().toLowerCase() + '@test.local');
 const bindLogin = () =>
   (app.querySelector('#login').onsubmit = async e => {
     e.preventDefault();
-    const { error } = await sb.auth.signInWithPassword(Object.fromEntries(new FormData(e.target)));
+    const d = Object.fromEntries(new FormData(e.target));
+    const { error } = await sb.auth.signInWithPassword({ email: emailOf(d.email), password: d.password });
     error ? (e.target.querySelector('.error').textContent = error.message) : rerender();
   });
 
+// Écrans sans session, comme l'appli tech : titre, formulaire, liens en pied.
+const card = (title, body, foot = '') =>
+  `<section class="auth"><h1>${title}</h1>${body}${foot ? `<p class="auth__foot">${foot}</p>` : ''}</section>`;
+const done = (sel, run) =>
+  (app.querySelector(sel).onsubmit = async e => {
+    e.preventDefault();
+    const out = e.target.querySelector('.error');
+    out.textContent = '';
+    const msg = await run(Object.fromEntries(new FormData(e.target)));
+    if (msg) out.textContent = msg;
+  });
+
 export function renderLogin(error = '') {
-  app.innerHTML = `<div class="auth"><h1>Connexion</h1><p class="muted">${VERSION}</p>
-    ${loginForm(`<label>Compte <select name="email">${ACCOUNTS.map(a => `<option value="${a}@test.local">${a}</option>`).join('')}</select></label>`, error)}</div>`;
+  app.innerHTML = card(
+    'Connexion',
+    `<form id="login" class="stack">
+      <label>E-mail<input name="email" type="text" required autocomplete="username" autocapitalize="off" spellcheck="false" list="accts"></label>
+      <datalist id="accts">${ACCOUNTS.map(a => `<option value="${a}">`).join('')}</datalist>
+      <label>Mot de passe<input name="password" type="password" required autocomplete="current-password"></label>
+      <button class="primary" type="submit">Se connecter</button><p class="error">${esc(error)}</p>
+    </form>`,
+    '<a href="#mot-de-passe">Mot de passe oublié</a> · <a href="#inscription">Créer un compte entreprise</a>'
+  );
   bindLogin();
+}
+
+export function renderForgot() {
+  app.innerHTML = card(
+    'Mot de passe oublié',
+    `<form id="fg" class="stack">
+      <label>E-mail<input name="email" type="email" required autocomplete="email"></label>
+      <button class="primary" type="submit">Recevoir un lien</button><p class="error"></p>
+    </form>`,
+    '<a href="#">Retour à la connexion</a>'
+  );
+  done('#fg', async d => {
+    const { error } = await sb.auth.resetPasswordForEmail(d.email.trim(), {
+      redirectTo: location.origin + location.pathname,
+    });
+    if (error) return error.message;
+    toast("Si un compte existe, un lien vient d'être envoyé.");
+  });
+}
+
+// Création d'un compte entreprise : l'entreprise est créée à la première connexion (nom gardé dans le compte).
+export function renderSignup() {
+  app.innerHTML = card(
+    'Créer un compte entreprise',
+    `<form id="su" class="stack">
+      <label>Nom de l'entreprise<input name="org" required maxlength="120"></label>
+      <label>Votre nom<input name="name" required maxlength="12" autocomplete="name"></label>
+      <label>E-mail<input name="email" type="email" required autocomplete="email"></label>
+      <label>Mot de passe<input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
+      <button class="primary" type="submit">Créer le compte</button><p class="error"></p>
+    </form>`,
+    'Déjà un compte ? <a href="#">Se connecter</a>'
+  );
+  done('#su', async d => {
+    const { data, error } = await sb.auth.signUp({
+      email: d.email.trim(),
+      password: d.password,
+      options: { emailRedirectTo: location.origin + location.pathname, data: { full_name: d.name, org_name: d.org } },
+    });
+    if (error) return error.message;
+    if (data.session) {
+      location.hash = '';
+      return rerender();
+    }
+    app.innerHTML = card(
+      'Vérifiez vos e-mails',
+      `<p>Un lien de confirmation a été envoyé à <b>${esc(d.email)}</b>. Ouvrez-le puis connectez-vous.</p>`,
+      '<a href="#">Retour à la connexion</a>'
+    );
+  });
 }
 
 export async function signOut() {

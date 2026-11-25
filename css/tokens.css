@@ -124,6 +124,7 @@
   /* Page Profils mobile : haut de page et écart entre sections (appli tech) */
   --set-top: 18px;
   --set-gap: 28px;
+  --auth-gap: 18px; /* écrans de connexion */
 
   /* Espacements (pas de 4 px) */
   --s1: 4px;
@@ -140,6 +141,8 @@
   --ink-date: #8a8a86;
   --ink-day: #3a4048; /* pastille de date du fil */
   --ink-search: #8a8a8a;
+  --ink-found: #b4b4b4; /* résultats de recherche hors texte trouvé */
+  --sf-bg: #f0f0f0; /* filtre de recherche */
   --ink-desc: #444444;
   --ink-icon: #333333;
   --line-tag: #d9d9d6;

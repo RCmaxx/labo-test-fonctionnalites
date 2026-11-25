@@ -18,10 +18,10 @@ export const PNAME = {
 export const DONE = ['resolue', 'validee'];
 export const STATUS = {
   brouillon: 'Brouillon',
-  publiee: 'Nouvelle',
+  publiee: 'Signalé',
   prise_en_charge: 'En cours',
-  resolue: 'Terminée',
-  validee: 'Validée',
+  resolue: 'Clôturé',
+  validee: 'Terminé',
 };
 export const REMIND = {
   15: '15 min avant',
@@ -33,7 +33,7 @@ export const REMIND = {
 export const MGR = ['admin', 'directeur', 'responsable_tech'],
   TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v89';
+export const VERSION = 'v90';
 export const app = document.getElementById('app');
 // Mobile simulé (cadre de téléphone) : seulement sur grand écran ; sur un vrai téléphone la largeur suffit, comme l'appli tech.
 export const setSim = on => document.documentElement.classList.toggle('sim', on && innerWidth > 600);

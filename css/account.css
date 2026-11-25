@@ -9,6 +9,29 @@
 .auth p {
   margin: 0;
 }
+.auth__foot {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+/* Mobile, comme l'appli tech : titre 22 px, champs au retrait de 20 px, écarts de 14 et 18 px */
+@container app (max-width: 600px) {
+  .auth {
+    margin-top: calc(10vh - var(--pad));
+    padding-inline: var(--s1);
+    gap: var(--auth-gap);
+  }
+  .auth h1 {
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .auth .stack {
+    gap: var(--page-pad);
+  }
+  .auth .error:empty {
+    display: none;
+  }
+}
 .account {
   display: grid;
   gap: var(--s4);

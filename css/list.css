@@ -382,12 +382,39 @@
 .shead input[type='search'] {
   flex: 1;
   min-width: 0;
+  height: 36px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-s);
+  font-size: 13px;
+}
+.shead input[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+.shint {
+  margin: 0 0 var(--s3);
+  font-size: 12px;
+  color: var(--ink-3);
 }
 .scount {
-  margin: 0;
-  font-size: 13px;
+  margin: -6px 0 10px;
+  font-size: 12px;
   color: var(--ink-2);
-  white-space: nowrap;
+}
+.scount:empty {
+  display: none;
+}
+/* Résultats de recherche, comme l'appli tech : tout en gris clair, seul le texte trouvé ressort (surligné) */
+.scards .card__slot,
+.scards .card,
+.scards .card__title,
+.scards .card__extra,
+.scards .card__presence,
+.scards time {
+  color: var(--ink-found);
+}
+.scards mark {
+  color: var(--ink);
 }
 .sfilters {
   display: flex;
@@ -396,12 +423,13 @@
   margin: 0 0 var(--s3);
 }
 .sf {
-  padding: 6px 12px;
-  border: 1px solid var(--line);
+  padding: var(--s2) var(--page-pad);
+  border: 0;
   border-radius: var(--r-pill);
-  background: var(--surface);
+  background: var(--sf-bg);
   color: var(--ink-2);
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
 }
 .sf.on {
@@ -587,4 +615,26 @@ mark {
     max-height: calc(100dvh - var(--gtop, 200px) - var(--s4));
     overflow-y: auto;
   }
+}
+
+/* Mobile, comme l'appli tech : recherche de bord à bord (les résultats gardent le retrait des cartes) */
+@container app (max-width: 600px) {
+  .shead,
+  .sfilters,
+  .shint,
+  .scount,
+  .srecent {
+    margin-inline: calc(-1 * var(--card-inset));
+  }
+  .shead {
+    margin-bottom: var(--page-pad);
+  }
+  .sfilters {
+    margin-top: -6px;
+    margin-bottom: var(--s4);
+  }
+}
+
+.srecent[hidden] {
+  display: none;
 }

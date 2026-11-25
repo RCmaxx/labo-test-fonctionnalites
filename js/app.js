@@ -1,6 +1,6 @@
 import { sb } from './sb.js';
 import { S, app, route, isMob, setSim, avatar, VERSION, esc, ROLES, PNAME } from './state.js';
-import { renderLogin, renderOrg, renderInvitation, renderMe, signOut } from './auth.js';
+import { renderLogin, renderForgot, renderSignup, renderOrg, renderInvitation, renderMe, signOut } from './auth.js';
 import { renderSettings } from './settings.js';
 import { renderList } from './list.js';
 import { renderDetail } from './detail.js';
@@ -29,7 +29,7 @@ const TITLES = {
   mes: 'Mes interventions',
   encours: 'En cours',
   terminees: 'Terminées',
-  recherche: 'Recherche',
+  recherche: 'Interventions', // comme l'appli tech : le titre ne change pas pendant la recherche
   parametres: 'Profils',
   equipe: 'Profils',
   compte: 'Mon compte',
@@ -44,7 +44,8 @@ async function render() {
     data: { session },
   } = await sb.auth.getSession();
   if (page === 'invitation') return renderInvitation(id, session);
-  if (!session) return renderLogin();
+  if (!session)
+    return page === 'mot-de-passe' ? renderForgot() : page === 'inscription' ? renderSignup() : renderLogin();
   if (!S.me) {
     const uid = session.user.id;
     const [{ data: m, error }, t] = await Promise.all([
@@ -52,7 +53,16 @@ async function render() {
       sb.from('members').select('user_id, full_name, role'),
     ]);
     if (error) return renderLogin(error.message);
-    if (!m) return renderOrg(session.user);
+    if (!m) {
+      // Compte créé depuis « Créer un compte entreprise » : l'entreprise est créée à la première connexion.
+      const md = session.user.user_metadata || {};
+      if (
+        md.org_name &&
+        !(await sb.rpc('create_organization', { p_name: md.org_name, p_full_name: md.full_name || '' })).error
+      )
+        return render();
+      return renderOrg(session.user);
+    }
     const { data: org } = await sb.from('organizations').select('name').eq('id', m.org_id).maybeSingle();
     S.me = {
       id: uid,
