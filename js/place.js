@@ -32,7 +32,7 @@ const mhN = v =>
   (String(v)
     .trim()
     .match(/^(?:mh|mobil[- ]?home)?\s*(\d+)$/i) || [])[1];
-export const tagIn = v => {
+const tagIn = v => {
   const n = mhN(v);
   return n
     ? `<span class="mhpre">MH</span><span class="mhnum">${esc(String(n).padStart(2, '0'))}</span>`

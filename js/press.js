@@ -16,7 +16,7 @@ const MSG = {
 };
 
 // Actions possibles sur une intervention, dans l'ordre de l'appli tech : [action, libellé, style].
-export function menuActs(r) {
+function menuActs(r) {
   const R = S.me.role,
     me = S.me.id,
     mgr = MGR.includes(R),

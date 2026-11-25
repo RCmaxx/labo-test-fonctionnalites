@@ -1,6 +1,6 @@
 /* Formulaire de création / modification, comme l'appli. */
 .fpage {
-  max-width: var(--form-max);
+  max-width: 608px;
 }
 .fhead {
   display: flex;
@@ -825,7 +825,7 @@
     color: var(--ink);
   }
   .fhead .fx svg {
-    width: var(--fx-icon);
+    width: 14px;
   }
   .nform {
     gap: var(--form-gap);
@@ -838,7 +838,7 @@
   }
   .nf-row {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) var(--prio-w);
+    grid-template-columns: auto minmax(0, 1fr) 80px;
     align-items: center;
     gap: var(--s2) 6px;
   }
@@ -947,7 +947,7 @@
     left: calc(100% + var(--s2));
     top: -6px;
     min-width: 0;
-    max-width: var(--sugg-max);
+    max-width: 256px;
     flex-wrap: nowrap;
     overflow-x: auto;
     padding: var(--s2);

@@ -381,7 +381,7 @@ main {
     padding: var(--s3) var(--s4);
     background: var(--surface);
     border: 1px solid var(--line-menu);
-    border-radius: var(--r-menu);
+    border-radius: 12px;
     box-shadow: var(--shadow-acct);
   }
   .topbar.open .who__org {
@@ -448,7 +448,7 @@ main {
   .fab,
   .fabm,
   main {
-    --fab: var(--fab-mob);
+    --fab: 52px;
   }
   .fab {
     right: var(--s4);
@@ -479,7 +479,7 @@ main {
     bottom: calc(var(--tab-gap) + var(--tab) + var(--s4) + var(--fab) + var(--s3));
     background: var(--chrome);
     box-shadow: var(--shadow-fabm);
-    font-size: var(--fabm-fs);
+    font-size: 24px;
     font-weight: 700;
     line-height: 1;
     letter-spacing: -0.02em;
@@ -540,7 +540,7 @@ main {
 @media (max-width: 600px) {
   /* le message est posé sur la page (hors du conteneur #app) : requête d'écran */
   .toast {
-    bottom: var(--toast-mob);
+    bottom: 84px;
   }
 }
 .toast.err,

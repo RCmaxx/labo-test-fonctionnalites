@@ -13,12 +13,7 @@
   --bg: #e9ebef;
   --surface: #ffffff;
   --group-fg: #3c3c3a;
-  --alert-bg: #ffddd3;
-  --alert-fg: #e0391b;
   --mark-bg: #ffe58a;
-  --tab-on: #eef0f5;
-  --tab-fg: #333333;
-  --shadow-bar: 0 6px 24px rgba(20, 20, 40, 0.12), 0 1px 3px rgba(20, 20, 40, 0.08);
   --danger: #b42318;
 
   /* Priorités : fond / texte */
@@ -85,19 +80,15 @@
   --shadow-fabm: 0 4px 14px rgba(0, 0, 0, 0.18);
 
   /* Boutons ronds du mobile (+ et pastille « mes interventions ») */
-  --fab-mob: 52px;
   --fab-plus: 20px;
   --fab-plus-w: 2.5px;
-  --fabm-fs: 24px;
 
   /* Écart entre deux cartes (et au-dessus de la première, comme l'appli tech) */
   --card-gap: 9px;
   /* Formulaire mobile (appli tech) : écart entre en-tête, cadre et boutons ; tailles des champs */
   --form-gap: 10px;
-  --prio-w: 80px;
   --loc-min: 72px;
   --loc-h: 36px;
-  --sugg-max: 256px; /* largeur maxi des suggestions de lieu */
   --pslot-bd: #d6d6d6; /* case photo vide */
   --pslot-fg: #cfcfcb;
   --fx: 44px;
@@ -106,26 +97,14 @@
   --slide-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ink-pure: #000;
   --menu-gap: 22px; /* menu du compte : écart au-dessus de la barre du bas */
-  --toast-mob: 84px; /* message bref au-dessus de la barre du bas */
-  --r-menu: 12px;
-  /* Fiche mobile : hauteur du header et place laissée sous la fiche pour la barre du bas (appli tech) */
-  --topbar-h: 57px;
-  --fiche-bottom: 57px;
-  --dcard-top: 15px; /* haut de la carte dans la fiche */
-  --dcard-r: 26px; /* marge droite de la carte dans la fiche */
   --back-icon: 20px;
   /* Hauteur de l'appli : l'écran, ou le cadre de téléphone du simulateur */
   --app-h: 100dvh;
   --sim-h: min(844px, 100dvh - 48px);
-  --fx-icon: 14px;
   /* Retrait des cartes par rapport au bord de la page (appli tech : 10 px) */
   --card-inset: 10px;
   /* Marge intérieure des pages de l'appli tech (bords, haut du message vide, sous la recherche) */
   --page-pad: 14px;
-  /* Page Profils mobile : haut de page et écart entre sections (appli tech) */
-  --set-top: 18px;
-  --set-gap: 28px;
-  --auth-gap: 18px; /* écrans de connexion */
 
   /* Espacements (pas de 4 px) */
   --s1: 4px;
@@ -181,7 +160,6 @@
   --wheel-band: rgba(0, 0, 0, 0.05);
   --photo: 50px;
   --padd: 36px; /* bouton + des photos */
-  --form-max: 608px;
 
   /* Typographie */
   --font: 'Inter', -apple-system, system-ui, sans-serif;

@@ -20,7 +20,7 @@ Aucune compilation : HTML + CSS + JavaScript (modules ES), base Supabase de **te
 
 ## Règles de code
 
-- Couleurs et mesures : uniquement des variables de `css/tokens.css`. Pas de `!important`.
+- Couleurs : uniquement des variables de `css/tokens.css`. Mesures partagées en variables ; une mesure qui ne sert qu'à un endroit s'écrit sur place. Pas de `!important`.
 - Mise en page mobile : requêtes de conteneur sur `#app` (le mode simulateur et le vrai mobile partent du même CSS).
 - Un fichier = une responsabilité ; `js/state.js` porte l'état partagé `S` et les constantes.
 - Avant de publier : `prettier --write js css` puis `eslint js` (aucune erreur attendue).

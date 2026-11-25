@@ -18,7 +18,7 @@
   .auth {
     margin-top: calc(10vh - var(--pad));
     padding-inline: var(--s1);
-    gap: var(--auth-gap);
+    gap: 18px;
   }
   .auth h1 {
     font-size: 22px;
@@ -127,9 +127,9 @@
    sur le fond, équipe en cartes blanches au retrait des cartes de la liste. */
 @container app (max-width: 600px) {
   .setpage {
-    gap: var(--set-gap);
+    gap: 28px;
     margin-inline: calc(-1 * var(--card-inset));
-    padding-top: var(--set-top);
+    padding-top: 18px;
   }
   .setpage > h1,
   .setpage .panel--invite,

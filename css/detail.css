@@ -719,7 +719,7 @@ a[data-edit][aria-disabled='true'] {
     margin-bottom: 0;
   }
   #app[data-page='i'] main {
-    height: calc(var(--app-h) - var(--topbar-h) - var(--fiche-bottom));
+    height: calc(var(--app-h) - 57px - 57px);
     padding-bottom: 0;
   }
   #app[data-page='i'] .detail {
@@ -934,7 +934,7 @@ a[data-edit][aria-disabled='true'] {
 @container app (max-width: 600px) {
   .detail--card .dcard {
     margin-inline: calc(-1 * (var(--pad) + var(--s2)));
-    padding: var(--dcard-top) var(--dcard-r) 0 var(--s1);
+    padding: 15px 26px 0 var(--s1);
     column-gap: var(--s3);
   }
   .detail--card .dcard > .back {
