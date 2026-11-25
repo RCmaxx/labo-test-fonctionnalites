@@ -8,21 +8,7 @@ const avt = m => {
 };
 const link = t => `${location.origin}${location.pathname}#invitation/${t}`;
 
-export async function renderSettings(el) {
-  const [{ data: org }, { data: members }, { data: invs, error: ie }] = await Promise.all([
-    sb.from('organizations').select('id, name').eq('id', S.me.org_id).maybeSingle(),
-    sb.from('members').select('user_id, full_name, email, role').order('created_at'),
-    sb
-      .from('invitations')
-      .select('id, email, role, token, expires_at')
-      .is('accepted_at', null)
-      .order('created_at', { ascending: false }),
-  ]);
-  const team = members || [];
-  const me = S.me.id;
-  el.innerHTML = `
-    <div class="account setpage">
-      <h1>Gestion des profils</h1>
+const orgPanel = org => `
       <section class="panel">
         <h2>Entreprise</h2>
         <form class="stack" id="org">
@@ -30,24 +16,33 @@ export async function renderSettings(el) {
           <button class="primary" type="submit">Enregistrer</button>
           <p class="error"></p>
         </form>
-      </section>
-      <section class="panel">
-        <h2>Équipe</h2>
-        <table class="tlist">
-          <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th></th></tr></thead>
-          <tbody>${team
-            .map(
-              m => `<tr>
+      </section>`;
+
+const teamRow = (m, me) => `<tr>
             <td>${avt(m)} ${esc(m.full_name) || '—'}</td>
             <td>${esc(m.email)}</td>
             <td>${m.user_id !== me ? `<select data-role="${m.user_id}">${options(ROLES, m.role)}</select>` : esc(ROLES[m.role] || m.role)}</td>
             <td>${m.user_id !== me ? `<button type="button" class="ghost danger" data-del="${m.user_id}">Retirer</button>` : ''}</td>
-          </tr>`
-            )
-            .join('')}</tbody>
+          </tr>`;
+
+const teamPanel = (team, me) => `
+      <section class="panel">
+        <h2>Équipe</h2>
+        <table class="tlist">
+          <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th></th></tr></thead>
+          <tbody>${team.map(m => teamRow(m, me)).join('')}</tbody>
         </table>
         <p class="error" id="terr"></p>
-      </section>
+      </section>`;
+
+const invRow = i => `<li>${esc(i.email)} · ${ROLES[i.role]} · expire le ${fmt(i.expires_at)}
+          <button type="button" class="ghost" data-copy="${i.token}">Copier le lien</button>
+          <button type="button" class="ghost danger" data-revoke="${i.id}">Annuler</button></li>`;
+
+const invList = (invs, ie) =>
+  ie ? `<li>${esc(ie.message)}</li>` : (invs || []).map(invRow).join('') || '<li>Aucune invitation en attente.</li>';
+
+const invitePanel = (invs, ie) => `
       <section class="panel panel--invite">
         <h2>Inviter un membre</h2>
         <form class="inline" id="inv">
@@ -56,18 +51,10 @@ export async function renderSettings(el) {
           <button class="primary" type="submit">Créer l'invitation</button>
           <p class="error"></p>
         </form>
-        <ul class="invs">${
-          ie
-            ? `<li>${esc(ie.message)}</li>`
-            : (invs || [])
-                .map(
-                  i => `<li>${esc(i.email)} · ${ROLES[i.role]} · expire le ${fmt(i.expires_at)}
-          <button type="button" class="ghost" data-copy="${i.token}">Copier le lien</button>
-          <button type="button" class="ghost danger" data-revoke="${i.id}">Annuler</button></li>`
-                )
-                .join('') || '<li>Aucune invitation en attente.</li>'
-        }</ul>
-      </section>
+        <ul class="invs">${invList(invs, ie)}</ul>
+      </section>`;
+
+const mePanel = () => `
       <section class="panel">
         <h2>Mon profil</h2>
         <form class="stack" id="me">
@@ -77,7 +64,9 @@ export async function renderSettings(el) {
           <button class="primary" type="submit">Enregistrer</button>
           <p class="error"></p>
         </form>
-      </section>
+      </section>`;
+
+const pwPanel = () => `
       <section class="panel">
         <h2>Mot de passe</h2>
         <form class="stack" id="pw">
@@ -85,13 +74,15 @@ export async function renderSettings(el) {
           <button class="primary" type="submit">Modifier</button>
           <p class="error"></p>
         </form>
-      </section>
-    </div>`;
+      </section>`;
 
-  const err = (form, m) => {
-    const p = form.querySelector('.error');
-    if (p) p.textContent = m || '';
-  };
+const err = (form, m) => {
+  const p = form.querySelector('.error');
+  if (p) p.textContent = m || '';
+};
+
+// Formulaires « Entreprise », « Mon profil » et « Mot de passe ».
+function bindForms(el, me) {
   el.querySelector('#org').onsubmit = async e => {
     e.preventDefault();
     const name = e.target.name.value.trim();
@@ -116,6 +107,10 @@ export async function renderSettings(el) {
     e.target.password.value = '';
     err(e.target, error ? error.message : 'Mot de passe modifié.');
   };
+}
+
+// Changement de rôle et retrait d'un membre.
+function bindTeam(el) {
   el.querySelectorAll('[data-role]').forEach(
     s =>
       (s.onchange = async () => {
@@ -137,6 +132,18 @@ export async function renderSettings(el) {
         renderSettings(el);
       })
   );
+}
+
+const copyLink = async text => {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    prompt("Lien d'invitation à copier :", text);
+  }
+};
+
+// Création, copie et annulation des invitations.
+function bindInvites(el, me) {
   el.querySelector('#inv').onsubmit = async e => {
     e.preventDefault();
     const { data, error } = await sb
@@ -150,24 +157,10 @@ export async function renderSettings(el) {
       .select('token')
       .single();
     if (error) return err(e.target, error.message);
-    try {
-      await navigator.clipboard.writeText(link(data.token));
-    } catch {
-      prompt("Lien d'invitation à copier :", link(data.token));
-    }
+    await copyLink(link(data.token));
     renderSettings(el);
   };
-  el.querySelectorAll('[data-copy]').forEach(
-    b =>
-      (b.onclick = async () => {
-        const text = link(b.dataset.copy);
-        try {
-          await navigator.clipboard.writeText(text);
-        } catch {
-          prompt("Lien d'invitation à copier :", text);
-        }
-      })
-  );
+  el.querySelectorAll('[data-copy]').forEach(b => (b.onclick = () => copyLink(link(b.dataset.copy))));
   el.querySelectorAll('[data-revoke]').forEach(
     b =>
       (b.onclick = async () => {
@@ -176,4 +169,24 @@ export async function renderSettings(el) {
         renderSettings(el);
       })
   );
+}
+
+export async function renderSettings(el) {
+  const [{ data: org }, { data: members }, { data: invs, error: ie }] = await Promise.all([
+    sb.from('organizations').select('id, name').eq('id', S.me.org_id).maybeSingle(),
+    sb.from('members').select('user_id, full_name, email, role').order('created_at'),
+    sb
+      .from('invitations')
+      .select('id, email, role, token, expires_at')
+      .is('accepted_at', null)
+      .order('created_at', { ascending: false }),
+  ]);
+  const me = S.me.id;
+  el.innerHTML = `
+    <div class="account setpage">
+      <h1>Gestion des profils</h1>${orgPanel(org)}${teamPanel(members || [], me)}${invitePanel(invs, ie)}${mePanel()}${pwPanel()}
+    </div>`;
+  bindForms(el, me);
+  bindTeam(el);
+  bindInvites(el, me);
 }

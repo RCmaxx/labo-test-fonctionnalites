@@ -47,75 +47,61 @@ const TITLES = {
 };
 
 let opening = true; // prochain affichage = ouverture de l'appli
-async function render() {
-  const [page, id] = route();
-  const {
-    data: { session },
-  } = await sb.auth.getSession();
-  if (page === 'invitation') return renderInvitation(id, session);
-  if (!session)
-    return page === 'mot-de-passe' ? renderForgot() : page === 'inscription' ? renderSignup() : renderLogin();
-  if (!S.me) {
-    const uid = session.user.id;
-    const [{ data: m, error }, t] = await Promise.all([
-      sb.from('members').select('full_name, role, acting_role, org_id').eq('user_id', uid).maybeSingle(),
-      sb.from('members').select('user_id, full_name, role'),
-    ]);
-    if (error) return renderLogin(error.message);
-    if (!m) {
-      // Compte créé depuis « Créer un compte entreprise » : l'entreprise est créée à la première connexion.
-      const md = session.user.user_metadata || {};
-      if (
-        md.org_name &&
-        !(await sb.rpc('create_organization', { p_name: md.org_name, p_full_name: md.full_name || '' })).error
-      )
-        return render();
-      return renderOrg(session.user);
-    }
-    const { data: org } = await sb.from('organizations').select('name').eq('id', m.org_id).maybeSingle();
-    S.me = {
-      id: uid,
-      email: session.user.email,
-      full_name: m.full_name,
-      org_id: m.org_id,
-      real: m.role,
-      role: (m.role === 'admin' && m.acting_role) || m.role,
-    };
-    S.org = org;
-    S.team = t.data || [];
-    startLive(show);
-    opening = true;
+// Première ouverture : charge le profil et l'entreprise. Rend `{ ret }` quand render() doit s'arrêter là.
+async function loadMe(session) {
+  const uid = session.user.id;
+  const [{ data: m, error }, t] = await Promise.all([
+    sb.from('members').select('full_name, role, acting_role, org_id').eq('user_id', uid).maybeSingle(),
+    sb.from('members').select('user_id, full_name, role'),
+  ]);
+  if (error) return { ret: renderLogin(error.message) };
+  if (!m) {
+    // Compte créé depuis « Créer un compte entreprise » : l'entreprise est créée à la première connexion.
+    const md = session.user.user_metadata || {};
+    if (
+      md.org_name &&
+      !(await sb.rpc('create_organization', { p_name: md.org_name, p_full_name: md.full_name || '' })).error
+    )
+      return { ret: render() };
+    return { ret: renderOrg(session.user) };
   }
-  const r = S.me.role,
-    admin = S.me.real === 'admin',
-    cli = r === 'client';
-  // Comme l'appli tech : un technicien a toujours la vue mobile (cadre téléphone sur grand écran).
-  setSim(r === 'technicien' || !!localStorage.labosim);
-  // Comme l'appli tech : sur mobile, chaque ouverture (lancement, connexion, retour après 5 min) arrive sur « Interventions ».
-  if (opening) {
-    opening = false;
-    if (isMob() && !cli && !['nouvelles', 'i', 'invitation'].includes(page)) return location.replace('#nouvelles');
-  }
-  const disp = admin ? PNAME[r] || S.me.full_name : S.me.full_name || S.me.email;
-  const av = avatar(admin && r === 'client' ? 'Client' : disp, r);
-  const pick = admin;
+  const { data: org } = await sb.from('organizations').select('name').eq('id', m.org_id).maybeSingle();
+  S.me = {
+    id: uid,
+    email: session.user.email,
+    full_name: m.full_name,
+    org_id: m.org_id,
+    real: m.role,
+    role: (m.role === 'admin' && m.acting_role) || m.role,
+  };
+  S.org = org;
+  S.team = t.data || [];
+  startLive(show);
+  opening = true;
+  return null;
+}
+
+// Liste « Voir en tant que » de l'administrateur : avatar, prénom et rôle court, comme l'appli tech.
+function profileSelect(r) {
   const roles = Object.entries(ROLES).filter(([k]) => k !== 'client');
   const mob = !!localStorage.labosim; // choix « mobile » enregistré (le cadre sim n'existe que sur grand écran)
-  // Profils proposés, comme l'appli tech : avatar, prénom et rôle court.
   const lab = (name, k, txt) => `${avatar(name, k).e} ${esc(name)} · ${txt}`;
-  const sel = pick
-    ? `<select id="asrole" aria-label="Voir en tant que">
+  return `<select id="asrole" aria-label="Voir en tant que">
     ${roles.map(([k]) => `<option value="${k}" ${k === r && !mob ? 'selected' : ''}>${lab(PNAME[k], k, SHORT[k])}</option>`).join('')}
     <option value="responsable_tech|m" ${mob && r === 'responsable_tech' ? 'selected' : ''}>${lab(PNAME.responsable_tech, 'responsable_tech', 'RT mobile')}</option>
     <option value="directeur|m" ${mob && r === 'directeur' ? 'selected' : ''}>${lab(PNAME.directeur, 'directeur', 'Directeur mobile')}</option>
     <option value="bis"${S.me.email === REAL.bis[0] ? ' selected' : ''}>${lab(REAL.bis[1], 'technicien', 'Tech')}</option>
     <option value="cli|m"${S.me.email === REAL.cli[0] ? ' selected' : ''}>${avatar('Client mobile').e} Client mobile</option>
-  </select>`
-    : '';
-  const [pg] = route();
-  const ptit = titleOf(pg);
-  app.innerHTML = `<nav class="topbar">
-    <span class="ptit">${esc(ptit)}</span>
+  </select>`;
+}
+
+// Barre du haut (vue standard) avec le compte à droite.
+function topbarHtml({ r, admin, cli }) {
+  const disp = admin ? PNAME[r] || S.me.full_name : S.me.full_name || S.me.email;
+  const av = avatar(admin && r === 'client' ? 'Client' : disp, r);
+  const pick = admin;
+  return `<nav class="topbar">
+    <span class="ptit">${esc(titleOf(route()[0]))}</span>
     <span class="pcnt"></span>
     <span class="brand">${esc(S.org?.name || '')}</span>
     <nav class="tnav">
@@ -130,27 +116,47 @@ async function render() {
       <div class="acct${pick ? ' acct--pick' : ''}">
         <span class="av" style="background:${av.bg}" aria-hidden="true">${av.e}</span>
         <span class="acc-t"><b>${esc(disp)}</b>${pick ? '' : `<i>${esc(ROLES[r] || r)}</i>`}</span>
-        ${pick ? CHEV + sel : ''}
+        ${pick ? CHEV + profileSelect(r) : ''}
       </div>
       ${S.me.role === 'admin' ? '<a href="#compte">Mon compte</a>' : ''}
       <button type="button" class="ghost" id="logout">Déconnexion</button>
     </div>
-  </nav>
-  <small class="lotv">${VERSION}</small>
-  <aside class="alerts" id="alerts"></aside>
-  <main></main>
-  ${cli ? '' : '<a class="fabm" href="#mes" id="fabm" aria-label="Mes interventions"></a>'}
-  <a class="fab${cli ? ' fab--cli' : ''}" href="#nouvelle" aria-label="Nouvelle intervention">+</a>
-  <nav class="tabbar">
+  </nav>`;
+}
+
+// Barre du bas (mobile) : onglets et rouage.
+function tabbarHtml({ admin, cli }) {
+  return `<nav class="tabbar">
     <i class="tabbar__ind" aria-hidden="true"></i>
     <a href="#" aria-label="Terminées">${LIST}</a>
     ${cli ? '' : '<a href="#nouvelles" aria-label="Nouvelles interventions"><span class="tabbar__n" id="tabn"></span></a><a href="#mes" aria-label="Mes interventions"><span class="tabbar__m" id="tabm"></span></a>'}
     ${admin ? `<a href="#parametres" aria-label="Profils">${USERS}</a>` : ''}
     <button type="button" class="tabbar__gear" id="gear" aria-label="Compte et profil" aria-expanded="false">${GEAR}</button>
   </nav>`;
-  drawAlerts();
-  paintCounts();
-  loadCounts();
+}
+
+// Mobile, comme l'appli tech : profils en boutons visibles dans le menu du rouage.
+function mobileProfiles(asr) {
+  const box = document.createElement('div');
+  box.className = 'mprof';
+  box.innerHTML =
+    '<span class="mprof__h">Changer de profil</span>' +
+    [...asr.options]
+      .map(
+        o =>
+          `<button type="button" data-v="${esc(o.value)}"${o.selected ? ' class="on" aria-current="true"' : ''}>${esc(o.text)}</button>`
+      )
+      .join('');
+  app.querySelector('#logout').before(box);
+  box.onclick = e => {
+    const b = e.target.closest('button');
+    if (!b || b.classList.contains('on') || asr.disabled) return;
+    asr.value = b.dataset.v;
+    asr.dispatchEvent(new Event('change'));
+  };
+}
+
+function bindShell() {
   app.querySelector('#logout').onclick = () => signOut();
   app.querySelector('#gear').onclick = e => {
     e.stopPropagation();
@@ -166,27 +172,45 @@ async function render() {
     openMine();
   });
   const asr = app.querySelector('#asrole');
-  if (asr) asr.onchange = () => pickRole(asr);
-  // Mobile, comme l'appli tech : profils en boutons visibles dans le menu du rouage.
   if (asr) {
-    const box = document.createElement('div');
-    box.className = 'mprof';
-    box.innerHTML =
-      '<span class="mprof__h">Changer de profil</span>' +
-      [...asr.options]
-        .map(
-          o =>
-            `<button type="button" data-v="${esc(o.value)}"${o.selected ? ' class="on" aria-current="true"' : ''}>${esc(o.text)}</button>`
-        )
-        .join('');
-    app.querySelector('#logout').before(box);
-    box.onclick = e => {
-      const b = e.target.closest('button');
-      if (!b || b.classList.contains('on') || asr.disabled) return;
-      asr.value = b.dataset.v;
-      asr.dispatchEvent(new Event('change'));
-    };
+    asr.onchange = () => pickRole(asr);
+    mobileProfiles(asr);
   }
+}
+
+async function render() {
+  const [page, id] = route();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
+  if (page === 'invitation') return renderInvitation(id, session);
+  if (!session)
+    return page === 'mot-de-passe' ? renderForgot() : page === 'inscription' ? renderSignup() : renderLogin();
+  if (!S.me) {
+    const stop = await loadMe(session);
+    if (stop) return stop.ret;
+  }
+  const r = S.me.role,
+    admin = S.me.real === 'admin',
+    cli = r === 'client';
+  // Comme l'appli tech : un technicien a toujours la vue mobile (cadre téléphone sur grand écran).
+  setSim(r === 'technicien' || !!localStorage.labosim);
+  // Comme l'appli tech : sur mobile, chaque ouverture (lancement, connexion, retour après 5 min) arrive sur « Interventions ».
+  if (opening) {
+    opening = false;
+    if (isMob() && !cli && !['nouvelles', 'i', 'invitation'].includes(page)) return location.replace('#nouvelles');
+  }
+  app.innerHTML = `${topbarHtml({ r, admin, cli })}
+  <small class="lotv">${VERSION}</small>
+  <aside class="alerts" id="alerts"></aside>
+  <main></main>
+  ${cli ? '' : '<a class="fabm" href="#mes" id="fabm" aria-label="Mes interventions"></a>'}
+  <a class="fab${cli ? ' fab--cli' : ''}" href="#nouvelle" aria-label="Nouvelle intervention">+</a>
+  ${tabbarHtml({ admin, cli })}`;
+  drawAlerts();
+  paintCounts();
+  loadCounts();
+  bindShell();
   return show();
 }
 
