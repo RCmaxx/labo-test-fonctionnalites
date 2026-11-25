@@ -138,7 +138,7 @@ async function render() {
   };
   const asr = app.querySelector('#asrole');
   if (asr) asr.onchange = () => pickRole(asr);
-  show();
+  return show();
 }
 
 async function backToAdmin() {
@@ -297,10 +297,40 @@ function show() {
 const tabs = initTabs({ app }); // doit être enregistré AVANT l'écouteur ci-dessous
 const LISTS = ['', 'nouvelles', 'mes'];
 // Entre deux onglets de liste, seul le contenu change (pas de reconstruction de l'en-tête ni de la barre du bas).
+// Ouverture d'une fiche depuis une liste (mobile), comme l'appli tech : l'image de la liste reste affichée pendant
+// le chargement, puis la fiche arrive par la droite pendant que la liste part à gauche en s'assombrissant.
+function pushOut() {
+  const m = app.querySelector('main');
+  if (!m || !isMob() || matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+  const r = m.getBoundingClientRect(),
+    o = document.createElement('div');
+  o.className = 'pushout';
+  o.setAttribute('aria-hidden', 'true');
+  o.innerHTML = `<div class="pushout__in">${m.innerHTML}</div><div class="pushout__dim"></div>`;
+  Object.assign(o.style, {
+    left: r.left + 'px',
+    top: r.top + 'px',
+    width: r.width + 'px',
+    height: innerHeight - r.top + 'px',
+  });
+  document.body.append(o);
+  return () => {
+    const fresh = app.querySelector('main');
+    fresh?.classList.add('slide-in');
+    o.classList.add('is-back');
+    requestAnimationFrame(() => requestAnimationFrame(() => o.classList.add('is-gone')));
+    setTimeout(() => {
+      o.remove();
+      fresh?.classList.remove('slide-in');
+    }, 450);
+  };
+}
 addEventListener('hashchange', e => {
   const from = (e.oldURL.split('#')[1] || '').split('/')[0];
   if (S.me && app.querySelector('main') && LISTS.includes(from) && LISTS.includes(route()[0])) return show();
-  render();
+  const go = S.me && LISTS.includes(from) && route()[0] === 'i' ? pushOut() : null;
+  const done = render();
+  if (go) Promise.resolve(done).finally(go);
 });
 addEventListener('labo:render', () => {
   tabs.reset();

@@ -87,6 +87,10 @@
   --loc-min: 72px;
   --loc-h: 36px;
   --fx: 44px;
+  /* Glissement d'ouverture de fiche (appli tech) */
+  --slide-ms: 0.28s;
+  --slide-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ink-pure: #000;
   --menu-gap: 22px; /* menu du compte : écart au-dessus de la barre du bas */
   --r-menu: 12px;
   /* Fiche mobile : hauteur du header et place laissée sous la fiche pour la barre du bas (appli tech) */

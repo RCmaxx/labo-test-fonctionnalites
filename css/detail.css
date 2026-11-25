@@ -955,3 +955,40 @@ a[data-edit][aria-disabled='true'] {
 .dtop--card .dph0 {
   margin: 6px 0 0 30px;
 }
+
+/* Ouverture d'une fiche depuis une liste (mobile) : glissement de l'appli tech (js/app.js, pushOut) */
+.pushout {
+  position: fixed;
+  z-index: 5; /* sous la barre du bas (10) */
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+  transition: transform var(--slide-ms) var(--slide-ease);
+}
+.pushout.is-back {
+  z-index: 0;
+}
+.pushout.is-gone {
+  transform: translateX(-30%);
+}
+.pushout__dim {
+  position: absolute;
+  inset: 0;
+  background: var(--ink-pure);
+  opacity: 0;
+  transition: opacity var(--slide-ms);
+}
+.pushout.is-gone .pushout__dim {
+  opacity: 0.12;
+}
+main.slide-in {
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+  animation: slide-in var(--slide-ms) var(--slide-ease) both;
+}
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
