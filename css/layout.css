@@ -292,6 +292,7 @@ main {
 .sim {
   --sim-w: 390px;
   --app-h: var(--sim-h);
+  --sim-bottom: calc(100dvh - var(--s6) - var(--sim-h));
 }
 .sim #app {
   position: relative;
@@ -301,22 +302,26 @@ main {
   margin: var(--s6) auto;
   background: var(--bg);
   box-shadow: 0 0 0 1px var(--line-strong);
-  border-radius: 40px;
+  border-radius: 36px;
   overflow-x: hidden;
   overflow-y: auto;
 }
 .sim .fabm:not(:empty) {
   right: calc(50vw - var(--sim-w) / 2 + var(--s4));
-  bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s4) + var(--fab) + var(--s3));
+  bottom: calc(var(--sim-bottom) + var(--tab-gap) + var(--tab) + var(--s4) + var(--fab) + var(--s3));
 }
 .sim .fab {
   right: calc(50vw - var(--sim-w) / 2 + var(--s4));
-  bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--s4));
+  bottom: calc(var(--sim-bottom) + var(--tab-gap) + var(--tab) + var(--s4));
 }
 .sim .tabbar {
   left: calc(50vw - var(--sim-w) / 2 + 12px);
   right: calc(50vw - var(--sim-w) / 2 + 12px);
-  bottom: calc(var(--s6) + var(--tab-gap));
+  bottom: calc(var(--sim-bottom) + var(--tab-gap));
+}
+
+.sim #app[data-page='nouvelles'] main .cards {
+  margin-inline-end: 15px;
 }
 
 /* Mobile (réel et simulé) */
@@ -630,7 +635,7 @@ main {
 }
 .sim .topbar.open .who {
   position: absolute;
-  bottom: calc(var(--s6) + var(--tab-gap) + var(--tab) + var(--menu-gap));
+  bottom: calc(var(--sim-bottom) + var(--tab-gap) + var(--tab) + var(--menu-gap));
 }
 
 /* Vue standard, comme l'appli tech : barre sombre ; rôle et « Mon compte » derrière la pastille du compte. */
