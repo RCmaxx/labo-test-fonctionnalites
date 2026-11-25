@@ -495,10 +495,10 @@ export async function renderDetail(el, id) {
       : '';
 
   el.innerHTML = `
-    <article class="detail${cardHead ? ' detail--card' : ''}">
+    <article class="detail${cardHead || inline ? ' detail--card' : ''}">
       <div class="dfix">
-        ${cardHead || `<div class="dtrow">${back}<h1 class="dtitle">${esc(i.title).replace(/ (?=[^ ]*$)/, '&nbsp;')}</h1></div>`}
-        <section class="dtop${cardHead ? ' dtop--card' : ''}">
+        ${cardHead || (inline ? '' : `<div class="dtrow">${back}<h1 class="dtitle">${esc(i.title).replace(/ (?=[^ ]*$)/, '&nbsp;')}</h1></div>`)}
+        <section class="dtop${cardHead || inline ? ' dtop--card' : ''}">
           <div class="dmeta3"><div class="drow"><span class="dloc">${i.location ? `<span class="ltag">${esc(locTag(i.location))}</span>` : ''}${i.assignee_id || i.proposed_to ? tagsOf(i) : ''}${i.status === 'publiee' ? '<span class="pill st-publiee">Nouveau</span>' : ''}<span class="ddate">${fmtAgo(i.created_at)}</span></span><span class="dright">${prio || pill ? `<span class="drt">${prio}${pill}</span>` : ''}</span></div>
             ${i.available_from || i.remind_minutes || i.client_presence ? `<p class="dslot">${i.available_from ? CLOCK + `<span>${esc(slotLine(i))}</span>` : i.client_presence ? '<span>Présence client requise</span>' : ''}${i.remind_minutes ? `<span class="dremind">${esc(REMIND[i.remind_minutes] || `${i.remind_minutes} min avant`)}</span>` : ''}</p>` : ''}</div>
           ${(!chat || cardHead) && dsc ? `<p class="ddesc">${esc(dsc)}</p>` : ''}
@@ -539,7 +539,9 @@ export async function renderDetail(el, id) {
       refold();
     };
 
-  const row = el.querySelector('.dmeta3 .drow');
+  // Dépliée dans la liste (ordinateur) : le rouage se pose sur la carte, comme l'appli tech.
+  const row = inline ? el.closest('.unfold')?.previousElementSibling : el.querySelector('.dmeta3 .drow');
+  row?.querySelector(':scope > .xgear')?.remove();
   const actEls = [...el.querySelectorAll('.dact .actions > a, .dact .actions > button')];
   if (row && actEls.length) {
     const g = document.createElement('button');

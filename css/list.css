@@ -353,7 +353,32 @@
   overflow: hidden;
 }
 .unfold__body {
+  /* conteneur étroit : la fiche dépliée prend le style mobile, comme dans l'appli tech */
+  container: app / inline-size;
   padding: var(--s2) var(--s1) var(--s4);
+}
+/* La carte et sa fiche dépliée forment un seul bloc blanc, comme l'appli tech */
+.unfold {
+  margin-top: calc(-1 * var(--card-gap));
+}
+.unfold .detail--card {
+  border-radius: 0 0 var(--r-l) var(--r-l);
+  background: var(--surface);
+}
+.unfold .detail--card .cin {
+  position: static;
+}
+.cards > li:has(+ .unfold.is-open) .card {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.cards > li:has(> .xgear) {
+  position: relative;
+}
+.cards > li > .xgear {
+  position: absolute;
+  top: var(--s2);
+  right: var(--s2);
 }
 
 .lpage-title {

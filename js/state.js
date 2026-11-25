@@ -33,7 +33,7 @@ export const REMIND = {
 export const MGR = ['admin', 'directeur', 'responsable_tech'],
   TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v98';
+export const VERSION = 'v99';
 export const app = document.getElementById('app');
 // Mobile simulé (cadre de téléphone) : seulement sur grand écran ; sur un vrai téléphone la largeur suffit, comme l'appli tech.
 export const setSim = on => document.documentElement.classList.toggle('sim', on && innerWidth > 600);
