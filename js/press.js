@@ -64,11 +64,9 @@ async function run(id, a, done) {
   done();
 }
 
-// Ouvre le menu sur la carte `card` ; renvoie le suivi du doigt resté posé (glisser puis relâcher sur une action).
-function openMenu(card, r, done) {
-  navigator.vibrate?.(10);
-  const veil = document.createElement('div'),
-    box = card.getBoundingClientRect();
+// Voile, copie de la carte et étiquettes d'actions, ajoutés à la page.
+function buildMenu(card, r, box) {
+  const veil = document.createElement('div');
   veil.className = 'pmenu-veil';
   const clone = card.cloneNode(true);
   clone.classList.add('pmenu-card');
@@ -94,13 +92,12 @@ function openMenu(card, r, done) {
     veil.classList.add('is-in');
     tags.classList.add('is-in');
   });
+  return { veil, clone, tags };
+}
 
-  const btns = [...tags.querySelectorAll('button')];
-  const at = (x, y) =>
-    btns.find(b => {
-      const q = b.getBoundingClientRect();
-      return x >= q.left - 6 && x <= q.right + 6 && y >= q.top - 4 && y <= q.bottom + 4;
-    });
+// Fermeture du menu (défilement, toucher ailleurs) ; `onPick(bouton)` est appelé au clic sur une action.
+// Rend `{ close, isShut }`.
+function guardMenu({ veil, clone, tags }, onPick) {
   let shut = false;
   // Menu ouvert : le doigt resté posé choisit une action, il ne fait pas défiler la page.
   const still = e => e.cancelable && e.preventDefault();
@@ -133,17 +130,31 @@ function openMenu(card, r, done) {
       ev.forEach(k => document.removeEventListener(k, swallow, true));
     }, 450);
   };
-  const pick = b => {
-    if (!b || b.disabled || shut) return;
-    close();
-    run(r.id, b.dataset.a, done);
-  };
-  tags.addEventListener('click', e => pick(e.target.closest('button')));
+  tags.addEventListener('click', e => onPick(e.target.closest('button')));
   setTimeout(() => {
     if (shut) return;
     addEventListener('scroll', close, true);
     document.addEventListener('pointerdown', outside, true);
   }, 50);
+  return { close, isShut: () => shut };
+}
+
+// Ouvre le menu sur la carte `card` ; renvoie le suivi du doigt resté posé (glisser puis relâcher sur une action).
+function openMenu(card, r, done) {
+  navigator.vibrate?.(10);
+  const parts = buildMenu(card, r, card.getBoundingClientRect());
+  const btns = [...parts.tags.querySelectorAll('button')];
+  const at = (x, y) =>
+    btns.find(b => {
+      const q = b.getBoundingClientRect();
+      return x >= q.left - 6 && x <= q.right + 6 && y >= q.top - 4 && y <= q.bottom + 4;
+    });
+  const pick = b => {
+    if (!b || b.disabled || guard.isShut()) return;
+    guard.close();
+    run(r.id, b.dataset.a, done);
+  };
+  const guard = guardMenu(parts, pick);
 
   let start = null,
     moved = false;

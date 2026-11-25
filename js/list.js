@@ -283,51 +283,39 @@ const item = (r, q = '', sf = []) => {
   </a></li>`;
 };
 
-// Page Terminées : mobile = une seule liste ; sinon groupes aujourd'hui / cette semaine / avant (avec « Voir plus »).
-function paintTerminees(el, rows, done, more, reopen) {
+const emptyOr = rows =>
+  rows.length ? `<ul class="cards">${rows.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>';
+
+// Groupes de la page Terminées : mobile = une seule liste ; sinon aujourd'hui / cette semaine / avant.
+function termineesGroups(done) {
   const d0 = day0(Date.now()),
     w0 = weekStart();
   const list = [...done].sort((a, b) => finAt(b) - finAt(a));
-  const auj = list.filter(r => day0(finAt(r)) === d0);
-  const sem = list.filter(r => {
-    const t = day0(finAt(r));
-    return t >= w0 && t < d0;
-  });
-  const avant = list.filter(r => day0(finAt(r)) < w0);
-  const groups = isMob()
-    ? [['all', 'Interventions terminées', list]]
-    : [
-        ['auj', "Terminées aujourd'hui", auj],
-        ['sem', 'Terminées cette semaine', sem],
-        ['avant', 'Autres interventions terminées', avant],
-      ];
-  const flat = isMob(); // mobile : une seule liste « N Interventions terminées », comme l'appli tech
-  const body = ([k, label, rows]) => {
-    if (flat)
-      return `<section class="group" data-g="all"><h2><span class="count">${rows.length}</span><span class="glab">${label}</span></h2>${rows.length ? `<ul class="cards">${rows.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
-    const inner =
-      k === 'sem' && rows.length
-        ? byDay(rows)
-        : rows.length
-          ? `<ul class="cards">${rows.map(r => item(r)).join('')}</ul>`
-          : '<p class="empty">Aucune.</p>';
-    return `<section class="group${CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2 role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"><span class="glab">${label}</span>${CHEV}</h2>${inner}</section>`;
-  };
-  const mob = isMob();
-  const html = mob
-    ? groups.map(body).join('')
-    : `<div class="gcols gdone">${groups.map(g => `<div class="gcol">${g[2].length ? body(g) : ''}</div>`).join('')}</div>`;
-  rows.innerHTML =
-    `<h1 class="lpage-title">Interventions terminées</h1>` +
-    html +
-    (more ? '<p class="more"><button type="button" id="more">Voir plus</button></p>' : '');
-  const g0 = rows.querySelector('.gcol');
-  if (g0) {
-    const host = document.querySelector('.sim #app');
-    const top = g0.getBoundingClientRect().top - (host ? host.getBoundingClientRect().top - host.scrollTop : 0);
-    document.documentElement.style.setProperty('--gtop', Math.round(top) + 'px');
-    rows.querySelectorAll('.gcol').forEach(c => stackSticky(c, '.group > h2'));
-  }
+  if (isMob()) return [['all', 'Interventions terminées', list]];
+  return [
+    ['auj', "Terminées aujourd'hui", list.filter(r => day0(finAt(r)) === d0)],
+    [
+      'sem',
+      'Terminées cette semaine',
+      list.filter(r => {
+        const t = day0(finAt(r));
+        return t >= w0 && t < d0;
+      }),
+    ],
+    ['avant', 'Autres interventions terminées', list.filter(r => day0(finAt(r)) < w0)],
+  ];
+}
+
+// Un groupe : mobile = « N Interventions terminées » comme l'appli tech ; sinon titre repliable.
+function termineesGroup([k, label, rows]) {
+  if (isMob())
+    return `<section class="group" data-g="all"><h2><span class="count">${rows.length}</span><span class="glab">${label}</span></h2>${emptyOr(rows)}</section>`;
+  const inner = k === 'sem' && rows.length ? byDay(rows) : emptyOr(rows);
+  return `<section class="group${CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2 role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"><span class="glab">${label}</span>${CHEV}</h2>${inner}</section>`;
+}
+
+// Titres repliables des groupes.
+function bindFold(rows) {
   rows.querySelectorAll('.group h2[role=button]').forEach(h => {
     h.onclick = h.onkeydown = e => {
       if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
@@ -340,6 +328,26 @@ function paintTerminees(el, rows, done, more, reopen) {
       h.setAttribute('aria-expanded', String(!CLOSED[k]));
     };
   });
+}
+
+// Page Terminées (avec « Voir plus »).
+function paintTerminees(el, rows, done, more, reopen) {
+  const groups = termineesGroups(done);
+  const html = isMob()
+    ? groups.map(termineesGroup).join('')
+    : `<div class="gcols gdone">${groups.map(g => `<div class="gcol">${g[2].length ? termineesGroup(g) : ''}</div>`).join('')}</div>`;
+  rows.innerHTML =
+    `<h1 class="lpage-title">Interventions terminées</h1>` +
+    html +
+    (more ? '<p class="more"><button type="button" id="more">Voir plus</button></p>' : '');
+  const g0 = rows.querySelector('.gcol');
+  if (g0) {
+    const host = document.querySelector('.sim #app');
+    const top = g0.getBoundingClientRect().top - (host ? host.getBoundingClientRect().top - host.scrollTop : 0);
+    document.documentElement.style.setProperty('--gtop', Math.round(top) + 'px');
+    rows.querySelectorAll('.gcol').forEach(c => stackSticky(c, '.group > h2'));
+  }
+  bindFold(rows);
   const btn = rows.querySelector('#more');
   if (btn)
     btn.onclick = () => {

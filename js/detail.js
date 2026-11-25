@@ -351,64 +351,56 @@ document.addEventListener(
   true
 );
 
-/** Prépare le fil de discussion : description, photos de création (mobile), regroupements et HTML du tchat. */
-function buildChat({ i, events, urls, chat, inline }) {
-  const evs = events.filter(
-    e =>
-      !['validee', 'refusee'].includes(e.type) &&
-      !(e.type === 'prise_en_charge' && /^Assignée à /.test(e.body || '')) &&
-      !(e.type === 'creee' && events.some(x => x.type === 'publiee'))
-  );
-  {
-    let tk = null;
-    [...events]
-      .sort((x, y) => new Date(x.created_at) - new Date(y.created_at))
-      .forEach(e => {
-        if (e.type === 'prise_en_charge') {
-          const m = (e.body || '').match(/^(?:Assignée à |Transférée par .* à )(.*)$/);
-          tk = m ? m[1] : e.actor_name;
-        } else if (e.type === 'liberee') tk = null;
-        else if (e.type === 'reactivee') e.taker = tk;
-      });
-  }
+// Pour chaque « réactivée », retient qui avait pris l'intervention juste avant.
+function markTakers(events) {
+  let tk = null;
+  [...events]
+    .sort((x, y) => new Date(x.created_at) - new Date(y.created_at))
+    .forEach(e => {
+      if (e.type === 'prise_en_charge') {
+        const m = (e.body || '').match(/^(?:Assignée à |Transférée par .* à )(.*)$/);
+        tk = m ? m[1] : e.actor_name;
+      } else if (e.type === 'liberee') tk = null;
+      else if (e.type === 'reactivee') e.taker = tk;
+    });
+}
 
-  const dsc = String(i.description || '').trim();
-  const asCard = !inline && chat && isMob(); // mobile : la carte de la liste sert d'en-tête, comme l'appli tech
-  if (chat) {
-    const src = events.find(x => ['creee', 'publiee'].includes(x.type) && x.actor_id === i.created_by) || {};
-    const ci = evs.findIndex(x => ['creee', 'publiee'].includes(x.type));
-    const base = {
-      actor_id: i.created_by,
-      actor_role: src.actor_role,
-      actor_name: src.actor_name || nameOf(i.created_by),
-      created_at: ci >= 0 ? evs[ci].created_at : i.created_at,
-    };
-    const head =
-      dsc && !asCard
-        ? { ...base, type: 'commentaire', body: dsc, cre: 1 }
-        : ci >= 0
-          ? evs[ci]
-          : { ...base, type: 'publiee' };
-    if (ci >= 0) evs.splice(ci, 1);
-    evs.unshift(head);
-  }
-  // Mobile : les photos jointes à la création quittent le fil et s'affichent en pastille sous la description.
-  const cph = [];
-  if (asCard) {
-    const t0 = new Date(evs[0]?.created_at);
-    evs
-      .filter(
-        e =>
-          e.type === 'photo' &&
-          e.actor_id === i.created_by &&
-          urls[e.body] &&
-          Math.abs(new Date(e.created_at) - t0) < 600000
-      )
-      .forEach(e => {
-        cph.push(e);
-        evs.splice(evs.indexOf(e), 1);
-      });
-  }
+// Met en tête du fil la création (ou la description, en bulle) de l'intervention.
+function addHead(evs, events, i, dsc, asCard) {
+  const src = events.find(x => ['creee', 'publiee'].includes(x.type) && x.actor_id === i.created_by) || {};
+  const ci = evs.findIndex(x => ['creee', 'publiee'].includes(x.type));
+  const base = {
+    actor_id: i.created_by,
+    actor_role: src.actor_role,
+    actor_name: src.actor_name || nameOf(i.created_by),
+    created_at: ci >= 0 ? evs[ci].created_at : i.created_at,
+  };
+  const head =
+    dsc && !asCard
+      ? { ...base, type: 'commentaire', body: dsc, cre: 1 }
+      : ci >= 0
+        ? evs[ci]
+        : { ...base, type: 'publiee' };
+  if (ci >= 0) evs.splice(ci, 1);
+  evs.unshift(head);
+}
+
+// Mobile : retire du fil les photos jointes à la création (dans les 10 min) et les rend.
+function takeCreationPhotos(evs, i, urls) {
+  const t0 = new Date(evs[0]?.created_at);
+  const cph = evs.filter(
+    e =>
+      e.type === 'photo' &&
+      e.actor_id === i.created_by &&
+      urls[e.body] &&
+      Math.abs(new Date(e.created_at) - t0) < 600000
+  );
+  cph.forEach(e => evs.splice(evs.indexOf(e), 1));
+  return cph;
+}
+
+// Regroupe les photos successives du même auteur (moins de 2 min d'écart, même jour).
+function groupEvents(evs) {
   const items = [];
   evs.forEach(e => {
     const g = items[items.length - 1];
@@ -424,9 +416,14 @@ function buildChat({ i, events, urls, chat, inline }) {
       g.push(e);
     else items.push([e]);
   });
+  return items;
+}
+
+// Bulles du fil, séparées par un repère à chaque nouveau jour.
+function chatBubbles(items, urls, i) {
   let lastDay = '';
   const ownE = e => e.actor_id === S.me.id;
-  const chatHtml = items
+  return items
     .map(g => {
       const e = g[0],
         d = dayLbl(e.created_at),
@@ -435,7 +432,23 @@ function buildChat({ i, events, urls, chat, inline }) {
       return sep + (e.type === 'photo' ? phMsg(g, ownE(e), urls) : bubble(e, ownE(e), urls, i));
     })
     .join('');
+}
 
+/** Prépare le fil de discussion : description, photos de création (mobile), regroupements et HTML du tchat. */
+function buildChat({ i, events, urls, chat, inline }) {
+  const evs = events.filter(
+    e =>
+      !['validee', 'refusee'].includes(e.type) &&
+      !(e.type === 'prise_en_charge' && /^Assignée à /.test(e.body || '')) &&
+      !(e.type === 'creee' && events.some(x => x.type === 'publiee'))
+  );
+  markTakers(events);
+  const dsc = String(i.description || '').trim();
+  const asCard = !inline && chat && isMob(); // mobile : la carte de la liste sert d'en-tête, comme l'appli tech
+  if (chat) addHead(evs, events, i, dsc, asCard);
+  // Mobile : les photos jointes à la création quittent le fil et s'affichent en pastille sous la description.
+  const cph = asCard ? takeCreationPhotos(evs, i, urls) : [];
+  const chatHtml = chatBubbles(groupEvents(evs), urls, i);
   return { asCard, chatHtml, cph, dsc };
 }
 

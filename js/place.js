@@ -39,23 +39,45 @@ const tagIn = v => {
     : `${PIN}<span class="ltx">${esc(v)}</span>`;
 };
 
-// Champ « Lieu » : saisie assistée (liste de lieux connus), étiquette de lieu et suggestion depuis le titre.
-/** Branche le champ Lieu du formulaire `f` ; rend `syncTag` pour rafraîchir l'étiquette après une restauration de brouillon. */
-export function initPlaceField(f, placesRes) {
-  const loc = f.location,
-    ul = f.querySelector('.ac-list');
-  let places = placesRes.data || [];
+const nameList = places => [...new Set([...COMMON, ...places.filter(p => p.num == null).map(p => p.label)])];
+const words = (s, sep) => s.toLowerCase().split(sep);
 
-  f.querySelectorAll('[name=priority]').forEach(p => p.addEventListener('change', () => (f.dataset.prio = p.value)));
-  f.querySelectorAll('[name=assign]').forEach(c =>
-    c.addEventListener('change', () => {
-      if (c.checked)
-        f.querySelectorAll('[name=assign]').forEach(o => {
-          if (o !== c) o.checked = false;
-        });
-    })
-  );
+// Lieux proposés d'après le titre (numéro de mobil-home ou nom de lieu).
+function fromTitle(title, places) {
+  const t = title.toLowerCase();
+  if (!t) return [];
+  const nums = [...t.matchAll(/(?:mh|mobil[- ]?home)?\s*(\d+)/g)].map(m => m[1]);
+  const byNum = places.filter(p => p.num != null && nums.includes(String(p.num))).map(p => p.label);
+  const tw = t.split(/[\s'-]+/);
+  const close = w =>
+    w.length >= 4 && !/^\d+$/.test(w) && tw.some(x => x.length >= 4 && (x.startsWith(w) || w.startsWith(x)));
+  const byName = nameList(places).filter(l => l && (t.includes(l.toLowerCase()) || words(l, /[\s'-]+/).some(close)));
+  return [...new Set([...byNum, ...byName])];
+}
 
+// Lieux proposés pendant la saisie de `v` (déjà en minuscules).
+function suggest(v, places) {
+  const m = v.match(/^(?:mh|mobil[- ]?home)?\s*(\d+)$/);
+  if (m) {
+    const digits = m[1];
+    const rank = p => {
+      const n = String(p.num ?? '');
+      return n === digits ? 0 : n.endsWith(digits) ? 1 : n.startsWith(digits) ? 2 : 3;
+    };
+    return places
+      .filter(p => p.num != null && String(p.num).endsWith(digits))
+      .sort((x, y) => rank(x) - rank(y) || x.num - y.num)
+      .map(p => padMH(p.label))
+      .slice(0, digits.length < 2 ? 3 : 4);
+  }
+  return nameList(places)
+    .filter(l => words(l, /[\s'/-]+/).some(w => w.startsWith(v)) || l.toLowerCase().startsWith(v))
+    .sort((x, y) => x.toLowerCase().indexOf(v) - y.toLowerCase().indexOf(v))
+    .slice(0, v.length < 3 ? 3 : 5);
+}
+
+// Étiquette de lieu affichée sur le champ quand il n'est pas en cours de saisie. Rend `syncTag`.
+function initTag(loc) {
   const ltag = document.createElement('span');
   ltag.className = 'loc-tag';
   loc.after(ltag);
@@ -79,28 +101,13 @@ export function initPlaceField(f, placesRes) {
     loc.focus();
     loc.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  const fromTitle = () => {
-    const t = f.title.value.toLowerCase();
-    if (!t) return [];
-    const nums = [...t.matchAll(/(?:mh|mobil[- ]?home)?\s*(\d+)/g)].map(m => m[1]);
-    const byNum = places.filter(p => p.num != null && nums.includes(String(p.num))).map(p => p.label);
-    const names = [...new Set([...COMMON, ...places.filter(p => p.num == null).map(p => p.label)])];
-    const byName = names.filter(
-      l =>
-        l &&
-        (t.includes(l.toLowerCase()) ||
-          l
-            .toLowerCase()
-            .split(/[\s'-]+/)
-            .some(
-              w =>
-                w.length >= 4 &&
-                !/^\d+$/.test(w) &&
-                t.split(/[\s'-]+/).some(x => x.length >= 4 && (x.startsWith(w) || w.startsWith(x)))
-            ))
-    );
-    return [...new Set([...byNum, ...byName])];
-  };
+  return syncTag;
+}
+
+// Liste de suggestions sous le champ.
+function initSuggestions(f, places, syncTag) {
+  const loc = f.location,
+    ul = f.querySelector('.ac-list');
   const closeAc = () => {
     ul.hidden = true;
     loc.setAttribute('aria-expanded', 'false');
@@ -114,7 +121,7 @@ export function initPlaceField(f, placesRes) {
   };
   loc.addEventListener('focus', () => {
     if (!loc.value.trim()) {
-      const hits = fromTitle().slice(0, 4);
+      const hits = fromTitle(f.title.value, places).slice(0, 4);
       if (hits.length) showHits(hits);
     }
     syncTag();
@@ -128,32 +135,7 @@ export function initPlaceField(f, placesRes) {
   loc.oninput = () => {
     const v = loc.value.trim().toLowerCase();
     if (!v) return closeAc();
-    const m = v.match(/^(?:mh|mobil[- ]?home)?\s*(\d+)$/);
-    let hits;
-    if (m) {
-      const digits = m[1];
-      const rank = p => {
-        const n = String(p.num ?? '');
-        return n === digits ? 0 : n.endsWith(digits) ? 1 : n.startsWith(digits) ? 2 : 3;
-      };
-      hits = places
-        .filter(p => p.num != null && String(p.num).endsWith(digits))
-        .sort((x, y) => rank(x) - rank(y) || x.num - y.num)
-        .map(p => padMH(p.label));
-      hits = hits.slice(0, digits.length < 2 ? 3 : 4);
-    } else {
-      hits = [...new Set([...COMMON, ...places.filter(p => p.num == null).map(p => p.label)])]
-        .filter(
-          l =>
-            l
-              .toLowerCase()
-              .split(/[\s'/-]+/)
-              .some(w => w.startsWith(v)) || l.toLowerCase().startsWith(v)
-        )
-        .sort((x, y) => x.toLowerCase().indexOf(v) - y.toLowerCase().indexOf(v))
-        .slice(0, v.length < 3 ? 3 : 5);
-    }
-    showHits(hits);
+    showHits(suggest(v, places));
   };
   ul.addEventListener('mousedown', e => e.preventDefault());
   ul.addEventListener('click', e => {
@@ -164,7 +146,22 @@ export function initPlaceField(f, placesRes) {
     loc.blur();
     syncTag();
   });
-  syncTag();
+}
 
+// Champ « Lieu » : saisie assistée (liste de lieux connus), étiquette de lieu et suggestion depuis le titre.
+/** Branche le champ Lieu du formulaire `f` ; rend `syncTag` pour rafraîchir l'étiquette après une restauration de brouillon. */
+export function initPlaceField(f, placesRes) {
+  f.querySelectorAll('[name=priority]').forEach(p => p.addEventListener('change', () => (f.dataset.prio = p.value)));
+  f.querySelectorAll('[name=assign]').forEach(c =>
+    c.addEventListener('change', () => {
+      if (c.checked)
+        f.querySelectorAll('[name=assign]').forEach(o => {
+          if (o !== c) o.checked = false;
+        });
+    })
+  );
+  const syncTag = initTag(f.location);
+  initSuggestions(f, placesRes.data || [], syncTag);
+  syncTag();
   return { syncTag };
 }

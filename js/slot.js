@@ -6,122 +6,147 @@ export const dIn = v => {
 export const TIMES = Array.from({ length: 96 }, (_, i) => `${p2(Math.floor(i / 4))}:${p2((i % 4) * 15)}`);
 
 // Roues date / début / fin : sélection au défilement, créneaux passés grisés, fin toujours après le début.
-function initWheels(f, sheet, isPast) {
+const vis = w => [...w.children].filter(x => !x.hidden);
+const mark = (items, k) => items.forEach((x, j) => x.classList.toggle('sel', j === k));
+
+// État partagé par les roues : formulaire, roues, hauteur d'une ligne, et drapeaux anti-boucle.
+function wheelCtx(f, sheet, isPast) {
   const wheels = [...sheet.querySelectorAll('.wheel')];
-  const wheel = k => wheels.find(w => w.dataset.k === k);
-  const IH = () => sheet.querySelector('.wi')?.offsetHeight || 36;
-  const vis = w => [...w.children].filter(x => !x.hidden);
-  const mark = (items, k) => items.forEach((x, j) => x.classList.toggle('sel', j === k));
-  let placing = false,
-    npBusy = false,
-    lastA = null;
-  const goTo = (w, k) => {
-    w.scrollTo({ top: k * IH(), behavior: 'smooth' });
-    mark([...w.children], k);
-    f[w.dataset.k].value = w.children[k].dataset.v;
+  return {
+    f,
+    isPast,
+    wheels,
+    wheel: k => wheels.find(w => w.dataset.k === k),
+    IH: () => sheet.querySelector('.wi')?.offsetHeight || 36,
+    placing: false,
+    npBusy: false,
+    lastA: null,
   };
-  // Début déjà passé : premier horaire libre, sinon jour suivant.
-  const skipPast = d => {
-    const wa = wheel('slot_a'),
-      wd = wheel('slot_d');
-    const k = [...wa.children].findIndex(x => !x.classList.contains('past'));
-    if (k >= 0) return goTo(wa, k);
-    const j = wd ? [...wd.children].findIndex(x => x.dataset.v > d) : -1;
-    if (j >= 0) goTo(wd, j);
-  };
-  // Fin : jamais avant le début ; suit le début quand on le change.
-  const fitEnd = src => {
-    const wb = wheel('slot_b'),
-      a0 = f.slot_a.value;
-    [...wb.children].forEach(x => {
-      x.hidden = !!x.dataset.v && !!a0 && x.dataset.v <= a0;
-    });
-    const nx = () => TIMES.find(t => t > a0) || '';
-    const fromA = src?.dataset?.k === 'slot_a';
-    if (f.slot_b.value && a0 && f.slot_b.value <= a0) f.slot_b.value = nx();
-    if (fromA && !placing && lastA !== null && a0 !== lastA) f.slot_b.value = nx();
-    if (!f.slot_b.value && a0) f.slot_b.value = nx();
-    if (fromA) lastA = a0;
-    const k = Math.max(
-      0,
-      vis(wb).findIndex(x => x.dataset.v === f.slot_b.value)
-    );
-    mark(vis(wb), k);
-    if (Math.abs(wb.scrollTop - k * IH()) > 2) wb.scrollTop = k * IH();
-  };
-  const noPast = src => {
-    if (npBusy) return;
-    npBusy = true;
-    try {
-      const d = f.slot_d.value;
-      wheels
-        .filter(w => w.dataset.k !== 'slot_d')
-        .forEach(w =>
-          [...w.children].forEach(x => x.classList.toggle('past', !!x.dataset.v && isPast(d, x.dataset.v)))
-        );
-      if (wheel('slot_a') && isPast(d, f.slot_a.value)) skipPast(d);
-      if (wheel('slot_b')) fitEnd(src);
-    } finally {
-      npBusy = false;
-    }
-  };
-  const pick = w => {
-    const items = vis(w),
-      idx = Math.max(0, Math.min(items.length - 1, Math.round(w.scrollTop / IH())));
-    const prev = f[w.dataset.k].value,
-      next = items[idx]?.dataset.v || '';
-    mark(items, idx);
-    f[w.dataset.k].value = next;
-    if (w.dataset.k === 'slot_d' && !placing && prev && next && prev !== next) {
-      f.slot_a.value = '08:00'; // nouveau jour : on repart de 8 h
-      const wa = wheel('slot_a'),
-        k = wa ? [...wa.children].findIndex(x => x.dataset.v === '08:00') : -1;
-      if (k >= 0) {
-        wa.scrollTo({ top: k * IH() });
-        mark([...wa.children], k);
+}
+
+function goTo(c, w, k) {
+  w.scrollTo({ top: k * c.IH(), behavior: 'smooth' });
+  mark([...w.children], k);
+  c.f[w.dataset.k].value = w.children[k].dataset.v;
+}
+
+// Début déjà passé : premier horaire libre, sinon jour suivant.
+function skipPast(c, d) {
+  const wa = c.wheel('slot_a'),
+    wd = c.wheel('slot_d');
+  const k = [...wa.children].findIndex(x => !x.classList.contains('past'));
+  if (k >= 0) return goTo(c, wa, k);
+  const j = wd ? [...wd.children].findIndex(x => x.dataset.v > d) : -1;
+  if (j >= 0) goTo(c, wd, j);
+}
+
+// Fin : jamais avant le début ; suit le début quand on le change.
+function fitEnd(c, src) {
+  const { f } = c,
+    wb = c.wheel('slot_b'),
+    a0 = f.slot_a.value;
+  [...wb.children].forEach(x => {
+    x.hidden = !!x.dataset.v && !!a0 && x.dataset.v <= a0;
+  });
+  const nx = () => TIMES.find(t => t > a0) || '';
+  const fromA = src?.dataset?.k === 'slot_a';
+  if (f.slot_b.value && a0 && f.slot_b.value <= a0) f.slot_b.value = nx();
+  if (fromA && !c.placing && c.lastA !== null && a0 !== c.lastA) f.slot_b.value = nx();
+  if (!f.slot_b.value && a0) f.slot_b.value = nx();
+  if (fromA) c.lastA = a0;
+  const k = Math.max(
+    0,
+    vis(wb).findIndex(x => x.dataset.v === f.slot_b.value)
+  );
+  mark(vis(wb), k);
+  if (Math.abs(wb.scrollTop - k * c.IH()) > 2) wb.scrollTop = k * c.IH();
+}
+
+// Grise les créneaux passés du jour choisi et remet début / fin d'aplomb.
+function noPast(c, src) {
+  if (c.npBusy) return;
+  c.npBusy = true;
+  try {
+    const d = c.f.slot_d.value;
+    c.wheels
+      .filter(w => w.dataset.k !== 'slot_d')
+      .forEach(w =>
+        [...w.children].forEach(x => x.classList.toggle('past', !!x.dataset.v && c.isPast(d, x.dataset.v)))
+      );
+    if (c.wheel('slot_a') && c.isPast(d, c.f.slot_a.value)) skipPast(c, d);
+    if (c.wheel('slot_b')) fitEnd(c, src);
+  } finally {
+    c.npBusy = false;
+  }
+}
+
+// Nouveau jour : on repart de 8 h.
+function resetDay(c) {
+  const { f } = c,
+    wa = c.wheel('slot_a');
+  f.slot_a.value = '08:00';
+  const k = wa ? [...wa.children].findIndex(x => x.dataset.v === '08:00') : -1;
+  if (k >= 0) {
+    wa.scrollTo({ top: k * c.IH() });
+    mark([...wa.children], k);
+  }
+  f.slot_b.value = TIMES.find(tm => tm > '08:00') || '';
+}
+
+// La roue s'est arrêtée : on lit la ligne choisie.
+function pick(c, w) {
+  const items = vis(w),
+    idx = Math.max(0, Math.min(items.length - 1, Math.round(w.scrollTop / c.IH())));
+  const prev = c.f[w.dataset.k].value,
+    next = items[idx]?.dataset.v || '';
+  mark(items, idx);
+  c.f[w.dataset.k].value = next;
+  if (w.dataset.k === 'slot_d' && !c.placing && prev && next && prev !== next) resetDay(c);
+  noPast(c, w);
+}
+
+// Place chaque roue sur la valeur du formulaire (début : prochain quart d'heure si vide).
+function place(c) {
+  c.placing = true;
+  try {
+    c.wheels.forEach(w => {
+      if (w.dataset.k === 'slot_a' && !c.f.slot_a.value) {
+        const n = new Date(),
+          q = `${p2(n.getHours())}:${p2((Math.ceil(n.getMinutes() / 15) * 15) % 60)}`;
+        c.f.slot_a.value = TIMES.find(t => t >= q) || '09:00';
       }
-      f.slot_b.value = TIMES.find(tm => tm > '08:00') || '';
-    }
-    noPast(w);
-  };
-  const place = () => {
-    placing = true;
-    try {
-      wheels.forEach(w => {
-        if (w.dataset.k === 'slot_a' && !f.slot_a.value) {
-          const n = new Date(),
-            q = `${p2(n.getHours())}:${p2((Math.ceil(n.getMinutes() / 15) * 15) % 60)}`;
-          f.slot_a.value = TIMES.find(t => t >= q) || '09:00';
-        }
-        const idx = Math.max(
-          0,
-          vis(w).findIndex(x => x.dataset.v === f[w.dataset.k].value)
-        );
-        w.scrollTop = idx * IH();
-        pick(w);
-      });
-    } finally {
-      placing = false;
-    }
-  };
-  wheels.forEach(w => {
+      const idx = Math.max(
+        0,
+        vis(w).findIndex(x => x.dataset.v === c.f[w.dataset.k].value)
+      );
+      w.scrollTop = idx * c.IH();
+      pick(c, w);
+    });
+  } finally {
+    c.placing = false;
+  }
+}
+
+function initWheels(f, sheet, isPast) {
+  const c = wheelCtx(f, sheet, isPast);
+  c.wheels.forEach(w => {
     let tm;
     w.addEventListener(
       'scroll',
       () => {
         clearTimeout(tm);
         tm = setTimeout(() => {
-          if (w.offsetParent) pick(w);
+          if (w.offsetParent) pick(c, w);
         }, 60);
       },
       { passive: true }
     );
     w.onclick = e => {
       const it = e.target.closest('.wi');
-      if (it) w.scrollTo({ top: vis(w).indexOf(it) * IH(), behavior: 'smooth' });
+      if (it) w.scrollTo({ top: vis(w).indexOf(it) * c.IH(), behavior: 'smooth' });
     };
   });
-  return { place };
+  return { place: () => place(c) };
 }
 
 // Fenêtre des roues : posée contre le bouton du créneau, à l'intérieur de l'écran.
@@ -160,6 +185,44 @@ function slotText(f, sheet) {
   return `${day} ${f.slot_a.value}${f.slot_b.value ? '–' + f.slot_b.value : ''}`;
 }
 
+const KS = ['slot_d', 'slot_a', 'slot_b'];
+
+// Boutons de la feuille : fermer, valider, retirer le créneau. `st` garde `done` (créneau validé) et `saved`.
+function bindSheet(f, sheet, st, { err, isPast, paintSlot, setPassage }) {
+  const closeSheet = () => {
+    sheet.hidden = true;
+    if (st.saved)
+      KS.forEach((k, j) => {
+        f[k].value = st.saved[j];
+      });
+    if (!st.done) setPassage(false);
+    paintSlot();
+  };
+  sheet.querySelector('.wx').onclick = closeSheet;
+  sheet.onclick = e => {
+    if (e.target === sheet) closeSheet();
+  };
+  sheet.querySelector('.wok').onclick = () => {
+    if (f.slot_b.value && f.slot_b.value <= f.slot_a.value)
+      return (err.textContent = "L'heure de fin doit suivre l'heure de début.");
+    if (isPast(f.slot_d.value, f.slot_a.value)) return (err.textContent = 'Ce créneau est déjà passé.');
+    err.textContent = '';
+    st.done = true;
+    st.saved = null;
+    sheet.hidden = true;
+    paintSlot();
+  };
+  sheet.querySelector('.wrm').onclick = () => {
+    KS.forEach(k => {
+      f[k].value = '';
+    });
+    st.done = false;
+    st.saved = null;
+    sheet.hidden = true;
+    setPassage(false);
+  };
+}
+
 // Sélecteur de créneau (date, heure, passage) du formulaire : roues de défilement dans une feuille.
 /** Branche le sélecteur sur le formulaire `f` ; rend ce dont le reste du formulaire a besoin. */
 export function initSlotPicker(f, { id, i, r, slotOn, err }) {
@@ -170,14 +233,12 @@ export function initSlotPicker(f, { id, i, r, slotOn, err }) {
   document.querySelectorAll('.wsheet').forEach(x => x !== sheet && x.remove());
   hostModal().append(sheet);
   addEventListener('hashchange', () => sheet.remove(), { once: true });
-  let slotDone = !!i.available_from,
-    saved = null;
+  const st = { done: !!i.available_from, saved: null };
   const T0 = () => (id && i.created_at ? new Date(i.created_at) : new Date());
   const isPast = (d, t) => !!(d && t) && new Date(`${d}T${t}`) < T0();
   const { place } = initWheels(f, sheet, isPast);
-  const KS = ['slot_d', 'slot_a', 'slot_b'];
   const paintSlot = () => {
-    const on = hp.classList.contains('on') && slotDone && f.slot_d.value && f.slot_a.value;
+    const on = hp.classList.contains('on') && st.done && f.slot_d.value && f.slot_a.value;
     hpv.textContent = on ? slotText(f, sheet) : '';
   };
   const setPassage = on => {
@@ -190,43 +251,12 @@ export function initSlotPicker(f, { id, i, r, slotOn, err }) {
     paintSlot();
   };
   const openSheet = () => {
-    saved = KS.map(k => f[k].value);
+    st.saved = KS.map(k => f[k].value);
     sheet.hidden = false;
     popPosition(sheet, hp);
     requestAnimationFrame(place);
   };
-  const closeSheet = () => {
-    sheet.hidden = true;
-    if (saved)
-      KS.forEach((k, j) => {
-        f[k].value = saved[j];
-      });
-    if (!slotDone) setPassage(false);
-    paintSlot();
-  };
-  sheet.querySelector('.wx').onclick = closeSheet;
-  sheet.onclick = e => {
-    if (e.target === sheet) closeSheet();
-  };
-  sheet.querySelector('.wok').onclick = () => {
-    if (f.slot_b.value && f.slot_b.value <= f.slot_a.value)
-      return (err.textContent = "L'heure de fin doit suivre l'heure de début.");
-    if (isPast(f.slot_d.value, f.slot_a.value)) return (err.textContent = 'Ce créneau est déjà passé.');
-    err.textContent = '';
-    slotDone = true;
-    saved = null;
-    sheet.hidden = true;
-    paintSlot();
-  };
-  sheet.querySelector('.wrm').onclick = () => {
-    KS.forEach(k => {
-      f[k].value = '';
-    });
-    slotDone = false;
-    saved = null;
-    sheet.hidden = true;
-    setPassage(false);
-  };
+  bindSheet(f, sheet, st, { err, isPast, paintSlot, setPassage });
   hp.querySelector('.hpsw2').onclick = () => {
     const on = !hp.classList.contains('on');
     setPassage(on);
@@ -251,10 +281,10 @@ export function initSlotPicker(f, { id, i, r, slotOn, err }) {
     place,
     setPassage,
     get done() {
-      return slotDone;
+      return st.done;
     },
     set done(v) {
-      slotDone = v;
+      st.done = v;
     },
   };
 }
