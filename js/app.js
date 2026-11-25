@@ -287,7 +287,6 @@ function show() {
     [page, id, sub] = route();
   if (!el) return;
   app.dataset.page = page || '';
-  const live = tabs.consumeSkip(); // onglet remis vivant par le balayage : rien à redessiner
   const cur = ['compte', 'nouvelles', 'mes', 'terminees', 'recherche', 'parametres', 'routines'].includes(page)
     ? '#' + page
     : '';
@@ -295,7 +294,6 @@ function show() {
   moveIndicator();
   const pt = app.querySelector('.ptit');
   if (pt) pt.textContent = titleOf(page);
-  if (live) return;
   if (['terminees', 'recherche', 'parametres'].includes(page) && S.me.role === 'client') {
     location.hash = '';
     return;
@@ -334,7 +332,7 @@ function show() {
   renderList(el);
 }
 
-const tabs = initTabs({ app }); // doit être enregistré AVANT l'écouteur ci-dessous
+initTabs({ app }); // balayage entre onglets (js/tabs.js)
 const LISTS = ['', 'nouvelles', 'mes'];
 // Entre deux onglets de liste, seul le contenu change (pas de reconstruction de l'en-tête ni de la barre du bas).
 // Ouverture d'une fiche depuis une liste (mobile), comme l'appli tech : l'image de la liste reste affichée pendant
@@ -372,10 +370,7 @@ addEventListener('hashchange', e => {
   const done = render();
   if (go) Promise.resolve(done).finally(go);
 });
-addEventListener('labo:render', () => {
-  tabs.reset();
-  render();
-});
+addEventListener('labo:render', render);
 // Retour dans l'appli après 5 min (ou depuis le cache de Safari) : nouvelle ouverture.
 let hidden = 0;
 document.addEventListener('visibilitychange', () => {

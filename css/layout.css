@@ -640,10 +640,6 @@ body.dragtab #app {
 .tabnb {
   pointer-events: none;
 }
-body.warming .topbar .ptit,
-body.warming .tabbar {
-  visibility: hidden;
-}
 @container app (min-width: 601px) {
   .fab,
   .fabm {

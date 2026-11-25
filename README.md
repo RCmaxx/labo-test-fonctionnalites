@@ -14,6 +14,7 @@ Aucune compilation : HTML + CSS + JavaScript (modules ES), base Supabase de **te
 | le détail d'une intervention et le tchat | `css/detail.css` + `js/detail.js` |
 | le formulaire | `css/form.css` + `js/form.js` |
 | le balayage entre onglets | `js/tabs.js` |
+| l'appui long sur une carte (menu des actions) | `js/press.js` |
 | les compteurs (header, barre du bas) | `js/counts.js` |
 | le temps réel | `js/live.js` |
 
@@ -28,4 +29,4 @@ Aucune compilation : HTML + CSS + JavaScript (modules ES), base Supabase de **te
 ## Fonctionnement
 
 `js/app.js` : `render()` construit l'en-tête et la barre du bas, puis `show()` affiche la vue de la route dans `<main>`.
-Entre les onglets de liste, seul `show()` est rappelé (pas de reconstruction du cadre) ; `js/tabs.js` garde les pages en vie pour un balayage instantané.
+Entre les onglets de liste, seul `show()` est rappelé (pas de reconstruction du cadre). Chaque onglet de liste garde son dernier affichage (`lastView` dans `js/list.js`) : il est remis aussitôt à l'arrivée, puis mis à jour ; `js/tabs.js` le montre à côté de la page pendant le balayage.

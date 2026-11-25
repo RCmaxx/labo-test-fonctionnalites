@@ -349,10 +349,18 @@ function paintTerminees(el, rows, done, more, reopen) {
   reopen();
 }
 
+// Dernier affichage de chaque onglet de liste : remis aussitôt à l'arrivée (puis mis à jour), et montré pendant le balayage.
+const LAST = {};
+export const lastView = page => LAST[page] || '';
+
 export async function renderList(el) {
-  const searching = route()[0] === 'recherche' && S.me.role !== 'client';
-  el.innerHTML = searching
-    ? `<div class="shead"><input type="search" id="q" value="${esc(search)}" placeholder="Rechercher" aria-label="Rechercher"></div>
+  const searching = route()[0] === 'recherche' && S.me.role !== 'client',
+    key = route()[0] || '';
+  el.innerHTML =
+    !searching && LAST[key]
+      ? LAST[key]
+      : searching
+        ? `<div class="shead"><input type="search" id="q" value="${esc(search)}" placeholder="Rechercher" aria-label="Rechercher"></div>
         <div class="sfilters" role="group" aria-label="Filtres de recherche">${Object.entries(SF)
           .map(
             ([k, v]) =>
@@ -363,7 +371,7 @@ export async function renderList(el) {
         <p class="scount" id="scount"></p>
         <ul class="srecent" hidden></ul>
         <div id="rows"><p>Chargement…</p></div>`
-    : `${isMob() && onDonePage() && S.me.role !== 'client' ? SEARCH_BAR : ''}<div id="rows"><p>Chargement…</p></div>`;
+        : `${isMob() && onDonePage() && S.me.role !== 'client' ? SEARCH_BAR : ''}<div id="rows"><p>Chargement…</p></div>`;
   const qel = el.querySelector('#q'),
     rows = el.querySelector('#rows');
   const [reads, msgs] = await Promise.all([
@@ -443,10 +451,11 @@ export async function renderList(el) {
       rows.innerHTML = sec(['publiee', 'Mes interventions', open.sort(byArrival)]);
       return;
     }
-    if (mob && page === 'mes')
-      return renderCircles(rows, open.filter(x => x.status === 'prise_en_charge' && mine(x)).sort(byArrival), x =>
-        item(x)
-      );
+    if (mob && page === 'mes') {
+      renderCircles(rows, open.filter(x => x.status === 'prise_en_charge' && mine(x)).sort(byArrival), x => item(x));
+      LAST[key] = el.innerHTML; // page Mes : affichage gardé aussi (balayage sans « Chargement… »)
+      return;
+    }
     if (mob && page === 'nouvelles') groups = [['publiee', 'Interventions', open.sort(byArrival)]];
     else if (mob) groups = groups.filter(g => ['mes', 'prise_en_charge'].includes(g[0]));
 
@@ -490,6 +499,7 @@ export async function renderList(el) {
   };
 
   const reopen = () => {
+    if (!searching) LAST[key] = el.innerHTML;
     const again = openId && rows.querySelector(`a.card[href="#i/${openId}"]`);
     if (again) unfold(again, false);
     else openId = null;
