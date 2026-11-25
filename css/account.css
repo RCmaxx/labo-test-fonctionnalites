@@ -78,9 +78,6 @@
   margin-left: auto;
 }
 
-.setpage {
-  max-width: 800px;
-}
 .setpage h2 {
   margin: 0 0 var(--s3);
   font-size: var(--fs-h2);
@@ -123,56 +120,69 @@
   vertical-align: middle;
 }
 
-/* Mobile, comme l'appli tech : page Profils en lecture seule (sans rôle, retrait ni invitation), sections posées
-   sur le fond, équipe en cartes blanches au retrait des cartes de la liste. */
+/* Page Profils, comme l'appli tech (mobile et ordinateur) : lecture seule (sans rôle, retrait ni invitation),
+   sections posées sur le fond, équipe en cartes blanches au retrait des cartes de la liste. */
+.setpage {
+  gap: 28px;
+  max-width: 560px;
+  margin-inline: auto;
+}
+.setpage .panel--invite,
+.setpage .error:empty,
+.setpage .tlist thead,
+.setpage .tlist td:nth-child(n + 3) {
+  display: none;
+}
+.setpage .panel {
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+.setpage h2 {
+  font-size: 18px;
+  line-height: 1.2;
+}
+.setpage .stack {
+  gap: var(--page-pad);
+}
+.setpage .stack > .primary {
+  justify-self: end;
+  margin-top: var(--s3);
+}
+.setpage .tlist {
+  width: calc(100% - 2 * var(--card-inset));
+  margin: 0 var(--card-inset);
+  border-collapse: separate;
+  border-spacing: 0 var(--card-gap);
+}
+.setpage .tlist td {
+  padding: var(--page-pad) 0 var(--page-pad) var(--s1);
+  border: 0;
+  background: var(--surface);
+}
+.setpage .tlist td:first-child {
+  padding: 17px var(--s1) var(--page-pad) var(--s3);
+}
+.setpage .tlist tr:first-child td:first-child {
+  border-top-left-radius: var(--r);
+}
+.setpage .tlist tr:last-child td:first-child {
+  border-bottom-left-radius: var(--r);
+}
+/* Ordinateur : cartes de l'équipe sans retrait, comme l'appli tech */
+@container app (min-width: 601px) {
+  .setpage .tlist {
+    width: 100%;
+    margin: 0;
+  }
+}
 @container app (max-width: 600px) {
   .setpage {
-    gap: 28px;
     margin-inline: calc(-1 * var(--card-inset));
     padding-top: 18px;
   }
-  .setpage > h1,
-  .setpage .panel--invite,
-  .setpage .error:empty,
-  .setpage .tlist thead,
-  .setpage .tlist td:nth-child(n + 3) {
+  .setpage > h1 {
     display: none;
-  }
-  .setpage .panel {
-    padding: 0;
-    background: none;
-    border-radius: 0;
-    box-shadow: none;
-  }
-  .setpage h2 {
-    font-size: 18px;
-    line-height: 1.2;
-  }
-  .setpage .stack {
-    gap: var(--page-pad);
-  }
-  .setpage .stack > .primary {
-    justify-self: end;
-    margin-top: var(--s3);
-  }
-  .setpage .tlist {
-    width: calc(100% - 2 * var(--card-inset));
-    margin: 0 var(--card-inset);
-    border-collapse: separate;
-    border-spacing: 0 var(--card-gap);
-  }
-  .setpage .tlist td {
-    padding: var(--page-pad) 0 var(--page-pad) var(--s1);
-    border: 0;
-    background: var(--surface);
-  }
-  .setpage .tlist td:first-child {
-    padding: 17px var(--s1) var(--page-pad) var(--s3);
-  }
-  .setpage .tlist tr:first-child td:first-child {
-    border-top-left-radius: var(--r);
-  }
-  .setpage .tlist tr:last-child td:first-child {
-    border-bottom-left-radius: var(--r);
   }
 }
