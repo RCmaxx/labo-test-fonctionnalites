@@ -490,22 +490,58 @@ function fold(u) {
   u.classList.remove('is-open');
   u.addEventListener('transitionend', () => u.remove(), { once: true });
 }
+// Anime le défilement de la colonne en même temps que la fiche s'ouvre : toute la fiche reste visible,
+// sans cacher le haut de la carte (même règle que l'appli tech). `u` est la fiche, `li` la carte.
+function scrollForUnfold(col, li, u) {
+  const H = u.firstElementChild.scrollHeight,
+    c = col.getBoundingClientRect(),
+    t = li.getBoundingClientRect(),
+    bottom = u.getBoundingClientRect().top + H;
+  const groups = [...col.querySelectorAll('.group')];
+  const top =
+    c.top +
+    groups
+      .slice(0, groups.indexOf(li.closest('.group')) + 1)
+      .reduce((n, g) => n + (g.querySelector(':scope > h2')?.offsetHeight || 0) + 8, 0);
+  const d = bottom > c.bottom ? Math.min(bottom - c.bottom + 8, t.top - top - 8) : t.top < top ? t.top - top - 8 : 0;
+  if (!d) return;
+  const s0 = col.scrollTop,
+    t0 = performance.now();
+  const step = now => {
+    const x = Math.min(1, (now - t0) / 240);
+    col.scrollTop = s0 + d * (1 - Math.pow(1 - x, 3));
+    if (x < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 function unfold(rows, a, anim = true) {
   const id = a.getAttribute('href').split('/')[1],
+    li = a.parentElement,
+    col = li.closest('.gcol'),
     cur = rows.querySelector('.unfold');
   if (cur) {
-    fold(cur);
-    if (cur.dataset.id === id && anim) return (openId = null);
+    if (cur.dataset.id === id && anim) {
+      fold(cur);
+      return (openId = null);
+    }
+    if (anim && col) {
+      // Autre carte : l'ancienne fiche disparaît d'un coup, la carte touchée reste où elle est.
+      const y0 = li.getBoundingClientRect().top;
+      cur.remove();
+      col.scrollTop += li.getBoundingClientRect().top - y0;
+    } else fold(cur);
   }
   openId = id;
-  a.parentElement.insertAdjacentHTML(
+  li.insertAdjacentHTML(
     'afterend',
     `<li class="unfold${anim ? '' : ' is-open is-now'}" data-id="${id}"><div><div class="unfold__body"></div></div></li>`
   );
-  const u = a.parentElement.nextElementSibling;
-  renderDetail(u.querySelector('.unfold__body'), id).then(
-    () => anim && requestAnimationFrame(() => u.classList.add('is-open'))
-  );
+  const u = li.nextElementSibling;
+  renderDetail(u.querySelector('.unfold__body'), id).then(() => {
+    if (!anim) return;
+    if (col) scrollForUnfold(col, li, u);
+    requestAnimationFrame(() => u.classList.add('is-open'));
+  });
 }
 
 // Requêtes de la page courante → { open, done, more } ou { error }.

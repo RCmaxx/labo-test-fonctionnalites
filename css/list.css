@@ -340,7 +340,7 @@
   grid-column: 1 / -1;
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.28s cubic-bezier(0.3, 0.8, 0.3, 1);
+  transition: grid-template-rows 0.24s cubic-bezier(0.215, 0.61, 0.355, 1); /* 240 ms, ralentit en fin de course : comme l'appli tech */
 }
 .unfold.is-open {
   grid-template-rows: 1fr;
@@ -355,18 +355,52 @@
 .unfold__body {
   /* conteneur étroit : la fiche dépliée prend le style mobile, comme dans l'appli tech */
   container: app / inline-size;
-  padding: var(--s2) var(--s1) var(--s4);
+  padding: 0;
 }
 /* La carte et sa fiche dépliée forment un seul bloc blanc, comme l'appli tech */
 .unfold {
   margin-top: calc(-1 * var(--card-gap));
 }
 .unfold .detail--card {
+  display: flex;
+  flex-direction: column;
+  height: 471px; /* hauteur fixe de la fiche dépliée, comme l'appli tech ; le fil défile dedans */
   border-radius: 0 0 var(--r-l) var(--r-l);
   background: var(--surface);
 }
+.unfold .detail--card .chat2 {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.unfold .detail--card .chat2 .chrono {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
 .unfold .detail--card .cin {
   position: static;
+  gap: 10px;
+  padding: 6px 16px; /* zone de saisie compacte de la fiche dépliée, comme l'appli tech */
+}
+.unfold .detail--card .cin .cph,
+.unfold .detail--card .cin .csend {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+}
+.unfold .detail--card .cin .cph svg {
+  width: 17px;
+  height: 17px;
+}
+.unfold .detail--card .cin .csend svg {
+  width: 16px;
+  height: 16px;
+}
+.unfold .detail--card .cin textarea {
+  min-height: 34px;
+  padding: 7px 14px;
+  border-radius: 18px;
+  font-size: 14px;
 }
 .cards > li:has(+ .unfold.is-open) .card {
   border-bottom-right-radius: 0;
@@ -377,8 +411,16 @@
 }
 .cards > li > .xgear {
   position: absolute;
-  bottom: 6px; /* rouage en bas à droite de la carte dépliée, comme l'appli tech */
-  right: 8px;
+  bottom: 7px; /* rouage en bas à droite de la carte dépliée, petit et gris comme l'appli tech */
+  right: 7px;
+  color: #8a8a8a;
+}
+.cards > li > .xgear:hover {
+  color: #5c5c5c;
+}
+.cards > li > .xgear svg {
+  width: 14px;
+  height: 14px;
 }
 
 .lpage-title {
