@@ -35,6 +35,7 @@ const TITLES = {
   compte: 'Mon compte',
   nouvelle: 'Nouvelle intervention',
   i: 'Intervention',
+  routines: 'Routines',
 };
 
 let opening = true; // prochain affichage = ouverture de l'appli
@@ -111,6 +112,7 @@ async function render() {
     <nav class="tnav">
       <a href="#">Interventions</a>
       ${cli ? '' : '<a href="#terminees">Terminées</a>'}
+      ${cli ? '' : '<a href="#routines">Routines</a>'}
       ${admin ? '<a href="#parametres">Profils</a>' : ''}
       ${cli ? '' : `<a href="#recherche" class="ico-search" aria-label="Rechercher">${SEARCH}</a>`}
     </nav>
@@ -286,7 +288,9 @@ function show() {
   if (!el) return;
   app.dataset.page = page || '';
   const live = tabs.consumeSkip(); // onglet remis vivant par le balayage : rien à redessiner
-  const cur = ['compte', 'nouvelles', 'mes', 'terminees', 'recherche', 'parametres'].includes(page) ? '#' + page : '';
+  const cur = ['compte', 'nouvelles', 'mes', 'terminees', 'recherche', 'parametres', 'routines'].includes(page)
+    ? '#' + page
+    : '';
   app.querySelectorAll('.tnav a, .tabbar a, .who a').forEach(a => a.classList.toggle('on', a.hash === cur));
   moveIndicator();
   const pt = app.querySelector('.ptit');
@@ -304,6 +308,12 @@ function show() {
     return renderSettings(el);
   }
   if (page === 'compte') return renderMe(el);
+  // Routines : page vide pour l'instant, comme dans l'appli tech.
+  if (page === 'routines') {
+    if (S.me.role === 'client') return (location.hash = '');
+    el.innerHTML = '<div class="account"><h1>Routines</h1></div>';
+    return;
+  }
   if (page === 'nouvelle') {
     if (isMob()) return renderForm(el);
     // Vue standard, comme l'appli tech : fenêtre par-dessus la liste.

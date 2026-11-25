@@ -49,7 +49,7 @@
   /* Barre du haut et barre d'onglets (mobile) : bleu nuit */
   --chrome: #14212b;
   --on-chrome: #ffffff;
-  --on-chrome-2: rgb(255 255 255 / 0.72);
+  --on-chrome-2: #c9d3dc; /* onglets et pastille du compte sur le bandeau (appli tech) */
   --chrome-fg: #ffffff;
   --chrome-dim: #9fb0bf;
   --chrome-on: rgba(255, 255, 255, 0.14);

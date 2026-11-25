@@ -614,7 +614,18 @@ main {
     display: none;
   }
   .topbar .who .ghost {
+    padding: 5px 10px;
     background: var(--surface);
+    font-size: 12px;
+  }
+  .acct {
+    border-color: var(--line);
+  }
+  .brand {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
