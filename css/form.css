@@ -872,7 +872,7 @@
     background: var(--surface);
     color: var(--ink-2);
     font: inherit;
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 500;
     line-height: 1.1;
   }
@@ -1000,8 +1000,10 @@
 .nbox {
   container: app / inline-size;
   width: min(600px, 100% - 2 * var(--s4));
-  padding: var(--s4);
+  padding: 10px 30px 20px; /* mesuré sur la fenêtre de l'appli tech (la page du formulaire déborde de 10 px de chaque côté) */
   background: var(--nbox-bg);
-  border-radius: var(--r);
-  box-shadow: var(--shadow-menu);
+  border-radius: 16px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.14);
 }
