@@ -992,6 +992,11 @@
   place-items: center;
   background: var(--veil);
 }
+/* Fenêtre de création : titre de 272 px avec Priorité juste à côté, comme l'appli tech (272 = lieu 72 + 6 + 194).
+   shortcut: lieu fixé à 72 px dans la fenêtre ; un lieu très long déborde sur la date. */
+.nbox .nf-row {
+  grid-template-columns: 72px 194px 80px;
+}
 .nbox {
   container: app / inline-size;
   width: min(600px, 100% - 2 * var(--s4));

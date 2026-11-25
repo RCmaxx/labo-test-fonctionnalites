@@ -157,6 +157,8 @@ async function render() {
     const on = app.querySelector('.topbar').classList.toggle('open');
     e.currentTarget.setAttribute('aria-expanded', String(on));
   };
+  // + de la vue standard : la création s'ouvre en fenêtre par-dessus la liste (voir show()).
+  app.addEventListener('click', e => e.target.closest('.gadd') && sessionStorage.setItem('gi-plus', '1'));
   // Bulle « mes interventions » : sur mobile, panneau du bas (comme l'appli tech) au lieu de changer de page.
   app.querySelector('#fabm')?.addEventListener('click', e => {
     if (!isMob()) return;
@@ -335,8 +337,10 @@ function show() {
     return;
   }
   if (page === 'nouvelle') {
-    if (isMob()) return renderForm(el);
-    // Vue standard, comme l'appli tech : fenêtre par-dessus la liste.
+    // Vue standard, comme l'appli tech : fenêtre par-dessus la liste quand on vient du +, page seule sinon (lien direct).
+    const fromPlus = sessionStorage.getItem('gi-plus');
+    sessionStorage.removeItem('gi-plus');
+    if (isMob() || !fromPlus) return renderForm(el);
     return renderList(el).then(() => {
       el.insertAdjacentHTML('beforeend', '<div class="nmodal"><div class="nbox"></div></div>');
       const m = el.querySelector('.nmodal');
