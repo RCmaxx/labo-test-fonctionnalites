@@ -800,7 +800,8 @@
 /* Mobile, comme l'appli tech : formulaire de bord à bord, champs dans un cadre blanc (titre + Priorité, puis lieu + date),
    brouillon et Suivant sur une ligne, sans Annuler (la croix ferme). */
 .pbw,
-.ndate {
+.ndate,
+.nform--cli .nf.ac {
   display: none;
 }
 @container app (max-width: 600px) {
@@ -970,6 +971,14 @@
   }
   .nform .nactions a.btn {
     display: none;
+  }
+  /* Sans brouillon (Réception…), comme l'appli tech : Suivant puis Annuler, chacun sur toute la largeur */
+  .nform .nactions:not(:has(.bdwrap)) {
+    grid-template-columns: 1fr;
+  }
+  .nform .nactions:not(:has(.bdwrap)) a.btn {
+    display: flex;
+    order: 3;
   }
 }
 

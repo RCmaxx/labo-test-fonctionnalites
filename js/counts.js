@@ -33,7 +33,7 @@ export function paintCounts() {
 }
 
 export async function loadCounts() {
-  if (!S.me || S.me.role === 'client') return;
+  if (!S.me) return; // compteurs affichés pour tous, client compris (appli tech)
   const { data } = await sb
     .from('interventions')
     .select('id, status, priority, assignee_id, assignee_role')

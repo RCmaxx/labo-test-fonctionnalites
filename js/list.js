@@ -448,7 +448,7 @@ export async function renderList(el) {
     groups = groups.filter(([k, , list]) => (k !== 'mes' || list.length) && (k !== 'dem' || canDem));
 
     if (r === 'client') {
-      rows.innerHTML = sec(['publiee', 'Mes interventions', open.sort(byArrival)]);
+      rows.innerHTML = sec(['all', "Mes demandes d'intervention", open.sort(byArrival)]); // comme l'appli tech
       return;
     }
     if (mob && page === 'mes') {

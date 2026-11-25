@@ -29,8 +29,8 @@ const SHORT = {
 };
 const ADM = 'lab-admin-sess';
 const REAL = { bis: ['tech.bis@test.local', 'Antoine'], cli: ['client@test.local', 'Client'] };
-// Mobile tech : la racine (#) est la page Terminées.
-const titleOf = pg => TITLES[pg || (isMob() && S.me?.role !== 'client' ? 'terminees' : '')] || 'Interventions';
+// Titre de la barre du haut ; la racine (#, Terminées sur mobile) garde « Interventions », comme l'appli tech.
+const titleOf = pg => TITLES[pg] || 'Interventions';
 const TITLES = {
   nouvelles: 'Interventions',
   mes: 'Mes interventions',
@@ -139,7 +139,7 @@ async function render() {
   <aside class="alerts" id="alerts"></aside>
   <main></main>
   ${cli ? '' : '<a class="fabm" href="#mes" id="fabm" aria-label="Mes interventions"></a>'}
-  <a class="fab" href="#nouvelle" aria-label="Nouvelle intervention">+</a>
+  <a class="fab${cli ? ' fab--cli' : ''}" href="#nouvelle" aria-label="Nouvelle intervention">+</a>
   <nav class="tabbar">
     <i class="tabbar__ind" aria-hidden="true"></i>
     <a href="#" aria-label="Terminées">${LIST}</a>

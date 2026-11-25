@@ -183,7 +183,7 @@ function formHtml({ backHref, canAssign, draftOk, from, i, id, r, slotOn, techs,
   return `
     <div class="fpage">
       <div class="fhead">${id ? `<a href="${backHref}" class="back" aria-label="Retour">${BACK}</a>` : ''}<h1>${id ? "Modifier l'intervention" : 'Nouvelle intervention'}</h1>${id ? '' : `<button type="button" class="fx" aria-label="Fermer">${CLOSE}</button>`}</div>
-      <form id="f" class="nform${id ? '' : ' stp1'}" autocomplete="off" data-prio="${i.priority || ''}">
+      <form id="f" class="nform${r === 'client' ? ' nform--cli' : ''}${id ? '' : ' stp1'}" autocomplete="off" data-prio="${i.priority || ''}">
         <div class="fsum" hidden role="button" tabindex="0"></div>
         <div class="s1"><div class="nf-row">
           <div class="nf"><input name="title" type="text" maxlength="70" required placeholder="${r === 'client' ? "Titre de l'intervention" : 'Titre'}" value="${esc(i.title)}"></div>
@@ -444,7 +444,7 @@ export async function renderForm(el, id) {
     chk();
   };
   // Comme l'appli tech : titre, lieu et priorité choisie pour passer à la suite.
-  const ok1 = () => !!(f.title.value.trim() && f.location.value.trim() && f.dataset.prio);
+  const ok1 = () => !!(f.title.value.trim() && (r === 'client' || f.location.value.trim()) && f.dataset.prio); // le client n'a pas de champ Lieu
   const sv = f.querySelector('.bdsave');
   const chk = () => {
     if (pb && !id) pb.disabled = st === 1 && !ok1();
