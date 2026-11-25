@@ -51,7 +51,8 @@
   gap: var(--s2);
   margin-left: auto;
 }
-.who__org {
+.who__org,
+.mprof {
   display: none;
 }
 .acct {
@@ -275,7 +276,7 @@ main {
   color: var(--pill-mine-fg);
   font-size: 15px;
   font-weight: 700;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  box-shadow: var(--ring-light);
 }
 .tabbar__m:empty::before {
   content: '0';
@@ -385,6 +386,38 @@ main {
   .topbar.open .acct {
     color: var(--ink);
   }
+  .topbar.open .mprof {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+    max-height: 42vh;
+    margin: 0 calc(-1 * var(--s1));
+    padding: 0 var(--s1);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .mprof__h {
+    margin: 2px 0;
+    color: var(--ink-2);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .mprof button {
+    min-height: 40px;
+    padding: var(--s2) 10px;
+    border: 0;
+    border-radius: var(--r-s);
+    background: var(--soft-btn);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+  }
+  .mprof button.on {
+    background: var(--chrome);
+    color: var(--surface);
+    font-weight: 600;
+  }
   .topbar.open #logout {
     padding: 6px 10px;
     border: 1px solid var(--line-logout);
@@ -476,7 +509,7 @@ main {
 }
 .toast.err,
 .notif.err {
-  background: var(--danger, #c42620);
+  background: var(--danger);
 }
 .sim .toast,
 .sim .notif {

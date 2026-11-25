@@ -138,6 +138,26 @@ async function render() {
   };
   const asr = app.querySelector('#asrole');
   if (asr) asr.onchange = () => pickRole(asr);
+  // Mobile, comme l'appli tech : profils en boutons visibles dans le menu du rouage.
+  if (asr) {
+    const box = document.createElement('div');
+    box.className = 'mprof';
+    box.innerHTML =
+      '<span class="mprof__h">Changer de profil</span>' +
+      [...asr.options]
+        .map(
+          o =>
+            `<button type="button" data-v="${esc(o.value)}"${o.selected ? ' class="on" aria-current="true"' : ''}>${esc(o.text)}</button>`
+        )
+        .join('');
+    app.querySelector('#logout').before(box);
+    box.onclick = e => {
+      const b = e.target.closest('button');
+      if (!b || b.classList.contains('on') || asr.disabled) return;
+      asr.value = b.dataset.v;
+      asr.dispatchEvent(new Event('change'));
+    };
+  }
   return show();
 }
 

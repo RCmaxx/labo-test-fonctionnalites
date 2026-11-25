@@ -830,7 +830,7 @@ a[data-edit][aria-disabled='true'] {
     color: var(--ink-day);
     font-size: 12px;
     font-weight: 600;
-    box-shadow: 0 1px 2px rgba(20, 33, 43, 0.12);
+    box-shadow: var(--shadow-day);
   }
   .detail--card .cday::before,
   .detail--card .cday::after {
@@ -891,7 +891,7 @@ a[data-edit][aria-disabled='true'] {
     color: var(--pf, var(--ink));
     font-size: 11.5px;
     line-height: 14px;
-    box-shadow: inset 0 0 0 1px rgba(20, 33, 43, 0.06);
+    box-shadow: var(--ring-soft);
   }
   .detail--card .chat2 .pnm > span {
     order: 3;
@@ -908,17 +908,14 @@ a[data-edit][aria-disabled='true'] {
     max-width: 82%;
     padding: 10px 15px 11px;
     border-radius: 22px 22px 22px 8px;
-    background: linear-gradient(160deg, #2a4558 0%, #14212b 70%);
-    box-shadow:
-      0 1px 1px rgba(20, 33, 43, 0.2),
-      0 4px 10px -6px rgba(20, 33, 43, 0.45),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    background: var(--bub-bg);
+    box-shadow: var(--shadow-bub);
     font-size: 15.5px;
     line-height: 22px;
-    color: #fff;
+    color: var(--bub-fg);
   }
   .detail--card .chat2 .bub .btxt {
-    color: #fff;
+    color: var(--bub-fg);
   }
   .detail--card .chat2 .msg.own > .pnm > b,
   .detail--card .chat2 .msg.own > .pnm > span,
