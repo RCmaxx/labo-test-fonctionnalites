@@ -33,7 +33,9 @@ def serve(src, mock, role, port):
     p = subprocess.Popen([sys.executable, '-m', 'http.server', str(port), '-d', str(d)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return p, d
 
-def measure(pw, port, route, width, shot):
+def measure(pw, port, route, width, shot, tech=False):
+    if tech and route != '#':
+        route = '#/' + route.lstrip('#/')
     b = pw.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
     pg = b.new_page(viewport={'width': width, 'height': 1020})
     pg.goto(f'http://localhost:{port}/index.html'); pg.wait_for_timeout(3000)
@@ -57,7 +59,7 @@ def main():
     try:
         with sync_playwright() as pw:
             L = measure(pw, 8201, o.route, o.width, '/tmp/diff_labo.png')
-            T = measure(pw, 8202, o.route, o.width, '/tmp/diff_tech.png')
+            T = measure(pw, 8202, o.route, o.width, '/tmp/diff_tech.png', True)
     finally:
         for p, d in ((pl, dl), (pt, dt)): p.kill(); shutil.rmtree(d, ignore_errors=True)
     n = 0

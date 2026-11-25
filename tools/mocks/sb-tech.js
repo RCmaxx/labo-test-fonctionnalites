@@ -14,11 +14,15 @@ const ev = [
  { id: 3, intervention_id: 4, type: 'commentaire', body: 'Merci !', actor_id: 'u2', actor_name: 'Léa', actor_role: 'reception', created_at: h(4) },
 ];
 const tables = { intervention_events: ev, intervention_photos: [], intervention_reads: [], interventions: rows, members: [{ user_id: 'u1', full_name: 'Thomas', email: 't@x.fr', role: 'technicien', acting_role: null, org_id: 'o1', created_at: h(500) }], organizations: [{ id: 'o1', name: 'Labo test' }] };
-const q = t => { let id = null; const o = {};
-  ['select','neq','in','not','order','limit','gte','lte','or','ilike','is','range','filter','match','lt','gt','insert','update','delete','upsert','contains','textSearch'].forEach(k => o[k] = () => o);
-  o.eq = (c, v) => { if (c === 'id') id = v; return o; };
-  o.maybeSingle = o.single = () => Promise.resolve({ data: id && t === 'interventions' ? rows.find(r => String(r.id) === String(id)) : tables[t]?.[0] || null, error: null });
-  o.then = (ok, ko) => Promise.resolve({ data: tables[t] || [], error: null }).then(ok, ko); return o; };
+const q = t => { const F = []; const o = {};
+  ['select','not','order','limit','gte','lte','or','ilike','range','filter','match','lt','gt','insert','update','delete','upsert','contains','textSearch'].forEach(k => o[k] = () => o);
+  o.eq = (c, v) => { F.push(r => String(r[c]) === String(v)); return o; };
+  o.neq = (c, v) => { F.push(r => String(r[c]) !== String(v)); return o; };
+  o.in = (c, v) => { F.push(r => v.map(String).includes(String(r[c]))); return o; };
+  o.is = (c, v) => { F.push(r => (r[c] ?? null) === v); return o; };
+  const get = () => (tables[t] || []).filter(r => F.every(f => f(r)));
+  o.maybeSingle = o.single = () => Promise.resolve({ data: get()[0] || null, error: null });
+  o.then = (ok, ko) => Promise.resolve({ data: get(), error: null }).then(ok, ko); return o; };
 const ch = { on() { return ch; }, subscribe() { return ch; }, unsubscribe() {} };
 const user = { id: 'u1', email: 't@x.fr' };
 export const sb = {
