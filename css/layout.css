@@ -637,7 +637,7 @@ main {
 @container app (min-width: 601px) {
   .topbar {
     border-image: linear-gradient(var(--chrome), var(--chrome)) fill 0 / 0 / 0 100vmax;
-    margin-bottom: calc(var(--s6) + 2px);
+    margin-bottom: var(--s6);
   }
   .topbar a {
     color: var(--on-chrome-2);

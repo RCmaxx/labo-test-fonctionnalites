@@ -695,12 +695,19 @@ mark {
     margin-top: var(--s1);
   }
   .gcols > .gcol {
-    padding-top: 36px;
+    padding-top: 38px;
     padding-right: calc(var(--s2) + 12px); /* comme l'appli tech : titres 12 px plus larges que les cartes */
   }
   .gcol .group > h2 {
     margin-bottom: 27px; /* espace entre le titre de colonne et la première carte, comme l'appli tech */
     padding-left: 11px;
+  }
+  .gdone > .gcol {
+    padding-top: 9px;
+  }
+  .gdone .gcol .group > h2 {
+    padding-left: 0;
+    margin-bottom: 33px;
   }
   .gcol .cards {
     margin-right: 12px;

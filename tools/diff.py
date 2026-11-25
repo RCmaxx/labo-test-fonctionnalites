@@ -29,7 +29,8 @@ def serve(src, mock, role, port):
     for n in ('index.html', 'js', 'css'):
         (shutil.copytree if (src / n).is_dir() else shutil.copy)(src / n, d / n)
     text = mock.read_text()
-    (d / 'js' / 'sb.js').write_text(text.replace("role: 'technicien'", f"role: '{role}'", 1))
+    lines = [l.replace("role: 'technicien'", f"role: '{role}'") if 'members:' in l or l.lstrip().startswith('role:') else l for l in text.split('\n')]
+    (d / 'js' / 'sb.js').write_text('\n'.join(lines))
     p = subprocess.Popen([sys.executable, '-m', 'http.server', str(port), '-d', str(d)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return p, d
 
