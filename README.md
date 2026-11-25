@@ -30,3 +30,7 @@ Aucune compilation : HTML + CSS + JavaScript (modules ES), base Supabase de **te
 
 `js/app.js` : `render()` construit l'en-tête et la barre du bas, puis `show()` affiche la vue de la route dans `<main>`.
 Entre les onglets de liste, seul `show()` est rappelé (pas de reconstruction du cadre). Chaque onglet de liste garde son dernier affichage (`lastView` dans `js/list.js`) : il est remis aussitôt à l'arrivée, puis mis à jour ; `js/tabs.js` le montre à côté de la page pendant le balayage.
+
+## Comparer avec l'appli tech
+
+`python3 tools/diff.py '#terminees'` ouvre labo et l'appli tech (dossier voisin `gestion-interventions`) dans Chrome à la taille de l'iPad et liste les écarts (position, taille, police, couleurs, coins). Options : `--role`, `--all`, `--width`.
