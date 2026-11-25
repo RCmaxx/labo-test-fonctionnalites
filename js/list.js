@@ -393,7 +393,7 @@ export async function renderList(el) {
     if (!last[k] || created_at > last[k]) u.new = true;
   });
   const sec = ([k, label, list], foldable) =>
-    `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${!foldable && k === 'publiee' && S.me.role !== 'client' ? '<a class="gadd" href="#nouvelle" aria-label="Nouvelle intervention">+</a>' : ''}${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
+    `<section class="group${foldable && CLOSED[k] ? ' closed' : ''}" data-g="${k}"><h2${foldable ? ` role="button" tabindex="0" aria-expanded="${!CLOSED[k]}"` : ''}>${GICO[k] || ''}<span class="count">${list.length}</span><span class="glab">${label}</span>${foldable ? CHEV : ''}</h2>${list.length ? `<ul class="cards">${list.map(r => item(r)).join('')}</ul>` : '<p class="empty">Aucune.</p>'}</section>`;
 
   const paint = (open, done, more) => {
     if (onDonePage()) return paintTerminees(el, rows, done, more, reopen);
@@ -462,7 +462,9 @@ export async function renderList(el) {
     const shown = groups.filter(g => g[2].length || (!mob && g[0] === 'auj'));
     const COL = { dem: 0, publiee: 0, mes: 1, prise_en_charge: 1, auj: 2 };
     rows.innerHTML = !mob
-      ? `<div class="gcols">${[0, 1, 2]
+      ? `<div class="gcols">${S.me.role !== 'client' ? '<a class="gadd" href="#nouvelle" aria-label="Nouvelle intervention">+</a>' : ''}${[
+          0, 1, 2,
+        ]
           .map(
             c =>
               `<div class="gcol">${shown
