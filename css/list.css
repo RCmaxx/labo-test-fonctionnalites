@@ -638,3 +638,84 @@ mark {
 .srecent[hidden] {
   display: none;
 }
+
+/* Panneau « mes interventions » (js/mine.js), comme l'appli tech */
+#minesheet {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+}
+#minesheet.is-on {
+  pointer-events: auto;
+}
+.ms__bk {
+  position: absolute;
+  inset: 0;
+  background: var(--ms-veil);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.is-on .ms__bk {
+  opacity: 1;
+}
+.ms__pn {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, var(--sim-w, 390px));
+  max-height: 70dvh;
+  margin: 0 auto;
+  border-radius: 20px 20px 0 0;
+  background: var(--bg);
+  box-shadow: var(--shadow-ms);
+  transform: translateY(100%);
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.is-on .ms__pn {
+  transform: none;
+}
+.ms__hd {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s4) var(--s4) 10px;
+}
+.ms__hd b {
+  font-size: 17px;
+  font-weight: 600;
+}
+.ms__n {
+  padding: 2px var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--ms-n-bg);
+  color: var(--ms-n-fg);
+  font-size: 12px;
+  font-weight: 600;
+}
+.ms__x {
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ms-x-bg);
+  color: var(--ink-2);
+  font-size: 20px;
+  line-height: 1;
+}
+.ms__ls {
+  overflow-y: auto;
+  padding: 0 var(--s4) calc(var(--s4) + env(safe-area-inset-bottom));
+}
+.ms__ls .cards {
+  grid-template-columns: 1fr;
+  padding-block: var(--card-gap);
+  margin-inline: var(--card-inset);
+}
+.ms__em {
+  margin: var(--s2) 0;
+  color: var(--ink-3);
+}

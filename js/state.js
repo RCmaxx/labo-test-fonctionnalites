@@ -33,7 +33,7 @@ export const REMIND = {
 export const MGR = ['admin', 'directeur', 'responsable_tech'],
   TECH = ['technicien', 'responsable_tech'];
 export const PAGE = 50; // terminées chargées par page
-export const VERSION = 'v94';
+export const VERSION = 'v95';
 export const app = document.getElementById('app');
 // Mobile simulé (cadre de téléphone) : seulement sur grand écran ; sur un vrai téléphone la largeur suffit, comme l'appli tech.
 export const setSim = on => document.documentElement.classList.toggle('sim', on && innerWidth > 600);
@@ -118,7 +118,12 @@ export const canTake = r =>
   r.status === 'publiee' &&
   !r.assignee_id &&
   (!r.proposed_to || r.proposed_to === S.me.id || (S.me.real === 'admin' && roleOf(r.proposed_to) === S.me.role));
-export const nameOf = id => S.team.find(m => m.user_id === id)?.full_name || 'Quelqu’un';
+// Nom affiché d'un membre ; un admin qui agit sous un profil apparaît sous le prénom de ce profil (comme l'appli tech).
+export const nameOf = (id, role) => {
+  const m = S.team.find(x => x.user_id === id);
+  if (m?.role === 'admin' && role && PNAME[role]) return PNAME[role];
+  return m?.full_name || 'Quelqu’un';
+};
 // Demande un nouvel affichage complet (écouté par app.js, évite une dépendance circulaire).
 export const rerender = () => dispatchEvent(new Event('labo:render'));
 export const MONTHS = 'janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.'.split(' ');

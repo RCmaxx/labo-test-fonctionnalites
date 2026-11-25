@@ -206,8 +206,9 @@ function bubble(e, own, urls, it = {}) {
 function tagsOf(i) {
   const id = i.assignee_id || i.proposed_to;
   if (!id) return '';
-  const m = S.team.find(x => x.user_id === id);
-  return `<span class="cwho">${TECH.includes(m?.role) ? WRENCH : BRIEFCASE}<span>${esc(nameOf(id))}</span></span>`;
+  const m = S.team.find(x => x.user_id === id),
+    as = i.assignee_id && m?.role === 'admin' ? i.assignee_role : null; // admin sous un profil : icône et prénom du profil
+  return `<span class="cwho">${TECH.includes(as || m?.role) ? WRENCH : BRIEFCASE}<span>${esc(nameOf(id, as))}</span></span>`;
 }
 
 function slotLine(i) {

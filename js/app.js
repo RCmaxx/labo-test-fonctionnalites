@@ -9,6 +9,7 @@ import { startLive, stopLive } from './live.js';
 import { drawAlerts } from './alerts.js';
 import { loadCounts, paintCounts } from './counts.js';
 import { initTabs } from './tabs.js';
+import { openMine } from './mine.js';
 
 const SEARCH =
   '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
@@ -156,6 +157,12 @@ async function render() {
     const on = app.querySelector('.topbar').classList.toggle('open');
     e.currentTarget.setAttribute('aria-expanded', String(on));
   };
+  // Bulle « mes interventions » : sur mobile, panneau du bas (comme l'appli tech) au lieu de changer de page.
+  app.querySelector('#fabm')?.addEventListener('click', e => {
+    if (!isMob()) return;
+    e.preventDefault();
+    openMine();
+  });
   const asr = app.querySelector('#asrole');
   if (asr) asr.onchange = () => pickRole(asr);
   // Mobile, comme l'appli tech : profils en boutons visibles dans le menu du rouage.

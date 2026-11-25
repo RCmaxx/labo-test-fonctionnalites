@@ -160,6 +160,12 @@
   --overlay: rgba(0, 0, 0, 0.25);
   --veil: rgba(0, 0, 0, 0.4); /* voile de l'appui long */
   --gs-veil: rgba(0, 0, 0, 0.25); /* voile du panneau du rouage */
+  /* Panneau « mes interventions » */
+  --ms-veil: rgba(20, 30, 45, 0.35);
+  --shadow-ms: 0 -8px 30px rgba(20, 30, 45, 0.18);
+  --ms-n-bg: #e6eefd;
+  --ms-n-fg: #2f6fe4;
+  --ms-x-bg: #f4f4f4;
   --ink-off: #a3a39f; /* action indisponible */
   --hot-ghost: #ededed; /* pastille survolée du doigt */
   --hot-primary: #000;

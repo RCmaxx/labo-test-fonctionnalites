@@ -86,7 +86,7 @@ const fields = r => ({
   titre: r.title,
   lieu: r.location,
   desc: r.description,
-  tech: r.assignee_id ? nameOf(r.assignee_id) : '',
+  tech: r.assignee_id ? nameOf(r.assignee_id, r.assignee_role) : '',
   rep: r.created_by ? nameOf(r.created_by) : '',
   statut: `${STATUS[r.status] || ''} ${STATUT_TXT[r.status] || ''}`,
 });
@@ -151,7 +151,7 @@ const place = r => {
   const label = m ? `<small>MH</small>${m[1].padStart(2, '0')}` : r.location ? PIN + esc(r.location) : 'Sans lieu';
   return `<span class="tag tag--place tag--${r.priority || 'normale'}">${label}</span>`;
 };
-const COLS =
+export const COLS =
   'id, title, location, description, status, priority, assignee_id, assignee_role, proposed_to, assigned_by, available_from, available_until, created_by, created_at, resolved_at, validated_at, client_presence';
 const scope = q => (S.me.role === 'client' ? q.eq('created_by', S.me.id) : q);
 const withSearch = (q, words) => {
@@ -275,7 +275,7 @@ const item = (r, q = '', sf = []) => {
   BYID.set(r.id, r);
   return `<li><a class="card${done ? ' card--done' : ''}" href="${href}" data-id="${r.id}" draggable="false"${S.me.role === 'client' ? ' aria-disabled="true"' : ''}>
     ${n ? `<span class="badge${n.new ? ' badge--new' : ''}">${n.n}</span>` : ''}<b class="card__title">${title}</b>
-    <span class="card__meta">${loc}${r.assignee_id ? `<span class="tag tag--tech">${WRENCH}${esc(nameOf(r.assignee_id))}</span>` : ''}${mine ? '<span class="tag tag--prop">Proposé à moi</span>' : ''}<time>${fmtCard(done ? r.resolved_at || r.validated_at : r.created_at)}</time></span>
+    <span class="card__meta">${loc}${r.assignee_id ? `<span class="tag tag--tech">${WRENCH}${esc(nameOf(r.assignee_id, r.assignee_role))}</span>` : ''}${mine ? '<span class="tag tag--prop">Proposé à moi</span>' : ''}<time>${fmtCard(done ? r.resolved_at || r.validated_at : r.created_at)}</time></span>
     ${slot ? `<span class="card__slot">${slot}</span>` : ''}
     ${r.client_presence ? `<span class="card__presence">${HAND}Présence client</span>` : ''}
     ${sn ? `<span class="card__snip">${sn}</span>` : ''}
