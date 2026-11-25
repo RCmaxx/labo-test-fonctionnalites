@@ -367,8 +367,11 @@ main {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
-    min-width: 220px;
+    gap: 6px;
+    width: min(282px, 100% - 2 * var(--s3));
+    max-height: calc(var(--app-h) - 120px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: var(--s3) var(--s4);
     background: var(--surface);
     border: 1px solid var(--line-menu);
@@ -377,24 +380,27 @@ main {
   }
   .topbar.open .who__org {
     display: block;
-    margin-bottom: 2px;
+    margin-bottom: var(--s1);
     font-size: 15px;
     font-weight: 700;
     line-height: 1.25;
     color: var(--ink-title);
   }
+  /* Panneau du rouage, comme l'appli tech (Lot 542) : voile, nom du camping, profils, Déconnexion */
+  .topbar.open::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    background: var(--gs-veil);
+  }
   .topbar.open .acct {
-    color: var(--ink);
+    display: none;
   }
   .topbar.open .mprof {
     display: flex;
     flex-direction: column;
-    gap: var(--s1);
-    max-height: 42vh;
-    margin: 0 calc(-1 * var(--s1));
-    padding: 0 var(--s1);
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    gap: 6px;
   }
   .mprof__h {
     margin: 2px 0;
@@ -403,6 +409,8 @@ main {
     font-weight: 600;
   }
   .mprof button {
+    display: block;
+    width: 100%;
     min-height: 40px;
     padding: var(--s2) 10px;
     border: 0;
@@ -419,10 +427,12 @@ main {
     font-weight: 600;
   }
   .topbar.open #logout {
+    min-height: 32px;
+    margin-top: var(--s1);
     padding: 6px 10px;
     border: 1px solid var(--line-logout);
-    border-radius: 9px;
-    background: transparent;
+    border-radius: var(--r-s);
+    background: var(--surface);
     color: var(--ink-title);
     font-size: 13px;
     font-weight: 400;

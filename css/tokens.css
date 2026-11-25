@@ -159,6 +159,7 @@
   --ph-count-bg: rgba(255, 255, 255, 0.92);
   --overlay: rgba(0, 0, 0, 0.25);
   --veil: rgba(0, 0, 0, 0.4); /* voile de l'appui long */
+  --gs-veil: rgba(0, 0, 0, 0.25); /* voile du panneau du rouage */
   --ink-off: #a3a39f; /* action indisponible */
   --hot-ghost: #ededed; /* pastille survolée du doigt */
   --hot-primary: #000;

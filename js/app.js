@@ -20,6 +20,13 @@ const USERS =
   '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M21 20c0-2.6-1.6-4.8-4-5.6"/></svg>';
 const CHEV =
   '<svg class="chev" width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5L6 7.5L9 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const SHORT = {
+  admin: 'Admin',
+  directeur: 'Directeur',
+  responsable_tech: 'Resp.tech',
+  technicien: 'Tech',
+  reception: 'Réception',
+};
 const ADM = 'lab-admin-sess';
 const REAL = { bis: ['tech.bis@test.local', 'Antoine'], cli: ['client@test.local', 'Client'] };
 // Mobile tech : la racine (#) est la page Terminées.
@@ -93,14 +100,15 @@ async function render() {
   const pick = admin;
   const roles = Object.entries(ROLES).filter(([k]) => k !== 'client');
   const mob = !!localStorage.labosim; // choix « mobile » enregistré (le cadre sim n'existe que sur grand écran)
+  // Profils proposés, comme l'appli tech : avatar, prénom et rôle court.
+  const lab = (name, k, txt) => `${avatar(name, k).e} ${esc(name)} · ${txt}`;
   const sel = pick
     ? `<select id="asrole" aria-label="Voir en tant que">
-    ${roles.map(([k, v]) => `<option value="${k}" ${k === r && !mob ? 'selected' : ''}>${esc(PNAME[k] || v)} · ${esc(v)}</option>`).join('')}
-    <option value="responsable_tech|m" ${mob && r === 'responsable_tech' ? 'selected' : ''}>${esc(PNAME.responsable_tech)} · RT mobile</option>
-    <option value="directeur|m" ${mob && r === 'directeur' ? 'selected' : ''}>${esc(PNAME.directeur)} · Directeur mobile</option>
-    <option value="bis"${S.me.email === REAL.bis[0] ? ' selected' : ''}>${esc(REAL.bis[1])} · Tech bis</option>
-    <option value="cli"${S.me.email === REAL.cli[0] && !mob ? ' selected' : ''}>Client</option>
-    <option value="cli|m"${S.me.email === REAL.cli[0] && mob ? ' selected' : ''}>Client mobile</option>
+    ${roles.map(([k]) => `<option value="${k}" ${k === r && !mob ? 'selected' : ''}>${lab(PNAME[k], k, SHORT[k])}</option>`).join('')}
+    <option value="responsable_tech|m" ${mob && r === 'responsable_tech' ? 'selected' : ''}>${lab(PNAME.responsable_tech, 'responsable_tech', 'RT mobile')}</option>
+    <option value="directeur|m" ${mob && r === 'directeur' ? 'selected' : ''}>${lab(PNAME.directeur, 'directeur', 'Directeur mobile')}</option>
+    <option value="bis"${S.me.email === REAL.bis[0] ? ' selected' : ''}>${lab(REAL.bis[1], 'technicien', 'Tech')}</option>
+    <option value="cli|m"${S.me.email === REAL.cli[0] ? ' selected' : ''}>${avatar('Client mobile').e} Client mobile</option>
   </select>`
     : '';
   const [pg] = route();
